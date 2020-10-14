@@ -1,0 +1,201 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="DefaultValidationError" xml:space="preserve">
+    <value>Kunde inte validera innehållet i dokumentet</value>
+  </data>
+  <data name="ErrorBelowChangeLimit" xml:space="preserve">
+    <value>Förhållandet mellan tillägg och borttag är lägre än gränsvärdet. Inga ändringar av medlemmarna i gruppen kommer att göras.</value>
+  </data>
+  <data name="ErrorGrouperDocumentNotValid" xml:space="preserve">
+    <value>JSON-dokumentet representerar inte ett giltigt Grouper-dokument</value>
+  </data>
+  <data name="GenericErrorMessage" xml:space="preserve">
+    <value>Ett fel inträffade</value>
+  </data>
+  <data name="ValidationCouldNotDeserializeJson" xml:space="preserve">
+    <value>Kunde inte översätta JSON till ett Grouper-dokument. Kontrollera att JSON representerar ett Grouper dokument</value>
+  </data>
+  <data name="ValidationErrorDocumentIdNotValid" xml:space="preserve">
+    <value>Dokument-ID saknas eller har fel format (ID: {0})</value>
+  </data>
+  <data name="ValidationErrorDuplicateMemberObject" xml:space="preserve">
+    <value>Samma medlemsobjekt kan bara förekomma en gång per grupp (Member source: {0}, Member action: {1}, Member count: {2})</value>
+  </data>
+  <data name="ValidationErrorDuplicateRule" xml:space="preserve">
+    <value>Samma regel får inte förekomma mer än en gång (Rule name: {0}, Rule value: {1})</value>
+  </data>
+  <data name="ValidationErrorDuplicateRuleName" xml:space="preserve">
+    <value>Ett regelnamn kan bara förekomma en gång i varje uppsättning regler (Rule name: {0})</value>
+  </data>
+  <data name="ValidationErrorGroupIdNotValid" xml:space="preserve">
+    <value>Grupp-ID saknas eller har fel format (ID: {0})</value>
+  </data>
+  <data name="ValidationErrorGroupNameIsNullOrEmpty" xml:space="preserve">
+    <value>Gruppnamn saknas eller är tomt</value>
+  </data>
+  <data name="ValidationErrorIllegalInterval" xml:space="preserve">
+    <value>Önskat processintervall kan inte vara mindre än noll</value>
+  </data>
+  <data name="ValidationErrorInvalidCombinationOfGroupStoreAndMemberSource" xml:space="preserve">
+    <value>Kombinationen av gruppkatalog och medlemskälla är inte giltig (Group store: {0}, Member source: {1})</value>
+  </data>
+  <data name="ValidationErrorInvalidCombinationOfRules" xml:space="preserve">
+    <value>Kombinationen av regler är inte tillåten för vald medlemskälla (Member source: {0})</value>
+  </data>
+  <data name="ValidationErrorInvalidGroupStore" xml:space="preserve">
+    <value>Gruppkatalog saknas eller är tomt (Group store: {0})</value>
+  </data>
+  <data name="ValidationErrorInvalidMemberAction" xml:space="preserve">
+    <value>Medlemsåtgärd saknas eller är ogiltig. Godkända åtgärder är "Include" eller "Exclude" (Member action: {0})</value>
+  </data>
+  <data name="ValidationErrorInvalidMemberSource" xml:space="preserve">
+    <value>Medlemskälla saknas eller är ogiltig (Member source: {0})</value>
+  </data>
+  <data name="ValidationErrorInvalidOwnerAction" xml:space="preserve">
+    <value>Ägaråtgård saknas eller är felaktig. Godkända åtgärder är "AddAll", "KeepExisting" eller "MatchSource" (Owner action: {0})</value>
+  </data>
+  <data name="ValidationErrorInvalidRuleName" xml:space="preserve">
+    <value>Regelns namn är inte giltigt eller kan inte användas i kombination med vald medlemskälla (Rule name: {0}, Member source: {1})</value>
+  </data>
+  <data name="ValidationErrorInvalidUpn" xml:space="preserve">
+    <value>Regelns värde är inte ett giltigt UserPrincipalName (Rule value: {0})</value>
+  </data>
+  <data name="ValidationErrorMemberObjectHasNoRules" xml:space="preserve">
+    <value>Inga regler finns för medlemsobjektet</value>
+  </data>
+  <data name="ValidationErrorNoMemberObjects" xml:space="preserve">
+    <value>Inga medlemsobjeckt finns</value>
+  </data>
+  <data name="ValidationErrorRuleValueDoesNotValidate" xml:space="preserve">
+    <value>Regels värde är ogiltigt (Rule name: {0}, Rule value: {1})</value>
+  </data>
+  <data name="ValidationErrorRuleValueIsNullOrEmpty" xml:space="preserve">
+    <value>Regelns värde saknas eller är tomt (Rule: {0})</value>
+  </data>
+  <data name="ValidationErrorSourceGroupSameAsTarget" xml:space="preserve">
+    <value>Samma grupp som uppdateras kan inte användas som medlemskälla</value>
+  </data>
+  <data name="ValidationErrorStoreNotRecognized" xml:space="preserve">
+    <value>Validatorn känner inte igen gruppkatalogen {0}</value>
+  </data>
+  <data name="ValidationJsonParsingError" xml:space="preserve">
+    <value>Ett fel uppstod när JSON-dokumentet skulle tolkas. Felet finns på rad {0} position {1}. Felmeddelandet är: {2}</value>
+  </data>
+</root>

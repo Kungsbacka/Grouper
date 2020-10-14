@@ -1,0 +1,165 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://kungsbacka.se/grouper-v6.json",
+  "type": "object",
+  "title": "Grouper document",
+  "default": null,
+  "required": [
+    "id",
+    "groupId",
+    "groupName",
+    "store",
+    "members"
+  ],
+  "properties": {
+    "id": {
+      "$id": "#/properties/id",
+      "type": "string",
+      "title": "Document ID",
+      "default": "",
+      "readOnly": true,
+      "pattern": "^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"
+    },
+    "interval": {
+      "id": "#properties/interval",
+      "type": "integer",
+      "title": "Processing interval",
+      "description": "Suggested processing interval in minutes. A processing interval of zero (0) is the same as no processing interval.",
+      "minimum": 0,
+      "default": 0
+    },
+    "groupId": {
+      "$id": "#/properties/groupId",
+      "type": "string",
+      "title": "Group ID",
+      "default": "",
+      "pattern": "^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"
+    },
+    "groupName": {
+      "$id": "#/properties/groupName",
+      "type": "string",
+      "title": "Group display name",
+      "default": "",
+      "examples": [
+        "My Group"
+      ],
+      "pattern": "^(.*)$"
+    },
+    "store": {
+      "$id": "#/properties/store",
+      "type": "string",
+      "enum": [
+        "AzureAd",
+        "OnPremAd",
+        "Exo"
+      ],
+      "title": "Group store",
+      "default": "",
+      "examples": [
+        "AzureAd"
+      ],
+      "pattern": "^(.*)$"
+    },
+    "owner": {
+      "$id": "#/properties/owner",
+      "type": "string",
+      "enum": [
+        "AddAll",
+        "KeepExisting",
+        "MatchSource"
+      ],
+      "title": "Owner action",
+      "default": "KeepExisting",
+      "examples": [
+        "AddAll"
+      ],
+      "pattern": "^(.*)$"
+    },
+    "members": {
+      "$id": "#/properties/members",
+      "type": "array",
+      "title": "Member objects",
+      "default": null,
+      "items": {
+        "$id": "#/properties/members/items",
+        "type": "object",
+        "title": "Member object",
+        "default": null,
+        "required": [
+          "source",
+          "action",
+          "rules"
+        ],
+        "properties": {
+          "source": {
+            "$id": "#/properties/members/items/properties/source",
+            "type": "string",
+            "enum": [
+              "Personalsystem",
+              "Elevregister",
+              "CustomView",
+              "AzureAdGroup",
+              "OnPremAdGroup",
+              "OnPremAdQuery",
+              "ExoGroup",
+              "Static"
+            ],
+            "title": "Member source",
+            "default": "",
+            "pattern": "^(.*)$"
+          },
+          "action": {
+            "$id": "#/properties/members/items/properties/action",
+            "type": "string",
+            "enum": [
+              "Include",
+              "Exclude"
+            ],
+            "title": "Member action",
+            "default": "Include",
+            "pattern": "^(.*)$"
+          },
+          "rules": {
+            "$id": "#/properties/members/items/properties/rules",
+            "type": "array",
+            "title": "Member rules",
+            "default": null,
+            "items": {
+              "$id": "#/properties/members/items/properties/rules/items",
+              "type": "object",
+              "title": "Member rule",
+              "default": null,
+              "required": [
+                "name",
+                "value"
+              ],
+              "properties": {
+                "name": {
+                  "$id": "#/properties/members/items/properties/rules/items/properties/name",
+                  "type": "string",
+                  "title": "Rule name",
+                  "default": "",
+                  "examples": [
+                    "Rule name"
+                  ],
+                  "pattern": "^(.*)$"
+                },
+                "value": {
+                  "$id": "#/properties/members/items/properties/rules/items/properties/value",
+                  "type": "string",
+                  "title": "Rule value",
+                  "default": "",
+                  "examples": [
+                    "Rule value"
+                  ],
+                  "pattern": "^(.*)$"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
