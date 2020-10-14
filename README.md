@@ -60,7 +60,7 @@ secrets (see [Encrypting secrets](#encrypting-secrets) below)
 
 * Copy the PowerShell module to a folder that is included in the PSModulePath if you want the module to autoload.
 * Build GrouperLib (CompileTargetFramework or CompileTargetCore depending on PowerShell version)
-* Copy GrouperLib.Core.dll to the module folder.
+* Copy GrouperLib.Core.dll and Newtonsoft.Json.dll to the module folder.
 
 ### Encrypting secrets
 
