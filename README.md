@@ -6,23 +6,23 @@ Grouper manages group membership for on-premise AD groups, Azure AD groups and E
 
 Grouper is comprised of four parts. Core functionality, database access, logging and group management are found in GrouperLib.
 GrouperApi exposes Grouper functionality as a web API. PSGrouper uses the web API to create a PowerShell module for working
-with Grouper documents. Finally the Grouper service is a document processor that uses published documents from the Grouper
-database to make changes to the corresponding groups.
+with Grouper documents. Finally the Grouper service is a document processor that reads published documents from the Grouper
+database and updates group members.
 
 ## Dependencies
 
 The PowerShell module work with both PowerShell 5.1 and PowerShell 7. GrouperLib is targeting .NET Standard 2.0 and have been
 successfully built for both .NET Framework 4.7.2 and .NET Core 3.0.
 
-Dependencies can vary depending on what kind of groups (Azure AD, on-premise AD or EXO) and where information about
-members are coming from. Below is a list of all external dependencies:
+Dependencies can vary depending on what kind of groups are involved (Azure AD, on-premise AD or EXO) and where information
+about members are coming from. Below is a list of all external dependencies:
 
 * Access to Azure AD and an Azure AD app registration with permission to read and write group members.
 * Access to on-premise AD and a user account (or gMSA) with permission to read and write group members.
 * Access to Exchange Online and a user account with permission to read and write distribution group members.
 * Access to a database for Grouper documents (more information below).
 * Access to a log database
-* Access to a meta directory or similar to use as a source for group members.
+* Access to a metadirectory or similar to use as a source for group members.
 
 ## API
 
