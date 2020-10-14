@@ -70,7 +70,7 @@ the following:
 
 1. Start PowerShell as the user that will run Grouper (if it's a gMSA you can use
 [PsExec](https://docs.microsoft.com/en-us/sysinternals/downloads/psexec) to
-start PowerShell: psexec.exe -i -u DOMAIN\gmsa$ powershell.exe).
+start PowerShell: `psexec.exe -i -u DOMAIN\gmsa$ powershell.exe`).
 2. Use tools/ProtectString.ps1 to encrypt the secret.
 3. Paste the protected string into the configuration file.
 
