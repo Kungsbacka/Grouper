@@ -45,7 +45,7 @@ secrets (see [Encrypting secrets](#encrypting-secrets) below)
 * Install service with sc. If you are using a gMSA then remove the password parameter.
 
 ```batch
-sc.exe create WebSolenFileMover binPath= "C:\Program Files\Grouper\GrouperService.exe" start= auto obj= user password= pass
+sc.exe create GrouperService binPath= "C:\Program Files\Grouper\GrouperService.exe" start= auto obj= user password= pass
 ```
 
 ### API
