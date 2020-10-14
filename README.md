@@ -64,12 +64,13 @@ secrets (see [Encrypting secrets](#encrypting-secrets) below)
 
 ### Encrypting secrets
 
-It is recommended that all secrets in the configuration file are encrypted. Grouper supports
-DPAPI protected strings in the configuration file. To protect a string with DPAPI you can do
+It is recommended that all secrets in the configuration files are encrypted. Grouper supports
+DPAPI protected strings in the configuration files. To protect a string with DPAPI you can do
 the following:
 
-1. Start PowerShell as the user that will run Grouper (if it's a gMSA you can use PsExec to
-start PowerShell: psexec -i -u DOMAIN\gmsa$ powershell.exe).
+1. Start PowerShell as the user that will run Grouper (if it's a gMSA you can use
+[PsExec](https://docs.microsoft.com/en-us/sysinternals/downloads/psexec) to
+start PowerShell: psexec.exe -i -u DOMAIN\gmsa$ powershell.exe).
 2. Use tools/ProtectString.ps1 to encrypt the secret.
 3. Paste the protected string into the configuration file.
 
