@@ -14,13 +14,14 @@ using System.Threading.Tasks;
 
 namespace GrouperLib.Store
 {
-    public class Exo : IMemberSource, IGroupStore
+    public class Exo : IMemberSource, IGroupStore, IDisposable
     {
         private readonly string _connectionUri = "https://outlook.office365.com/powershell";
         private readonly string _configurationName = "Microsoft.Exchange";
         private readonly PSCredential _credential;
         private Runspace _runspace;
         private object _session;
+        private bool _disposed;
 
         private static readonly Regex guidRegex = new Regex(
             "\"(?<guid>[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12})\"",
@@ -227,7 +228,7 @@ namespace GrouperLib.Store
                     store: GroupStores.Exo
                 );
             }
-            return await Task.FromResult<GroupInfo>(groupInfo);
+            return await Task.FromResult(groupInfo);
         }
 
         private bool IsNotFoundError(RemoteException ex)
@@ -271,6 +272,27 @@ namespace GrouperLib.Store
         public IEnumerable<GroupStores> GetSupportedGroupStores()
         {
             return new GroupStores[] { GroupStores.Exo };
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    if (_runspace != null)
+                    {
+                        _runspace.Dispose();
+                    }
+                }
+                _disposed = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

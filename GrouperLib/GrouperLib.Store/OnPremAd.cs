@@ -78,7 +78,7 @@ namespace GrouperLib.Store
             }
             else
             {
-                using (var directoryEntry = GetDirectoryEntry($"LDAP://<GUID={objectId}>"))
+                using (DirectoryEntry directoryEntry = GetDirectoryEntry($"LDAP://<GUID={objectId}>"))
                 {
                     try
                     {
@@ -119,7 +119,7 @@ namespace GrouperLib.Store
             using (DirectorySearcher directorySearcher = new DirectorySearcher(searchRoot, ldapFilter, new string[] { "objectGUID", "userPrincipalName" }))
             {
                 directorySearcher.PageSize = 1000;
-                var result = directorySearcher.FindAll();
+                SearchResultCollection result = directorySearcher.FindAll();
                 foreach (SearchResult item in result)
                 {
                     Guid identity = new Guid((byte[])item.Properties["objectGuid"][0]);

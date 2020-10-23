@@ -23,17 +23,20 @@ namespace GrouperService
         private LogDb _logDb;
         private bool _stopRequested;
         private Dictionary<Guid, DateTime> _lastProcessedDictionary;
+        private readonly GrouperConfiguration _config;
 
         public Worker() { }
 
         public Worker(EventLog eventLog)
         {
             _eventLog = eventLog ?? throw new ArgumentNullException(nameof(eventLog));
+            _config = GrouperConfiguration.CreateFromAppSettings(ConfigurationManager.AppSettings);
         }
 
         public void Start()
         {
             _stopRequested = false;
+            SetupDatabases();
             SetupGrouper();
             FillLastProcessedDictionary();
             SetupTimer();
@@ -47,10 +50,17 @@ namespace GrouperService
 
         private void SetupGrouper()
         {
-            GrouperConfiguration config = GrouperConfiguration.CreateFromAppSettings(ConfigurationManager.AppSettings);
-            _grouper = Grouper.CreateFromConfig(config);
-            _documentDb = new DocumentDb(config, "Grouper Service");
-            _logDb = new LogDb(config);
+            if (_grouper != null)
+            {
+                _grouper.Dispose();
+            }
+            _grouper = Grouper.CreateFromConfig(_config);
+        }
+
+        private void SetupDatabases()
+        {
+            _documentDb = new DocumentDb(_config, "Grouper Service");
+            _logDb = new LogDb(_config);
         }
 
         private void SetupTimer()
@@ -126,15 +136,16 @@ namespace GrouperService
         {
             Timer timer = (Timer)source;
             List<GrouperDocumentEntry> entries = new List<GrouperDocumentEntry>();
-            if (ShouldProcessAllDocuments())
+            bool processAllDocuments = ShouldProcessAllDocuments();
+            if (processAllDocuments)
             {
                 _lastFullProcessHour = DateTime.Now.Hour;
                 entries.AddRange(_documentDb.GetAllEntriesAsync().GetAwaiter().GetResult());
             }
             else
             {
-                // Get documents that changed since the last timer event
-                // If we miss a document it will be processed in the next full run
+                // Get documents that changed since the last timer event.
+                // It doesn't matter if we miss a document. It will be processed in the next full run
                 DateTime start = DateTime.Now.AddMilliseconds(-_workInterval);
                 entries.AddRange(_documentDb.GetEntriesByAgeAsync(start).GetAwaiter().GetResult());
 
@@ -186,6 +197,12 @@ namespace GrouperService
                         WriteToEventLog(message, EventLogEntryType.Error);
                     }
                 }
+            }
+            // There is a memory leak somewhere. Likely in Exo. So we tear down Grouper and build a new one after
+            // every full run and see if that helps narrow down the leak.
+            if (processAllDocuments)
+            {
+                SetupGrouper();
             }
             if (!_stopRequested)
             {

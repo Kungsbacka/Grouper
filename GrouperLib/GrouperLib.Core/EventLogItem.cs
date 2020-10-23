@@ -29,7 +29,7 @@ namespace GrouperLib.Core
             LogLevel = logLevel;
         }
 
-        public EventLogItem(DateTime logTime, Guid? documentId, Guid? groupId, string groupDisplayName, string groupStore, string message, int logLevel)
+        public EventLogItem(DateTime logTime, Guid? documentId, Guid? groupId, string groupDisplayName, string groupStore, string message, LogLevels logLevel)
         {
             LogTime = logTime;
             DocumentId = documentId;
@@ -43,7 +43,7 @@ namespace GrouperLib.Core
                 GroupStore = (GroupStores)Enum.Parse(typeof(GroupStores), groupStore, true);
             }
             Message = message;
-            LogLevel = (LogLevels)logLevel;
+            LogLevel = logLevel;
         }
 
         public override string ToString()

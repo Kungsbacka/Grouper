@@ -8,9 +8,10 @@ using GrouperLib.Store;
 
 namespace GrouperLib.Backend
 {
-    public class Grouper
+    public class Grouper : IDisposable
     {
         private ILogger _logger;
+        private bool _disposed;
         private readonly double _changeRatioLowerLimit;
         private readonly Dictionary<GroupMemberSources, IMemberSource> _memberSources;
         private readonly Dictionary<GroupStores, IGroupOwnerSource> _ownerSources;
@@ -245,6 +246,31 @@ namespace GrouperLib.Backend
                 return store;
             }
             throw new InvalidOperationException($"There is no group store added for {document.Store}");
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    if (_memberSources.TryGetValue(GroupMemberSources.ExoGroup, out IMemberSource source))
+                    {
+                        ((Exo)source).Dispose();
+                    }
+                    if (_groupStores.TryGetValue(GroupStores.Exo, out IGroupStore store))
+                    {
+                        ((Exo)store).Dispose();
+                    }
+                }
+                _disposed = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

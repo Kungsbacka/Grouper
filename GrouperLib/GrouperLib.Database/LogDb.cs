@@ -47,7 +47,7 @@ namespace GrouperLib.Database
                                 groupDisplayName: reader.GetNullable<string>(3),
                                 groupStore: reader.GetNullable<string>(4),
                                 message: reader.GetString(6),
-                                logLevel: reader.GetByte(5)
+                                logLevel: (LogLevels)reader.GetByte(5)
                             ));
                         }
                     }
