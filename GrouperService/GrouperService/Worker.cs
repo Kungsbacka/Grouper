@@ -119,8 +119,7 @@ namespace GrouperService
             return _lastFullProcessHour != hour && (hour == 6 || hour == 12 || hour == 16);
         }
 
-
-        // All calls to a an empty partial method are optimized out
+        // All calls to an empty partial method are optimized out
         partial void DebugPrint(string str, params object[] args);
 
         [Conditional("DEBUG")]
@@ -198,8 +197,8 @@ namespace GrouperService
                     }
                 }
             }
-            // There is a memory leak somewhere. Likely in Exo. So we tear down Grouper and build a new one after
-            // every full run and see if that helps narrow down the leak.
+            // There is a memory leak somewhere. Likely in Exo. So we tear down Grouper and
+            // build a new after every full run to see if that helps narrow down the leak.
             if (processAllDocuments)
             {
                 SetupGrouper();
