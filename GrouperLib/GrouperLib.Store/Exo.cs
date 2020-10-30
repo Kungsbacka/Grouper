@@ -88,21 +88,23 @@ namespace GrouperLib.Store
         private Collection<PSObject> InvokeCommand(string command)
         {
             CreateSession();
-            PowerShell ps = PowerShell.Create()
+            using (PowerShell ps = PowerShell.Create()
                 .AddCommand("Invoke-Command")
                 .AddParameter("ScriptBlock", ScriptBlock.Create(command))
-                .AddParameter("Session", _session);
-            ps.Runspace = _runspace;
-            var result = ps.Invoke();
-            if (ps.HadErrors)
+                .AddParameter("Session", _session))
             {
-                if (ps.Streams.Error.Count > 0)
+                ps.Runspace = _runspace;
+                var result = ps.Invoke();
+                if (ps.HadErrors)
                 {
-                    throw ps.Streams.Error[0].Exception;
+                    if (ps.Streams.Error.Count > 0)
+                    {
+                        throw ps.Streams.Error[0].Exception;
+                    }
+                    throw new InvalidOperationException($"An unknown error occured while executing command {command}");
                 }
-                throw new InvalidOperationException($"An unknown error occured while executing command {command}");
+                return result;
             }
-            return result;
         }
 
         public async Task GetGroupMembersAsync(GroupMemberCollection memberCollection, Guid groupId)
@@ -149,7 +151,7 @@ namespace GrouperLib.Store
             {
                 throw new ArgumentException(nameof(member), "Can only add members of type 'AzureAd'");
             }
-            string command = $"Add-DistributionGroupMember -Identity '{groupId.ToString()}' -Member '{member.Id.ToString()}' -ErrorAction 'Stop'";
+            string command = $"Add-DistributionGroupMember -Identity '{groupId}' -Member '{member.Id}' -ErrorAction 'Stop'";
             try
             {
                 InvokeCommand(command);
@@ -179,7 +181,7 @@ namespace GrouperLib.Store
             {
                 throw new ArgumentException(nameof(member), "Can only remove members of type 'AzureAd'");
             }
-            string command = $"Remove-DistributionGroupMember -Identity '{groupId.ToString()}' -Member '{member.Id.ToString()}' -Confirm:$false -ErrorAction 'Stop'";
+            string command = $"Remove-DistributionGroupMember -Identity '{groupId}' -Member '{member.Id}' -Confirm:$false -ErrorAction 'Stop'";
             try
             {
                 InvokeCommand(command);
@@ -202,7 +204,7 @@ namespace GrouperLib.Store
         public async Task<GroupInfo> GetGroupInfoAsync(Guid groupId)
         {
             GroupInfo groupInfo = null;
-            string command = $"Get-DistributionGroup -Identity '{groupId.ToString()}' -ErrorAction 'Stop'";
+            string command = $"Get-DistributionGroup -Identity '{groupId}' -ErrorAction 'Stop'";
             Collection<PSObject> result;
             try
             {
