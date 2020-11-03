@@ -48,25 +48,19 @@ function Get-GrouperMemberDiff
         }
         $diff = ApiPostDocument $url $document
         foreach ($item in $diff.Add) {
-            if ($item -isnot [GrouperLib.Core.GroupMember]) {
-                $item = [GrouperLib.Core.GroupMember]::new($item.id, $item.displayName, $item.memberType)
-            }
-            $obj = [GrouperLib.Core.GroupMemberOperation]::new($document, $item, 'Add')
+            $member = [GrouperLib.Core.GroupMember]::new($item.id, $item.displayName, $item.memberType)
+            $obj = [GrouperLib.Core.GroupMemberOperation]::new($document, $member, 'Add')
             Write-Output -InputObject $obj
         }
         foreach ($item in $diff.Remove) {
-            if ($item -isnot [GrouperLib.Core.GroupMember]) {
-                $item = [GrouperLib.Core.GroupMember]::new($item.id, $item.displayName, $item.memberType)
-            }
-            $obj = [GrouperLib.Core.GroupMemberOperation]::new($document, $item, 'Remove')
+            $member = [GrouperLib.Core.GroupMember]::new($item.id, $item.displayName, $item.memberType)
+            $obj = [GrouperLib.Core.GroupMemberOperation]::new($document, $member, 'Remove')
             Write-Output -InputObject $obj
         }
         if ($IncludeUnchanged) {
             foreach ($item in $diff.Unchanged) {
-                if ($item -isnot [GrouperLib.Core.GroupMember]) {
-                    $item = [GrouperLib.Core.GroupMember]::new($item.id, $item.displayName, $item.memberType)
-                }
-                $obj = [GrouperLib.Core.GroupMemberOperation]::new($document, $item, 'None')
+                $member = [GrouperLib.Core.GroupMember]::new($item.id, $item.displayName, $item.memberType)
+                $obj = [GrouperLib.Core.GroupMemberOperation]::new($document, $member, 'None')
                 Write-Output -InputObject $obj
             }
         }

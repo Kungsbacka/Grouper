@@ -235,20 +235,8 @@ function Edit-GrouperDocument
                 Write-Host 'Unable to validate document. Correct all errors and try again.' -ForegroundColor Red
                 return
             }
-            $modpath = "$PSScriptRoot\..\Grouper.psd1"
-            $job = Start-Job -ArgumentList @($modpath, $json) -ScriptBlock {
-                Import-Module -Name $args[0]
-                $diff = $args[1] | ConvertTo-GrouperDocument | Get-GrouperMemberDiff
-                if ($diff.Count -gt 0) {
-                    $diff | Format-Table -AutoSize | Out-String | Write-Host
-                }
-                else {
-                    Write-Host 'No members will be added or removed'
-                }
-            }
-            $job | Wait-Job
-            $job | Receive-Job
-            $job | Remove-Job
+            $doc = ConvertTo-GrouperDocument -InputObject $json
+            Get-GrouperMemberDiff -InputObject $doc | Out-Host
         })
         $control = $window.FindName('Skip')
         $control.Add_Click({
@@ -309,7 +297,7 @@ function Edit-GrouperDocument
         }
 
         function Validate($json) {
-            $result = Test-GrouperDocument -InputObject $json -OutputErrors
+            $result = @(Test-GrouperDocument -InputObject $json -OutputErrors)
             if ($result) {
                 for ($i = 0; $i -lt $result.Count; $i++) {
                     Write-Host "$($i + 1). $($result[$i])" -ForegroundColor Yellow
