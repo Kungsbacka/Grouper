@@ -27,7 +27,7 @@ namespace GrouperApi.Controllers
             GrouperDocument document = await Helper.MakeDocumentAsync(Request);
             Grouper grouper = GetGrouperBackend();
             GroupMemberDiff diff = await grouper.GetMemberDiffAsync(document);
-            // await grouper.UpdateGroupAsync(diff, ignoreChangelimit);
+            await grouper.UpdateGroupAsync(diff, ignoreChangelimit);
             var changes = new List<OperationalLogItem>();
             foreach (GroupMember member in diff.Add)
             {

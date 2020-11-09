@@ -119,20 +119,22 @@ namespace GrouperLib.Store
             using (DirectorySearcher directorySearcher = new DirectorySearcher(searchRoot, ldapFilter, new string[] { "objectGUID", "userPrincipalName" }))
             {
                 directorySearcher.PageSize = 1000;
-                SearchResultCollection result = directorySearcher.FindAll();
-                foreach (SearchResult item in result)
+                using (SearchResultCollection result = directorySearcher.FindAll())
                 {
-                    Guid identity = new Guid((byte[])item.Properties["objectGuid"][0]);
-                    string displayName;
-                    if (item.Properties["userPrincipalName"].Count == 1)
+                    foreach (SearchResult item in result)
                     {
-                        displayName = (string)item.Properties["userPrincipalName"][0];
+                        Guid identity = new Guid((byte[])item.Properties["objectGuid"][0]);
+                        string displayName;
+                        if (item.Properties["userPrincipalName"].Count == 1)
+                        {
+                            displayName = (string)item.Properties["userPrincipalName"][0];
+                        }
+                        else
+                        {
+                            displayName = identity.ToString();
+                        }
+                        memberCollection.Add(new GroupMember(identity, displayName, GroupMemberTypes.OnPremAd));
                     }
-                    else
-                    {
-                        displayName = identity.ToString();
-                    }
-                    memberCollection.Add(new GroupMember(identity, displayName, GroupMemberTypes.OnPremAd));
                 }
             }
         }

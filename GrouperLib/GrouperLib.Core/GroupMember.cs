@@ -40,8 +40,7 @@ namespace GrouperLib.Core
 
         public override bool Equals(object obj)
         {
-            GroupMember member = obj as GroupMember;
-            if (member == null)
+            if (!(obj is GroupMember member))
             {
                 return false;
             }

@@ -23,9 +23,8 @@ namespace GrouperLib.Database
             {
                 foreach (var param in parameterDictionary)
                 {
-                    if (param.Value is string[])
+                    if (param.Value is string[] stringArray)
                     {
-                        string[] stringArray = (string[])param.Value;
                         SqlParameter sqlParam = command.CreateParameter();
                         sqlParam.ParameterName = param.Key;
                         sqlParam.SqlDbType = SqlDbType.Structured;
@@ -58,7 +57,7 @@ namespace GrouperLib.Database
         {
             if (dataReader.IsDBNull(i))
             {
-                return default(T);
+                return default;
             }
             return (T)dataReader.GetValue(i);
         }

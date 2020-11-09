@@ -9,7 +9,7 @@ namespace GrouperLib.Database
     {
         public string Name { get; }
 
-        private string[] _list;
+        private readonly string[] _list;
 
         private static readonly DataTable _emptyNvarcharTableParam = InitializeEmptyDataTable();
 

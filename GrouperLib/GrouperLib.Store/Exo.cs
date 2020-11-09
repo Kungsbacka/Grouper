@@ -109,7 +109,7 @@ namespace GrouperLib.Store
 
         public async Task GetGroupMembersAsync(GroupMemberCollection memberCollection, Guid groupId)
         {
-            string command = $"Get-DistributionGroupMember -Identity '{groupId.ToString()}' -ErrorAction 'Stop'";
+            string command = $"Get-DistributionGroupMember -Identity '{groupId}' -ErrorAction 'Stop'";
             Collection<PSObject> result;
             try
             {

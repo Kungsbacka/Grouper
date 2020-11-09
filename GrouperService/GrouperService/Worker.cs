@@ -3,6 +3,7 @@ using GrouperLib.Config;
 using GrouperLib.Core;
 using GrouperLib.Database;
 using GrouperLib.Store;
+using Microsoft.Graph;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -25,7 +26,10 @@ namespace GrouperService
         private Dictionary<Guid, DateTime> _lastProcessedDictionary;
         private readonly GrouperConfiguration _config;
 
-        public Worker() { }
+        public Worker()
+        {
+            _config = GrouperConfiguration.CreateFromAppSettings(ConfigurationManager.AppSettings);
+        }
 
         public Worker(EventLog eventLog)
         {
@@ -173,9 +177,10 @@ namespace GrouperService
                 {
                     return;
                 }
+                GroupMemberDiff diff;
                 try
                 {
-                    GroupMemberDiff diff = _grouper.GetMemberDiffAsync(entry.Document).GetAwaiter().GetResult();
+                    diff = _grouper.GetMemberDiffAsync(entry.Document).GetAwaiter().GetResult();
                     _grouper.UpdateGroupAsync(diff).GetAwaiter().GetResult();
                     if (entry.Document.ProcessingInterval> 0)
                     {
@@ -196,9 +201,11 @@ namespace GrouperService
                         WriteToEventLog(message, EventLogEntryType.Error);
                     }
                 }
+                finally
+                {
+                    diff = null;
+                }
             }
-            // There is a memory leak somewhere. Likely in Exo. So we tear down Grouper and
-            // build a new after every full run to see if that helps narrow down the leak.
             if (processAllDocuments)
             {
                 SetupGrouper();
