@@ -55,7 +55,7 @@ namespace GrouperLib.Core
         {
             if (string.IsNullOrEmpty(groupName))
             {
-                throw new ArgumentException("Parameter cannot be null or an empty string", nameof(groupName));
+                throw new ArgumentException("Parameter cannot be null or empty", nameof(groupName));
             }
             GroupName = groupName;
             // Copy all other properties
@@ -63,7 +63,6 @@ namespace GrouperLib.Core
             GroupId = document.GroupId;
             Store = document.Store;
             Owner = document.Owner;
-            // Is it necessary to make a copy? GrouperDocumentMember should be immutable
             _members = document.Members.Select(m => new GrouperDocumentMember(m)).ToList();
         }
 

@@ -45,7 +45,7 @@ namespace GrouperLib.Core
             {
                 return true;
             }
-            if (Rules.Count  != member.Rules.Count)
+            if (Rules.Count != member.Rules.Count)
             {
                 return false;
             }
