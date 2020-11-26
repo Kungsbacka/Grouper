@@ -1,31 +1,36 @@
 ﻿using System;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace GrouperLib.Core
 {
     public sealed class AuditLogItem
     {
+        [JsonProperty(PropertyName = "logTime", Order = 1)]
         public DateTime LogTime { get; }
+
+        [JsonProperty(PropertyName = "documentId", Order = 2)]
         public Guid DocumentId { get; }
+
+        [JsonProperty(PropertyName = "actor", Order = 3)]
         public string Actor { get; }
+
+        [JsonProperty(PropertyName = "action", Order = 4)]
         public string Action { get; }
+
+        [JsonProperty(PropertyName = "additionalInformation", Order = 5)]
         public string AdditionalInformation { get; }
 
-        public AuditLogItem(Guid documentId, string actor, string action, string additionaInformation)
-        {
-            LogTime = DateTime.Now;
-            DocumentId = documentId;
-            Actor = actor;
-            Action = action;
-            AdditionalInformation = additionaInformation;
-        }
+        public AuditLogItem(Guid documentId, string actor, string action, string additionaInformation) :
+            this(DateTime.Now, documentId, actor, action, additionaInformation)
+        { }
 
         public AuditLogItem(DateTime logTime, Guid documentId, string actor, string action, string additionalInformation)
         {
             LogTime = logTime;
             DocumentId = documentId;
-            Actor = actor;
-            Action = action;
+            Actor = actor ?? throw new ArgumentNullException(nameof(actor));
+            Action = action ?? throw new ArgumentNullException(nameof(action));
             AdditionalInformation = additionalInformation;
         }
 

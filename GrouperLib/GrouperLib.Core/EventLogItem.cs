@@ -7,13 +7,26 @@ namespace GrouperLib.Core
 {
     public class EventLogItem
     {
+        [JsonProperty(PropertyName = "logTime", Order = 1)]
         public DateTime LogTime { get; }
+
+        [JsonProperty(PropertyName = "documentId", Order = 2)]
         public Guid? DocumentId { get; }
+
+        [JsonProperty(PropertyName = "groupId", Order = 3)]
         public Guid? GroupId { get; }
+
+        [JsonProperty(PropertyName = "groupDisplayName", Order = 4)]
         public string GroupDisplayName { get; }
+
+        [JsonProperty(PropertyName = "groupStore", Order = 5)]
         [JsonConverter(typeof(StringEnumConverter))]
         public GroupStores? GroupStore { get; }
+
+        [JsonProperty(PropertyName = "message", Order = 6)]
         public string Message { get; }
+
+        [JsonProperty(PropertyName = "logLevel", Order = 7)]
         [JsonConverter(typeof(StringEnumConverter))]
         public LogLevels LogLevel { get; }
 
