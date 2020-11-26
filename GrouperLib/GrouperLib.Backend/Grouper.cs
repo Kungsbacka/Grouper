@@ -5,6 +5,7 @@ using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using GrouperLib.Store;
+using System.Linq;
 
 namespace GrouperLib.Backend
 {
@@ -131,7 +132,7 @@ namespace GrouperLib.Backend
                 throw new ArgumentNullException(nameof(document));
             }
             var currentMembers = await GetCurrentMembersAsync(document);
-            var targetMembers = await GetTargetMembersAsync(document);
+            var targetMembers = await GetTargetMembersAsync(document, currentMembers);
             IGroupOwnerSource ownerSource = GetOwnerSource(document);
             if (ownerSource != null)
             {
@@ -207,10 +208,14 @@ namespace GrouperLib.Backend
             return memberCollection;
         }
 
-        private async Task<GroupMemberCollection> GetTargetMembersAsync(GrouperDocument document)
+        private async Task<GroupMemberCollection> GetTargetMembersAsync(GrouperDocument document, GroupMemberCollection currentMembers)
         {
             var include = new GroupMemberCollection();
             var exclude = new GroupMemberCollection();
+            if (!(document.Members.Any(m => m.Action == GroupMemberActions.Include)))
+            {
+                include.Add(currentMembers);
+            }
             foreach (GrouperDocumentMember member in document.Members)
             {
                 var memberCollection = member.Action == GroupMemberActions.Exclude ? exclude : include;
