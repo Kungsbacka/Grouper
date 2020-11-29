@@ -16,45 +16,6 @@ namespace GrouperLib.Test
         private static readonly int processingInterval = 3;
 
         [Fact]
-        public void GrouperDocumentConstructionTest()
-        {
-            DeserializedMember deserializedMember = new DeserializedMember()
-            {
-                Action = "Include",
-                Source = "Static",
-                Rules = new List<DeserializedRule>()
-                {
-                    new DeserializedRule()
-                    {
-                        Name = "Upn",
-                        Value = targetName
-                    }
-                }
-            };
-            DeserializedDocument deserializedDocument = new DeserializedDocument()
-            {
-                Id = documentId.ToString(),
-                Interval = processingInterval,
-                GroupName = groupName,
-                GroupId = groupId.ToString(),
-                Store = store.ToString(),
-                Owner = ownerAction.ToString(),
-                Members = new List<DeserializedMember>()
-                {
-                    deserializedMember
-                }
-            };
-            GrouperDocument document = new GrouperDocument(deserializedDocument);
-            Assert.Equal(documentId, document.Id);
-            Assert.Equal(groupId, document.GroupId);
-            Assert.Equal(groupName, document.GroupName);
-            Assert.Equal(ownerAction, document.Owner);
-            Assert.Equal(processingInterval, document.ProcessingInterval);
-            Assert.Equal(store, document.Store);
-            Assert.Equal(1, document.Members.Count);
-        }
-
-        [Fact]
         public void GrouperDocumentCloneWithNewNameTest()
         {
             GrouperDocument document = GetDocument(store);
@@ -95,9 +56,6 @@ namespace GrouperLib.Test
             Assert.True(GetDocument(5).ShouldSerializeProcessingInterval());
         }
 
-        [Fact]
-        public void TestGrouperDocumentFromJson
-
         private GrouperDocument GetDocument(int processingInterval)
         {
             return GetDocument(store, processingInterval);
@@ -110,33 +68,31 @@ namespace GrouperLib.Test
 
         private GrouperDocument GetDocument(GroupStores store, int processingInterval)
         {
-            DeserializedMember deserializedMember = new DeserializedMember()
+            return TestHelpers.MakeDocument(new
             {
-                Action = "Include",
-                Source = "Static",
-                Rules = new List<DeserializedRule>()
-                {
-                    new DeserializedRule()
-                    {
-                        Name = "Upn",
-                        Value = targetName
-                    }
-                }
-            };
-            DeserializedDocument deserializedDocument = new DeserializedDocument()
-            {
-                Id = documentId.ToString(),
+                Id = documentId,
                 Interval = processingInterval,
                 GroupName = groupName,
-                GroupId = groupId.ToString(),
-                Store = store.ToString(),
-                Owner = ownerAction.ToString(),
-                Members = new List<DeserializedMember>()
+                GroupId = groupId,
+                Store = store,
+                Owner = ownerAction,
+                Members = new []
                 {
-                    deserializedMember
+                    new
+                    {
+                        Action = GroupMemberActions.Include,
+                        Source = GroupMemberSources.Static,
+                        Rules = new []
+                        {
+                            new
+                            {
+                                Name = "Upn",
+                                Value = targetName
+                            }
+                        }
+                    }
                 }
-            };
-            return new GrouperDocument(deserializedDocument);
+            });
         }
 
         private string GetDocumentJson()
@@ -161,12 +117,5 @@ namespace GrouperLib.Test
   ]
 }";
         }
-
-        //[Fact]
-        //public void TestGrouperDocument()
-        //{
-        //    Assert.Equal(1, 1);
-        //}
-
     }
 }

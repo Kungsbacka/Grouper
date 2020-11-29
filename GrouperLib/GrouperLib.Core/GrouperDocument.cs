@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 
@@ -12,7 +13,8 @@ namespace GrouperLib.Core
         [JsonProperty(PropertyName = "id", Order = 1)]
         public Guid Id { get; }
 
-        [JsonProperty(PropertyName = "interval", Order = 2)]
+        [DefaultValue(0)]
+        [JsonProperty(PropertyName = "interval", Order = 2, DefaultValueHandling = DefaultValueHandling.Populate)]
         public int ProcessingInterval { get; }
 
         [JsonProperty(PropertyName = "groupId", Order = 3)]
@@ -25,7 +27,8 @@ namespace GrouperLib.Core
         [JsonConverter(typeof(StringEnumConverter))]
         public GroupStores Store { get; }
 
-        [JsonProperty(PropertyName = "owner", Order = 6)]
+        [DefaultValue("KeepExisting")]
+        [JsonProperty(PropertyName = "owner", Order = 6, DefaultValueHandling = DefaultValueHandling.Populate)]
         [JsonConverter(typeof(StringEnumConverter))]
         public GroupOwnerActions Owner { get; }
 
@@ -39,16 +42,25 @@ namespace GrouperLib.Core
         }
         private readonly List<GrouperDocumentMember> _members;
 
-        internal GrouperDocument(DeserializedDocument deserializedDocument)
+        public GroupMemberTypes MemberType {
+            get
+            {
+                return Store == GroupStores.OnPremAd ? GroupMemberTypes.OnPremAd : GroupMemberTypes.AzureAd;
+            }
+        }
+
+        [JsonConstructor]
+#pragma warning disable IDE0051 // Remove unused private members - Used when deserializing from JSON
+        private GrouperDocument(Guid id, int interval, Guid groupId, string groupName, GroupStores store, GroupOwnerActions owner, List<GrouperDocumentMember> members)
+#pragma warning restore IDE0051 // Remove unused private members
         {
-            Id = Guid.Parse(deserializedDocument.Id);
-            ProcessingInterval = deserializedDocument.Interval;
-            GroupName = deserializedDocument.GroupName;
-            GroupId = Guid.Parse(deserializedDocument.GroupId);
-            Store = (GroupStores)Enum.Parse(typeof(GroupStores), deserializedDocument.Store, true);
-            Owner = (GroupOwnerActions)Enum.Parse(typeof(GroupOwnerActions), deserializedDocument.Owner, true);
-            GroupMemberTypes memberType = Store == GroupStores.OnPremAd ? GroupMemberTypes.OnPremAd : GroupMemberTypes.AzureAd;
-            _members = deserializedDocument.Members.Select(m => new GrouperDocumentMember(m, memberType)).ToList();
+            Id = id;
+            ProcessingInterval = interval;
+            GroupId = groupId;
+            GroupName = groupName;
+            Store = store;
+            Owner = owner;
+            _members = members;
         }
 
         private GrouperDocument(GrouperDocument document, string groupName)
@@ -70,6 +82,8 @@ namespace GrouperLib.Core
 
         public bool ShouldSerializeProcessingInterval() =>  ProcessingInterval > 0;
 
+        public bool ShouldSerializeMemberType() => false;
+
         public GrouperDocument CloneWithNewGroupName(string groupName)
         {
             return new GrouperDocument(this, groupName);
@@ -86,12 +100,12 @@ namespace GrouperLib.Core
             {
                 throw new ArgumentNullException(nameof(validationErrors));
             }
-            DeserializedDocument deserializedDocument = DocumentValidator.DeserializeAndValidate(json, validationErrors);
+            GrouperDocument document = DocumentValidator.DeserializeAndValidate(json, validationErrors);
             if (validationErrors.Count > 0)
             {
                 return null;
             }
-            return new GrouperDocument(deserializedDocument);
+            return document;
         }
 
         public static GrouperDocument FromJson(string json)
@@ -156,7 +170,7 @@ namespace GrouperLib.Core
 
         public override bool Equals(object obj)
         {
-            if (!(obj is GrouperDocument document))
+            if (obj is not GrouperDocument document)
             {
                 return false;
             }

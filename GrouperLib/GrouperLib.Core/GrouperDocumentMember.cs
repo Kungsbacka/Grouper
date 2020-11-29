@@ -26,29 +26,28 @@ namespace GrouperLib.Core
         }
         private readonly List<GrouperDocumentRule> _rules;
 
-        public GroupMemberTypes MemberType { get; }
-
         public bool ShouldSerializeMemberType() => false;
 
-        internal GrouperDocumentMember(DeserializedMember deserializedMember, GroupMemberTypes memberType)
+        [JsonConstructor]
+#pragma warning disable IDE0051 // Remove unused private members - Used when deserializing from JSON
+        private GrouperDocumentMember(GroupMemberSources source, GroupMemberActions action, List<GrouperDocumentRule> rules)
+#pragma warning restore IDE0051 // Remove unused private members
         {
-            Source = (GroupMemberSources)Enum.Parse(typeof(GroupMemberSources), deserializedMember.Source, true);
-            Action = (GroupMemberActions)Enum.Parse(typeof(GroupMemberActions), deserializedMember.Action, true);
-            MemberType = memberType;
-            _rules = deserializedMember.Rules.Select(r => new GrouperDocumentRule(r)).ToList();
+            Source = source;
+            Action = action;
+            _rules = rules;
         }
 
         internal GrouperDocumentMember(GrouperDocumentMember documentMember)
         {
             Source = documentMember.Source;
             Action = documentMember.Action;
-            MemberType = documentMember.MemberType;
             _rules = documentMember.Rules.Select(r => new GrouperDocumentRule(r)).ToList();
         }
 
         public override bool Equals(object obj)
         {
-            if (!(obj is GrouperDocumentMember member))
+            if (obj is not GrouperDocumentMember member)
             {
                 return false;
             }

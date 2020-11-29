@@ -16,9 +16,9 @@ namespace GrouperLib.Core
                 RegexOptions.Compiled);
         }
 
-        public void Validate(DeserializedDocument deserializedDocument, DeserializedMember deserializedMember, List<ValidationError> validationErrors)
+        public void Validate(GrouperDocument document, GrouperDocumentMember documentMember, List<ValidationError> validationErrors)
         {
-            foreach (DeserializedRule rule in deserializedMember.Rules)
+            foreach (GrouperDocumentRule rule in documentMember.Rules)
             {
                 if (rule.Name.IEquals("Upn"))
                 {

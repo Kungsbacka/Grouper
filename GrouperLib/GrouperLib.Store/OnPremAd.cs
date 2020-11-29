@@ -209,8 +209,12 @@ namespace GrouperLib.Store
             await Task.FromResult(0);
         }
 
-        public async Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember)
+        public async Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember, GroupMemberTypes memberType)
         {
+            if (memberType != GroupMemberTypes.OnPremAd)
+            {
+                throw new ArgumentException("Invalid member type", nameof(memberType));
+            }
             switch (grouperMember.Source)
             {
                 case GroupMemberSources.OnPremAdGroup:

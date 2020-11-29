@@ -11,7 +11,7 @@ namespace GrouperLib.Core
     {
         internal enum ResourceLocation { Independent, OnPrem, Azure }
 
-        private class MemberSourceInfo
+        private class DocumentMemberValidationRules
         {
             public ResourceLocation Location { get; set; }
             public string[][] RuleSets { get; set; }
@@ -95,9 +95,9 @@ namespace GrouperLib.Core
             RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant
         );
 
-        private static readonly Dictionary<string, MemberSourceInfo> memberSources = new Dictionary<string, MemberSourceInfo>(StringComparer.OrdinalIgnoreCase)
+        private static readonly Dictionary<GroupMemberSources, DocumentMemberValidationRules> memberSources = new Dictionary<GroupMemberSources, DocumentMemberValidationRules>()
         {
-            { "Personalsystem", new MemberSourceInfo()
+            { GroupMemberSources.Personalsystem, new DocumentMemberValidationRules()
                 {
                     Location = ResourceLocation.Independent,
                     RuleSets = new string[][] {
@@ -115,7 +115,7 @@ namespace GrouperLib.Core
                     MultipleRulesAllowed = new string[] {"Befattning"}
                 }
             },
-            { "Elevregister", new MemberSourceInfo()
+            { GroupMemberSources.Elevregister, new DocumentMemberValidationRules()
                 {
                     Location = ResourceLocation.Independent,
                     RuleSets = new string[][]
@@ -146,7 +146,7 @@ namespace GrouperLib.Core
                     MultipleRulesAllowed = new string[] {"Årskurs"}
                 }
             },
-            { "OnPremAdGroup", new MemberSourceInfo()
+            { GroupMemberSources.OnPremAdGroup, new DocumentMemberValidationRules()
                 {
                     Location = ResourceLocation.OnPrem,
                     RuleSets = new string[][]
@@ -163,7 +163,7 @@ namespace GrouperLib.Core
                     }
                 }
             },
-            { "OnPremAdQuery", new MemberSourceInfo()
+            { GroupMemberSources.OnPremAdQuery, new DocumentMemberValidationRules()
                 {
                     Location = ResourceLocation.OnPrem,
                     RuleSets = new string[][]
@@ -173,7 +173,7 @@ namespace GrouperLib.Core
                     }
                 }
             },
-            { "AzureAdGroup", new MemberSourceInfo()
+            { GroupMemberSources.AzureAdGroup, new DocumentMemberValidationRules()
                 {
                     Location = ResourceLocation.Azure,
                     RuleSets = new string[][] { new string[] {"Group"} },
@@ -187,7 +187,7 @@ namespace GrouperLib.Core
                     }
                 }
             },
-            { "ExoGroup", new MemberSourceInfo()
+            { GroupMemberSources.ExoGroup, new DocumentMemberValidationRules()
                 {
                     Location = ResourceLocation.Azure,
                     RuleSets = new string[][] { new string[] {"Group"} },
@@ -197,13 +197,13 @@ namespace GrouperLib.Core
                     }
                 }
             },
-            { "CustomView", new MemberSourceInfo()
+            { GroupMemberSources.CustomView, new DocumentMemberValidationRules()
                 {
                     Location = ResourceLocation.Independent,
                     RuleSets = new string[][] { new string[] {"View"} }
                 }
             },
-            { "Static", new MemberSourceInfo()
+            { GroupMemberSources.Static, new DocumentMemberValidationRules()
                 {
                     Location = ResourceLocation.Independent,
                     RuleSets = new string[][] { new string[] {"Upn"} },
@@ -216,124 +216,111 @@ namespace GrouperLib.Core
             }
         };
 
-        private static void InternalValidateDocument(DeserializedDocument deserializedDocument, List<ValidationError> validationErrors)
+        private static void InternalValidateDocument(GrouperDocument document, List<ValidationError> validationErrors)
         {
-            if (string.IsNullOrEmpty(deserializedDocument.Id) || !guidRegex.IsMatch(deserializedDocument.Id))
+            if (document.Id == Guid.Empty)
             {
-                validationErrors.Add(new ValidationError(nameof(deserializedDocument.Id), ResourceString.ValidationErrorDocumentIdNotValid, deserializedDocument.Id));
+                validationErrors.Add(new ValidationError(nameof(document.Id), ResourceString.ValidationErrorDocumentIdNotValid, document.Id));
             }
-            if (deserializedDocument.Interval < 0)
+            if (document.ProcessingInterval < 0)
             {
-                validationErrors.Add(new ValidationError(nameof(deserializedDocument.Interval), ResourceString.ValidationErrorIllegalInterval));
+                validationErrors.Add(new ValidationError(nameof(document.ProcessingInterval), ResourceString.ValidationErrorIllegalInterval));
             }
-            if (string.IsNullOrEmpty(deserializedDocument.GroupName))
+            if (string.IsNullOrEmpty(document.GroupName))
             {
-                validationErrors.Add(new ValidationError(nameof(deserializedDocument.GroupName), ResourceString.ValidationErrorGroupNameIsNullOrEmpty));
+                validationErrors.Add(new ValidationError(nameof(document.GroupName), ResourceString.ValidationErrorGroupNameIsNullOrEmpty));
             }
-            if (string.IsNullOrEmpty(deserializedDocument.GroupId) || !guidRegex.IsMatch(deserializedDocument.GroupId))
+            if (document.Id == Guid.Empty)
             {
-                validationErrors.Add(new ValidationError(nameof(deserializedDocument.GroupId), ResourceString.ValidationErrorGroupIdNotValid, deserializedDocument.GroupId));
+                validationErrors.Add(new ValidationError(nameof(document.GroupId), ResourceString.ValidationErrorGroupIdNotValid, document.GroupId));
             }
-            if (!Enum.TryParse(deserializedDocument.Owner, true, out GroupOwnerActions _))
+            if (!storeLocations.TryGetValue(document.Store, out ResourceLocation groupLocation))
             {
-                validationErrors.Add(new ValidationError(nameof(deserializedDocument.Owner), ResourceString.ValidationErrorInvalidOwnerAction, deserializedDocument.Owner));
-            }
-            if (deserializedDocument.Store == null || !Enum.TryParse(deserializedDocument.Store, true, out GroupStores store))
-            {
-                validationErrors.Add(new ValidationError(nameof(deserializedDocument.Store), ResourceString.ValidationErrorInvalidGroupStore, deserializedDocument.Store));
+                validationErrors.Add(new ValidationError(nameof(document.Store), ResourceString.ValidationErrorStoreNotRecognized, document.Store.ToString()));
                 return;
             }
-            if (!storeLocations.TryGetValue(store, out ResourceLocation groupLocation))
-            {
-                validationErrors.Add(new ValidationError(nameof(deserializedDocument.Store), ResourceString.ValidationErrorStoreNotRecognized, store.ToString()));
-                return;
-            }
-            InternalValidateMembers(deserializedDocument.Members, deserializedDocument.Store, groupLocation, validationErrors);
+            InternalValidateMembers(document.Members, document.Store, groupLocation, validationErrors);
             if (validationErrors.Count > 0)
             {
                 return;
             }
-            foreach (DeserializedMember deserializedMember in deserializedDocument.Members)
+            foreach (GrouperDocumentMember documentMember in document.Members)
             {
-                if (memberSources.TryGetValue(deserializedMember.Source, out MemberSourceInfo memberSourceInfo))
+                if (memberSources.TryGetValue(documentMember.Source, out DocumentMemberValidationRules memberSourceInfo))
                 {
                     if (memberSourceInfo.CustomValidators != null)
                     {
                         foreach (ICustomValidator validator in memberSourceInfo.CustomValidators)
                         {
-                            validator.Validate(deserializedDocument, deserializedMember, validationErrors);
+                            validator.Validate(document, documentMember, validationErrors);
                         }
                     }
                 }
             }
         }
 
-        private static void InternalValidateMembers(List<DeserializedMember> deserializedMembers, string groupStore, ResourceLocation groupLocation, List<ValidationError> validationErrors)
+        private static void InternalValidateMembers(IList<GrouperDocumentMember> documentMembers, GroupStores groupStore, ResourceLocation groupLocation, List<ValidationError> validationErrors)
         {
-            if (deserializedMembers == null || deserializedMembers.Count == 0)
+            if (documentMembers == null || documentMembers.Count == 0)
             {
-                validationErrors.Add(new ValidationError(nameof(DeserializedDocument.Members), ResourceString.ValidationErrorNoMemberObjects));
+                validationErrors.Add(new ValidationError(nameof(GrouperDocument.Members), ResourceString.ValidationErrorNoMemberObjects));
             }
-            foreach (DeserializedMember deserializedMember in deserializedMembers)
+            foreach (GrouperDocumentMember member in documentMembers)
             {
-                if (!Enum.TryParse(deserializedMember.Action, true, out GroupMemberActions _))
-                {
-                    validationErrors.Add(new ValidationError(nameof(deserializedMember.Action), ResourceString.ValidationErrorInvalidMemberAction, deserializedMember.Action));
-                }
-                if (memberSources.TryGetValue(deserializedMember.Source, out MemberSourceInfo memberSourceInfo))
+                if (memberSources.TryGetValue(member.Source, out DocumentMemberValidationRules memberSourceInfo))
                 {
                     if (memberSourceInfo.Location != ResourceLocation.Independent && memberSourceInfo.Location != groupLocation)
                     {
-                        validationErrors.Add(new ValidationError(nameof(deserializedMember.Source), ResourceString.ValidationErrorInvalidCombinationOfGroupStoreAndMemberSource, groupStore, deserializedMember.Source));
+                        validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Source), ResourceString.ValidationErrorInvalidCombinationOfGroupStoreAndMemberSource, groupStore, member.Source));
                     }
                 }
                 else
                 {
-                    validationErrors.Add(new ValidationError(nameof(deserializedMember.Source), ResourceString.ValidationErrorInvalidMemberSource, deserializedMember.Source));
+                    validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Source), ResourceString.ValidationErrorInvalidMemberSource, member.Source));
                 }
             }
             if (validationErrors.Count > 0)
             {
                 return;
             }
-            HashSet<DeserializedMember> members = new HashSet<DeserializedMember>();
-            foreach (DeserializedMember deserializedMember in deserializedMembers)
+            HashSet<GrouperDocumentMember> members = new HashSet<GrouperDocumentMember>();
+            foreach (GrouperDocumentMember member in documentMembers)
             {
-                if (members.Add(deserializedMember))
+                if (members.Add(member))
                 {
-                    InternalValidateRules(deserializedMember.Rules, deserializedMember.Source, validationErrors);
+                    InternalValidateRules(member.Rules, member.Source, validationErrors);
                 }
                 else
                 {
-                    validationErrors.Add(new ValidationError(nameof(deserializedMember.Action), ResourceString.ValidationErrorDuplicateMemberObject, deserializedMember.Source, deserializedMember.Action, deserializedMember.Rules?.Count));
+                    validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Action), ResourceString.ValidationErrorDuplicateMemberObject, member.Source, member.Action, member.Rules?.Count));
                 }
             }
         }
 
-        private static void InternalValidateRules(List<DeserializedRule> deserializedRules, string memberSourceString, List<ValidationError> validationErrors)
+        private static void InternalValidateRules(IList<GrouperDocumentRule> documentRules, GroupMemberSources memberSource, List<ValidationError> validationErrors)
         {
-            if (deserializedRules == null || deserializedRules.Count == 0)
+            if (documentRules == null || documentRules.Count == 0)
             {
-                validationErrors.Add(new ValidationError(nameof(DeserializedMember.Rules), ResourceString.ValidationErrorMemberObjectHasNoRules));
+                validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Rules), ResourceString.ValidationErrorMemberObjectHasNoRules));
                 return;
             }
             var rules = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
-            if (!memberSources.TryGetValue(memberSourceString, out MemberSourceInfo memberSource))
+            if (!memberSources.TryGetValue(memberSource, out DocumentMemberValidationRules memberSourceInfo))
             {
-                validationErrors.Add(new ValidationError(nameof(DeserializedMember.Source), ResourceString.ValidationErrorInvalidMemberSource, memberSourceString));
+                validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Source), ResourceString.ValidationErrorInvalidMemberSource, memberSource));
                 return;
             }
-            foreach (DeserializedRule rule in deserializedRules)
+            foreach (GrouperDocumentRule rule in documentRules)
             {
                 if (string.IsNullOrEmpty(rule.Name))
                 {
-                    validationErrors.Add(new ValidationError(nameof(rule.Name), ResourceString.ValidationErrorInvalidRuleName, rule.Name, memberSourceString));
+                    validationErrors.Add(new ValidationError(nameof(rule.Name), ResourceString.ValidationErrorInvalidRuleName, rule.Name, memberSource));
                 }
                 else
                 {
                     if (rules.TryGetValue(rule.Name, out HashSet<string> values))
                     {
-                        if (!memberSource.IsMultipleRulesAllowed(rule.Name))
+                        if (!memberSourceInfo.IsMultipleRulesAllowed(rule.Name))
                         {
                             validationErrors.Add(new ValidationError(nameof(rule.Name), ResourceString.ValidationErrorDuplicateRuleName, rule.Name));
                         }
@@ -346,9 +333,9 @@ namespace GrouperLib.Core
                     {
                         rules.Add(rule.Name, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { rule.Value });
                     }
-                    if (!memberSource.InAnyRuleSet(rule.Name))
+                    if (!memberSourceInfo.InAnyRuleSet(rule.Name))
                     {
-                        validationErrors.Add(new ValidationError(nameof(rule.Name), ResourceString.ValidationErrorInvalidRuleName, rule.Name, memberSourceString));
+                        validationErrors.Add(new ValidationError(nameof(rule.Name), ResourceString.ValidationErrorInvalidRuleName, rule.Name, memberSource));
                     }
                 }
             }
@@ -356,17 +343,17 @@ namespace GrouperLib.Core
             {
                 return;
             }
-            if (!memberSource.HasMatchingRuleSet(rules.Keys))
+            if (!memberSourceInfo.HasMatchingRuleSet(rules.Keys))
             {
-                validationErrors.Add(new ValidationError(nameof(DeserializedMember.Rules), ResourceString.ValidationErrorInvalidCombinationOfRules, memberSourceString));
+                validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Rules), ResourceString.ValidationErrorInvalidCombinationOfRules, memberSource));
             }
-            foreach (DeserializedRule rule in deserializedRules)
+            foreach (GrouperDocumentRule rule in documentRules)
             {
                 if (string.IsNullOrEmpty(rule.Value))
                 {
                     validationErrors.Add(new ValidationError(nameof(rule.Value), ResourceString.ValidationErrorRuleValueIsNullOrEmpty, rule.Name));
                 }
-                else if (memberSource.ValidationRules != null && memberSource.ValidationRules.TryGetValue(rule.Name, out Regex validationRegex))
+                else if (memberSourceInfo.ValidationRules != null && memberSourceInfo.ValidationRules.TryGetValue(rule.Name, out Regex validationRegex))
                 {
                     if (!validationRegex.IsMatch(rule.Value))
                     {
@@ -377,12 +364,12 @@ namespace GrouperLib.Core
             return;
         }
 
-        internal static DeserializedDocument DeserializeAndValidate(string json, List<ValidationError> validationErrors)
+        internal static GrouperDocument DeserializeAndValidate(string json, List<ValidationError> validationErrors)
         {
-            DeserializedDocument deserializedDocument = null;
+            GrouperDocument document = null;
             try
             {
-                deserializedDocument = JsonConvert.DeserializeObject<DeserializedDocument>(json);
+                document = JsonConvert.DeserializeObject<GrouperDocument>(json);
             }
             catch (JsonReaderException ex)
             {
@@ -392,16 +379,12 @@ namespace GrouperLib.Core
             {
                 validationErrors.Add(new ValidationError(nameof(json), ResourceString.ValidationJsonParsingError, 0, 0, ex.Message));
             }
-            if (deserializedDocument == null)
-            {
-                validationErrors.Add(new ValidationError(nameof(json), ResourceString.ValidationCouldNotDeserializeJson));
-            }
             if (validationErrors.Count > 0)
             {
                 return null;
             }
-            InternalValidateDocument(deserializedDocument, validationErrors);
-            return deserializedDocument;
+            InternalValidateDocument(document, validationErrors);
+            return document;
         }
     }
 }

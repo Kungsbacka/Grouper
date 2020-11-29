@@ -17,70 +17,69 @@ namespace GrouperLib.Test
         [Fact]
         public void TestOnPremAdValidatorValidateWithLegalDocument()
         {
-            DeserializedMember deserializedMember = new DeserializedMember()
+
+            GrouperDocument document = TestHelpers.MakeDocument(new
             {
-                Action = "Include",
-                Source = "OnPremeAdGroup",
-                Rules = new List<DeserializedRule>()
-                {
-                    new DeserializedRule()
-                    {
-                        Name = "Group",
-                        Value = targetGroupId.ToString()
-                    }
-                }
-            };
-            DeserializedDocument deserializedDocument = new DeserializedDocument()
-            {
-                Id = documentId.ToString(),
+                Id = documentId,
                 Interval = 0,
                 GroupName = groupName,
-                GroupId = groupId.ToString(),
-                Store = store.ToString(),
-                Owner = ownerAction.ToString(),
-                Members = new List<DeserializedMember>()
+                GroupId = groupId,
+                Store = store,
+                Owner = ownerAction,
+                Members = new []
                 {
-                    deserializedMember
+                    new
+                    {
+                        Action = GroupMemberActions.Include,
+                        Source = GroupMemberSources.OnPremAdGroup,
+                        Rules = new []
+                        {
+                            new
+                            {
+                                Name = "Group",
+                                Value = targetGroupId
+                            }
+                        }
+                    }
                 }
-            };
+            });
             ICustomValidator validator = new OnPremAdValidator();
             List<ValidationError> errors = new List<ValidationError>();
-            validator.Validate(deserializedDocument, deserializedMember, errors);
+            validator.Validate(document, document.Members[0], errors);
             Assert.True(errors.Count == 0);
         }
 
         [Fact]
         public void TestOnPremAdValidatorValidateWithBrokenDocument()
         {
-            DeserializedMember deserializedMember = new DeserializedMember()
+            GrouperDocument document = TestHelpers.MakeDocument(new
             {
-                Action = "Include",
-                Source = "OnPremAdGroup",
-                Rules = new List<DeserializedRule>()
-                {
-                    new DeserializedRule()
-                    {
-                        Name = "Group",
-                        Value = groupId.ToString()
-                    }
-                }
-            };
-            DeserializedDocument deserializedDocument = new DeserializedDocument()
-            {
-                Id = documentId.ToString(),
+                Id = documentId,
                 Interval = 0,
                 GroupName = groupName,
-                GroupId = groupId.ToString(),
-                Store = store.ToString(),
-                Owner = ownerAction.ToString(),
-                Members = new List<DeserializedMember>()
+                GroupId = groupId,
+                Store = store,
+                Owner = ownerAction,
+                Members = new []
                 {
-                    deserializedMember
+                    new
+                    {
+                        Action = GroupMemberActions.Include,
+                        Source = GroupMemberSources.OnPremAdGroup,
+                        Rules = new[]
+                        {
+                            new
+                                {
+                                    Name = "Group",
+                                    Value = groupId
+                                }
+                        }
+                    }
                 }
-            };
+            });
             ICustomValidator validator = new OnPremAdValidator();
             List<ValidationError> errors = new List<ValidationError>();
-            validator.Validate(deserializedDocument, deserializedMember, errors);
+            validator.Validate(document, document.Members[0], errors);
             Assert.True(errors.Count > 0);
         }
     }

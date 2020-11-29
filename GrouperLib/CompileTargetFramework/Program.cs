@@ -1,15 +1,12 @@
-﻿using GrouperLib.Core;
-using System;
-using System.CodeDom;
+﻿using System;
 
 namespace CompileTargetFramework
 {
-
     class Program
     {
         static void Main(string[] args)
         {
-            
+           
         }
     }
 }

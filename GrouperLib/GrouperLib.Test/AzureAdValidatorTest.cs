@@ -17,70 +17,60 @@ namespace GrouperLib.Test
         [Fact]
         public void TestAzureAdValidatorValidateWithLegalDocument()
         {
-            DeserializedMember deserializedMember = new DeserializedMember()
+            GrouperDocument document = TestHelpers.MakeDocument(new
             {
-                Action = "Include",
-                Source = "AzureAdGroup",
-                Rules = new List<DeserializedRule>()
+                Id = documentId,
+                Interval = 0,
+                GroupId = groupId,
+                GroupName = groupName,
+                Store = store,
+                Owner = ownerAction,
+                Members = new[]
                 {
-                    new DeserializedRule()
+                    new
                     {
-                        Name = "Group",
-                        Value = targetGroupId.ToString()
+                        Source = GroupMemberSources.AzureAdGroup,
+                        Action = GroupMemberActions.Include,
+                        Rules = new []
+                        {
+                            new { Name = "Group", Value = targetGroupId }
+                        }
                     }
                 }
-            };
-            DeserializedDocument deserializedDocument = new DeserializedDocument()
-            {
-                Id = documentId.ToString(),
-                Interval = 0,
-                GroupName = groupName,
-                GroupId = groupId.ToString(),
-                Store = store.ToString(),
-                Owner = ownerAction.ToString(),
-                Members = new List<DeserializedMember>()
-                {
-                    deserializedMember
-                }
-            };
+            });
             ICustomValidator validator = new AzureAdValidator();
             List<ValidationError> errors = new List<ValidationError>();
-            validator.Validate(deserializedDocument, deserializedMember, errors);
+            validator.Validate(document, document.Members[0], errors);
             Assert.True(errors.Count == 0);
         }
 
         [Fact]
         public void TestAzureAdValidatorValidateWithBrokenDocument()
         {
-            DeserializedMember deserializedMember = new DeserializedMember()
+            GrouperDocument document = TestHelpers.MakeDocument(new
             {
-                Action = "Include",
-                Source = "AzureAdGroup",
-                Rules = new List<DeserializedRule>()
+                Id = documentId,
+                Interval = 0,
+                GroupId = groupId,
+                GroupName = groupName,
+                Store = store,
+                Owner = ownerAction,
+                Members = new[]
                 {
-                    new DeserializedRule()
+                    new
                     {
-                        Name = "Group",
-                        Value = groupId.ToString()
+                        Source = GroupMemberSources.AzureAdGroup,
+                        Action = GroupMemberActions.Include,
+                        Rules = new []
+                        {
+                            new { Name = "Group", Value = groupId }
+                        }
                     }
                 }
-            };
-            DeserializedDocument deserializedDocument = new DeserializedDocument()
-            {
-                Id = documentId.ToString(),
-                Interval = 0,
-                GroupName = groupName,
-                GroupId = groupId.ToString(),
-                Store = store.ToString(),
-                Owner = ownerAction.ToString(),
-                Members = new List<DeserializedMember>()
-                {
-                    deserializedMember
-                }
-            };
+            });
             ICustomValidator validator = new AzureAdValidator();
             List<ValidationError> errors = new List<ValidationError>();
-            validator.Validate(deserializedDocument, deserializedMember, errors);
+            validator.Validate(document, document.Members[0], errors);
             Assert.True(errors.Count > 0);
         }
     }

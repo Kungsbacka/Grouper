@@ -227,8 +227,12 @@ namespace GrouperLib.Store
             return exception;
         }
 
-        public async Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember)
+        public async Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember, GroupMemberTypes memberType)
         {
+            if (memberType != GroupMemberTypes.AzureAd)
+            {
+                throw new ArgumentException("Invalid member type", nameof(memberType));
+            }
             await GetGroupMembersAsync(
                 memberCollection,
                 Guid.Parse(grouperMember.Rules.Where(r => r.Name.IEquals("Group")).First().Value)

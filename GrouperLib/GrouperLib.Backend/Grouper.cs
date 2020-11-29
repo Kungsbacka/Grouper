@@ -220,7 +220,7 @@ namespace GrouperLib.Backend
             {
                 var memberCollection = member.Action == GroupMemberActions.Exclude ? exclude : include;
                 IMemberSource source = GetMemberSource(member);
-                await source.GetMembersFromSourceAsync(memberCollection, member);
+                await source.GetMembersFromSourceAsync(memberCollection, member, document.MemberType);
             }
             include.ExceptWith(exclude);
             return include;

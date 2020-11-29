@@ -45,23 +45,23 @@ namespace GrouperLib.Test
         public void TestOperationalLogItemConstructionWithDocument()
         {
             DateTime now = DateTime.Now;
-            GrouperDocument document = new GrouperDocument(new DeserializedDocument()
+            GrouperDocument document = TestHelpers.MakeDocument(new
             {
-                Id = documentId.ToString(),
+                Id = documentId,
                 Interval = 0,
                 GroupName = groupName,
-                GroupId = groupId.ToString(),
-                Store = store.ToString(),
-                Owner = ownerAction.ToString(),
-                Members = new List<DeserializedMember>()
+                GroupId = groupId,
+                Store = store,
+                Owner = ownerAction,
+                Members = new []
                 {
-                    new DeserializedMember()
+                    new
                     {
-                        Action = "Include",
-                        Source = "Static",
-                        Rules = new List<DeserializedRule>()
+                        Action = GroupMemberActions.Include,
+                        Source = GroupMemberSources.Static,
+                        Rules = new []
                         {
-                            new DeserializedRule()
+                            new
                             {
                                 Name = "Upn",
                                 Value = targetName

@@ -5,13 +5,13 @@ namespace GrouperLib.Core
 {
     class AzureAdValidator : ICustomValidator
     {
-        public void Validate(DeserializedDocument deserializedDocument, DeserializedMember deserializedMember, List<ValidationError> validationErrors)
+        public void Validate(GrouperDocument document, GrouperDocumentMember documentMember, List<ValidationError> validationErrors)
         {
-            foreach (DeserializedRule rule in deserializedMember.Rules)
+            foreach (GrouperDocumentRule rule in documentMember.Rules)
             {
                 if (rule.Name.IEquals("Group"))
                 {
-                    if (rule.Value.IEquals(deserializedDocument.GroupId))
+                    if (rule.Value.IEquals(document.GroupId.ToString()))
                     {
                         validationErrors.Add(new ValidationError(nameof(rule.Value), ResourceString.ValidationErrorSourceGroupSameAsTarget));
                     }

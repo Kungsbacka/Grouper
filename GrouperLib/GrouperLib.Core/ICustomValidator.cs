@@ -4,6 +4,6 @@ namespace GrouperLib.Core
 {
     interface ICustomValidator
     {
-        void Validate(DeserializedDocument deserializedDocument, DeserializedMember deserializedMember, List<ValidationError> validationErrors);
+        void Validate(GrouperDocument document, GrouperDocumentMember documentMember, List<ValidationError> validationErrors);
     }
 }

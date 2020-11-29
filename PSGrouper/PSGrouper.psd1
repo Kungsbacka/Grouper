@@ -61,6 +61,7 @@ RequiredModules = @()
 RequiredAssemblies = @(
     'PresentationFramework'
     'Newtonsoft.Json.dll'
+    'GrouperLib.Language.dll'
     'GrouperLib.Core.dll'
 )
 

@@ -11,10 +11,13 @@ namespace GrouperLib.Core
         [JsonProperty(PropertyName = "value", Order = 2)]
         public string Value { get; }
 
-        internal GrouperDocumentRule(DeserializedRule deserializedRule)
+        [JsonConstructor]
+#pragma warning disable IDE0051 // Remove unused private members - Used when deserializing from JSON
+        private GrouperDocumentRule(string name, string value)
+#pragma warning restore IDE0051 // Remove unused private members
         {
-            Name = deserializedRule.Name;
-            Value = deserializedRule.Value;
+            Name = name;
+            Value = value;
         }
 
         internal GrouperDocumentRule(GrouperDocumentRule documentRule)
@@ -25,7 +28,7 @@ namespace GrouperLib.Core
 
         public override bool Equals(object obj)
         {
-            if (!(obj is GrouperDocumentRule rule))
+            if (obj is not GrouperDocumentRule rule)
             {
                 return false;
             }

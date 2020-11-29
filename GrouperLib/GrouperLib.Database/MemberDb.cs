@@ -73,7 +73,7 @@ namespace GrouperLib.Database
             }
         }
 
-        private async Task GetMembersFromPersonalsystemAsync(GroupMemberCollection memberCollection, GrouperDocumentMember member)
+        private async Task GetMembersFromPersonalsystemAsync(GroupMemberCollection memberCollection, GrouperDocumentMember member, GroupMemberTypes memberType)
         {
             var befattning = new List<string>();
             string organisation = null;
@@ -93,7 +93,7 @@ namespace GrouperLib.Database
                     includeManager = rule.Value.IEquals("true");
                 }
             }
-            await GetMembersAsync("dbo.spGrouperPersonalsystem", member.MemberType, memberCollection,
+            await GetMembersAsync("dbo.spGrouperPersonalsystem", memberType, memberCollection,
                 new Dictionary<string, object>()
                 {
                     { "organisation",    organisation },
@@ -103,7 +103,7 @@ namespace GrouperLib.Database
             );
         }
 
-        private async Task GetMembersFromElevregisterAsync(GroupMemberCollection memberCollection, GrouperDocumentMember member)
+        private async Task GetMembersFromElevregisterAsync(GroupMemberCollection memberCollection, GrouperDocumentMember member, GroupMemberTypes memberType)
         {
             var arskurs = new List<string>();
             bool elev = true;
@@ -146,7 +146,7 @@ namespace GrouperLib.Database
                     arskurs.Add(rule.Value);
                 }
             }
-            await GetMembersAsync("dbo.spGrouperElevregister", member.MemberType, memberCollection,
+            await GetMembersAsync("dbo.spGrouperElevregister", memberType, memberCollection,
                 new Dictionary<string, object>()
                 {
                     { "skolform", skolform },
@@ -160,9 +160,9 @@ namespace GrouperLib.Database
             );
         }
 
-        private async Task GetMembersFromUpnAsync(GroupMemberCollection memberCollection, GrouperDocumentMember member)
+        private async Task GetMembersFromUpnAsync(GroupMemberCollection memberCollection, GrouperDocumentMember member, GroupMemberTypes memberType)
         {
-            await GetMembersAsync("dbo.spGrouperStaticMember", member.MemberType, memberCollection,
+            await GetMembersAsync("dbo.spGrouperStaticMember", memberType, memberCollection,
                 new Dictionary<string, object>()
                 {
                     { "upn", member.Rules.Where(r => r.Name.IEquals("Upn") && !string.IsNullOrEmpty(r.Value)).Select(r => r.Value).ToArray() }
@@ -170,9 +170,9 @@ namespace GrouperLib.Database
             );
         }
 
-        private async Task GetMembersFromCustomViewAsync(GroupMemberCollection memberCollection, GrouperDocumentMember member)
+        private async Task GetMembersFromCustomViewAsync(GroupMemberCollection memberCollection, GrouperDocumentMember member, GroupMemberTypes memberType)
         {
-            await GetMembersAsync("dbo.spGrouperCustomView", member.MemberType, memberCollection,
+            await GetMembersAsync("dbo.spGrouperCustomView", memberType, memberCollection,
                 new Dictionary<string, object>()
                 {
                     { "view", member.Rules.Where(r => r.Name.IEquals("View")).First().Value }
@@ -180,24 +180,24 @@ namespace GrouperLib.Database
             );
         }
 
-        public async Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember)
+        public async Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember, GroupMemberTypes memberType)
         {
             switch (grouperMember.Source)
             {
                 case GroupMemberSources.Elevregister:
-                    await GetMembersFromElevregisterAsync(memberCollection, grouperMember);
+                    await GetMembersFromElevregisterAsync(memberCollection, grouperMember, memberType);
                     break;
                 case GroupMemberSources.Personalsystem:
-                    await GetMembersFromPersonalsystemAsync(memberCollection, grouperMember);
+                    await GetMembersFromPersonalsystemAsync(memberCollection, grouperMember, memberType);
                     break;
                 case GroupMemberSources.Static:
-                    await GetMembersFromUpnAsync(memberCollection, grouperMember);
+                    await GetMembersFromUpnAsync(memberCollection, grouperMember, memberType);
                     break;
                 case GroupMemberSources.CustomView:
-                    await GetMembersFromCustomViewAsync(memberCollection, grouperMember);
+                    await GetMembersFromCustomViewAsync(memberCollection, grouperMember, memberType);
                     break;
                 default:
-                    throw new ArgumentException(nameof(grouperMember));
+                    throw new ArgumentException(nameof(grouperMember.Source));
             }
         }
 
