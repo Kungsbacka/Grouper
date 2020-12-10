@@ -12,17 +12,15 @@ namespace GrouperLib.Test
         private static readonly Guid groupId = Guid.Parse("baefe5f4-d404-491d-89d0-fb192afa3c1d");
         private static readonly string groupName = "Test Group";
         private static readonly GroupStores store = GroupStores.OnPremAd;
-        private static readonly string targetName = "target@example.com";
-        private static readonly GroupOwnerActions ownerAction = GroupOwnerActions.KeepExisting;
         private static readonly string message = "Message";
         private static readonly LogLevels logLevel = LogLevels.Error;
 
         [Fact]
         public void TestEventLogItemConstruction()
         {
-            DateTime now = DateTime.Now;
+            DateTime time = DateTime.Parse("2020-11-19T21:28:18.3926113+01:00");
             EventLogItem logItem = new EventLogItem(
-                logTime: now,
+                logTime: time,
                 documentId: documentId,
                 groupId: groupId,
                 groupDisplayName: groupName,
@@ -30,6 +28,7 @@ namespace GrouperLib.Test
                 message: message,
                 logLevel: logLevel
             );
+            Assert.Equal(time, logItem.LogTime);
             Assert.Equal(documentId, logItem.DocumentId);
             Assert.Equal(groupName, logItem.GroupDisplayName);
             Assert.Equal(groupId, logItem.GroupId);
@@ -41,36 +40,12 @@ namespace GrouperLib.Test
         [Fact]
         public void TestEventLogItemConstructionWithDocument()
         {
-            GrouperDocument document = TestHelpers.MakeDocument(new
-            {
-                Id = documentId,
-                Interval = 0,
-                GroupName = groupName,
-                GroupId = groupId,
-                Store = store,
-                Owner = ownerAction,
-                Members = new []
-                {
-                    new
-                    {
-                        Action = GroupMemberActions.Include,
-                        Source = GroupMemberSources.Static,
-                        Rules = new []
-                        {
-                            new
-                            {
-                                Name = "Upn",
-                                Value = targetName
-                            }
-                        }
-                    }
-                }
-            });
+            GrouperDocument document = TestHelpers.MakeDocument();
             EventLogItem logItem = new EventLogItem(document, message, logLevel);
-            Assert.Equal(document.Id, logItem.DocumentId);
-            Assert.Equal(document.GroupName, logItem.GroupDisplayName);
-            Assert.Equal(document.GroupId, logItem.GroupId);
-            Assert.Equal(document.Store, logItem.GroupStore);
+            Assert.Equal(TestHelpers.DefaultDocumentId, logItem.DocumentId);
+            Assert.Equal(TestHelpers.DefaultGroupName, logItem.GroupDisplayName);
+            Assert.Equal(TestHelpers.DefaultGroupId, logItem.GroupId);
+            Assert.Equal(TestHelpers.DefaultGroupStore, logItem.GroupStore);
             Assert.Equal(message, logItem.Message);
             Assert.Equal(logLevel, logItem.LogLevel);
         }

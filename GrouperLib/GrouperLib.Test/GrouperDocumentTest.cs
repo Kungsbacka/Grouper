@@ -1,121 +1,105 @@
 ﻿using System;
 using Xunit;
 using GrouperLib.Core;
-using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 
 namespace GrouperLib.Test
 {
     public class GrouperDocumentTest
     {
-        private static readonly Guid documentId = Guid.Parse("3cbc0481-23b0-4860-a58a-7a723ee250c5");
-        private static readonly Guid groupId = Guid.Parse("baefe5f4-d404-491d-89d0-fb192afa3c1d");
-        private static readonly string groupName = "Test Group";
-        private static readonly GroupStores store = GroupStores.OnPremAd;
-        private static readonly string targetName = "target@example.com";
-        private static readonly GroupOwnerActions ownerAction = GroupOwnerActions.KeepExisting;
-        private static readonly int processingInterval = 3;
-
         [Fact]
-        public void GrouperDocumentCloneWithNewNameTest()
+        public void TestGrouperDocumentCloneWithNewName()
         {
-            GrouperDocument document = GetDocument(store);
-            string json = document.ToJson();
-            string newGroupName = "New Group Namn";
+            GrouperDocument document = TestHelpers.MakeDocument();
+            string newGroupName = "New Group Name";
             GrouperDocument newDocument = document.CloneWithNewGroupName(newGroupName);
-            Assert.Equal(documentId, newDocument.Id);
+            Assert.Equal(TestHelpers.DefaultDocumentId, newDocument.Id);
             Assert.Equal(newGroupName, newDocument.GroupName);
         }
 
         [Fact]
         public void TestGrouperDocumentShouldSerializeOwnerWithAzureAd()
         {
-            Assert.True(GetDocument(GroupStores.AzureAd).ShouldSerializeOwner());
+            bool shoudSerializeOwner = TestHelpers.MakeDocument(new { Store = GroupStores.AzureAd }).ShouldSerializeOwner();
+            Assert.True(shoudSerializeOwner);
         }
 
         [Fact]
         public void TestGrouperDocumentShouldSerializeOwnerWithOnPremAd()
         {
-            Assert.False(GetDocument(GroupStores.OnPremAd).ShouldSerializeOwner());
+            bool shoudSerializeOwner = TestHelpers.MakeDocument(new { Store = GroupStores.OnPremAd }).ShouldSerializeOwner();
+            Assert.False(shoudSerializeOwner);
         }
 
         [Fact]
         public void TestGrouperDocumentShouldSerializeOwnerWithExo()
         {
-            Assert.False(GetDocument(GroupStores.Exo).ShouldSerializeOwner());
+            bool shoudSerializeOwner = TestHelpers.MakeDocument(new { Store = GroupStores.Exo }).ShouldSerializeOwner();
+            Assert.False(shoudSerializeOwner);
         }
 
         [Fact]
         public void TestGrouperDocumentShouldSerializeProcessingIntervalZero()
         {
-            Assert.False(GetDocument(0).ShouldSerializeProcessingInterval());
+            bool shouldSerializeProcessingInterval = TestHelpers.MakeDocument(new { Interval = 0 }).ShouldSerializeProcessingInterval();
+            Assert.False(shouldSerializeProcessingInterval);
         }
 
         [Fact]
-        public void TestGrouperDocumentShouldSerializeProcessingIntervalNotZero()
+        public void TestGrouperDocumentShouldSerializeProcessingIntervalNonZero()
         {
-            Assert.True(GetDocument(5).ShouldSerializeProcessingInterval());
+            bool shouldSerializeProcessingInterval = TestHelpers.MakeDocument(new { Interval = 5 }).ShouldSerializeProcessingInterval();
+            Assert.True(shouldSerializeProcessingInterval);
         }
 
-        private GrouperDocument GetDocument(int processingInterval)
+        [Fact]
+        public void TestGrouperDocumentSerializationOfGroupStore()
         {
-            return GetDocument(store, processingInterval);
+            GrouperDocument document = TestHelpers.MakeDocument();
+            string serializedDocument = document.ToJson();
+            dynamic obj = JObject.Parse(serializedDocument);
+            Assert.Equal(TestHelpers.DefaultGroupStore.ToString(), (string)obj.store);
         }
 
-        private GrouperDocument GetDocument(GroupStores store)
+        [Fact]
+        public void TestGrouperDocumentSerializationOfGroupOwnerAction()
         {
-            return GetDocument(store, processingInterval);
+            GrouperDocument document = TestHelpers.MakeDocument(new { Store = GroupStores.AzureAd, Owner = TestHelpers.DefaultOwnerAction });
+            string serializedDocument = document.ToJson();
+            dynamic obj = JObject.Parse(serializedDocument);
+            Assert.Equal(TestHelpers.DefaultOwnerAction.ToString(), (string)obj.owner);
         }
 
-        private GrouperDocument GetDocument(GroupStores store, int processingInterval)
+        [Fact]
+        public void TestGrouperDocumentEquals()
         {
-            return TestHelpers.MakeDocument(new
-            {
-                Id = documentId,
-                Interval = processingInterval,
-                GroupName = groupName,
-                GroupId = groupId,
-                Store = store,
-                Owner = ownerAction,
-                Members = new []
-                {
-                    new
-                    {
-                        Action = GroupMemberActions.Include,
-                        Source = GroupMemberSources.Static,
-                        Rules = new []
-                        {
-                            new
-                            {
-                                Name = "Upn",
-                                Value = targetName
-                            }
-                        }
-                    }
-                }
-            });
+            GrouperDocument document1 = TestHelpers.MakeDocument();
+            GrouperDocument document2 = TestHelpers.MakeDocument();
+            Assert.True(document1.Equals(document2));
         }
 
-        private string GetDocumentJson()
+        [Fact]
+        public void TestGrouperDocumentNotEquals()
         {
-            return @"{
-  ""id"": ""3cbc0481-23b0-4860-a58a-7a723ee250c5"",
-  ""interval"": 3,
-  ""groupId"": ""baefe5f4-d404-491d-89d0-fb192afa3c1d"",
-  ""groupName"": ""Test Group"",
-  ""store"": ""OnPremAd"",
-  ""members"": [
-    {
-      ""source"": ""Static"",
-      ""action"": ""Include"",
-      ""rules"": [
-        {
-          ""name"": ""Upn"",
-          ""value"": ""target@example.com""
+            Guid guid = Guid.Parse("191de1de-df8c-4f1d-b07c-aec81fff52c1");
+            GrouperDocument document1 = TestHelpers.MakeDocument();
+            GrouperDocument document2 = TestHelpers.MakeDocument(new { Id = guid });
+            Assert.False(document1.Equals(document2));
+
         }
-      ]
-    }
-  ]
-}";
+
+        [Fact]
+        public void TestGrouperDocumentGetHashCode()
+        {
+            GrouperDocument document = TestHelpers.MakeDocument();
+            Assert.Equal(TestHelpers.DefaultDocumentId.GetHashCode(), document.GetHashCode());
+        }
+
+        [Fact]
+        public void TestGrouperDocumentMembersListShouldBeImmutable()
+        {
+            GrouperDocument document = TestHelpers.MakeDocument();
+            Assert.Throws<NotSupportedException>(() => { document.Members.RemoveAt(0); });
         }
     }
 }

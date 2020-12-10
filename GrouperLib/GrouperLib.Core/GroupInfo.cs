@@ -6,7 +6,7 @@ namespace GrouperLib.Core
     {
         public Guid Id { get; }
         public string DisplayName { get; }
-        public GroupStores Store { get;  }
+        public GroupStores Store { get; }
 
         public GroupInfo(Guid id, string displayName, GroupStores store)
         {

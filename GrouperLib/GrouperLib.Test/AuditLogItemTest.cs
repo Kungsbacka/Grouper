@@ -15,9 +15,9 @@ namespace GrouperLib.Test
         [Fact]
         public void TestAuditLogItemConstruction()
         {
-            DateTime now = DateTime.Now;
-            AuditLogItem logItem = new AuditLogItem(now, documentId, actor, action, info);
-            Assert.Equal(now, logItem.LogTime);
+            DateTime time = DateTime.Parse("2020-11-19T21:28:18.3926113+01:00");
+            AuditLogItem logItem = new AuditLogItem(time, documentId, actor, action, info);
+            Assert.Equal(time, logItem.LogTime);
             Assert.Equal(documentId, logItem.DocumentId);
             Assert.Equal(actor, logItem.Actor);
             Assert.Equal(action, logItem.Action);
@@ -43,15 +43,15 @@ namespace GrouperLib.Test
         [Fact]
         public void TestAuditLogItemConstructionWithoutTime()
         {
-            DateTime time = DateTime.Now;
+            DateTime now = DateTime.Now;
             AuditLogItem logItem = new AuditLogItem(documentId, actor, action, info);
-            Assert.True(logItem.LogTime >= time);
+            Assert.True(logItem.LogTime >= now);
         }
 
         [Fact]
         public void TestAuditLogItemSerialization()
         {
-            string validJson = @"{
+            string expectedJson = @"{
   ""logTime"": ""2020-11-19T21:28:18.3926113+01:00"",
   ""documentId"": ""00000000-0000-0000-0000-000000000000"",
   ""actor"": ""Actor"",
@@ -60,8 +60,8 @@ namespace GrouperLib.Test
 }";
             DateTime time = DateTime.Parse("2020-11-19T21:28:18.3926113+01:00");
             AuditLogItem logItem = new AuditLogItem(time, Guid.Empty, actor, action, info);
-            string json = JsonConvert.SerializeObject(logItem, Formatting.Indented);
-            Assert.Equal(validJson, json);
+            string actualJson = JsonConvert.SerializeObject(logItem, Formatting.Indented);
+            Assert.Equal(expectedJson, actualJson);
         }
     }
 }

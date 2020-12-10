@@ -1,7 +1,6 @@
 ﻿using System;
 using Xunit;
 using GrouperLib.Core;
-using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace GrouperLib.Test
@@ -15,7 +14,6 @@ namespace GrouperLib.Test
         private static readonly GroupStores store = GroupStores.OnPremAd;
         private static readonly string targetName = "target@example.com";
         private static readonly GroupMemberOperations operation = GroupMemberOperations.Add;
-        private static readonly GroupOwnerActions ownerAction = GroupOwnerActions.KeepExisting;
 
         [Fact]
         public void TestOperationalLogItemConstruction()
@@ -45,38 +43,14 @@ namespace GrouperLib.Test
         public void TestOperationalLogItemConstructionWithDocument()
         {
             DateTime now = DateTime.Now;
-            GrouperDocument document = TestHelpers.MakeDocument(new
-            {
-                Id = documentId,
-                Interval = 0,
-                GroupName = groupName,
-                GroupId = groupId,
-                Store = store,
-                Owner = ownerAction,
-                Members = new []
-                {
-                    new
-                    {
-                        Action = GroupMemberActions.Include,
-                        Source = GroupMemberSources.Static,
-                        Rules = new []
-                        {
-                            new
-                            {
-                                Name = "Upn",
-                                Value = targetName
-                            }
-                        }
-                    }
-                }
-            });
+            GrouperDocument document = TestHelpers.MakeDocument();
             OperationalLogItem logItem = new OperationalLogItem(document, operation,
                 new GroupMember(targetId, targetName, GroupMemberTypes.OnPremAd));
             Assert.True(logItem.LogTime >= now);
-            Assert.Equal(documentId, logItem.DocumentId);
-            Assert.Equal(groupId, logItem.GroupId);
-            Assert.Equal(groupName, logItem.GroupDisplayName);
-            Assert.Equal(store, logItem.GroupStore);
+            Assert.Equal(TestHelpers.DefaultDocumentId, logItem.DocumentId);
+            Assert.Equal(TestHelpers.DefaultGroupId, logItem.GroupId);
+            Assert.Equal(TestHelpers.DefaultGroupName, logItem.GroupDisplayName);
+            Assert.Equal(TestHelpers.DefaultGroupStore, logItem.GroupStore);
             Assert.Equal(operation, logItem.Operation);
             Assert.Equal(targetId, logItem.TargetId);
             Assert.Equal(targetName, logItem.TargetDisplayName);
