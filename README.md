@@ -33,8 +33,6 @@ will likely happen in the near future.
 
 ## Deploying
 
-Both the API and the service needs configuration to function. F
-
 ### Grouper service
 
 * Copy App.example.config to App.Debug.config and App.Release.config
@@ -42,7 +40,7 @@ Both the API and the service needs configuration to function. F
 secrets (see [Encrypting secrets](#encrypting-secrets) below)
 * Build
 * Copy DLLs and config to the server that is going to run the service
-* Install service with sc. If you are using a gMSA then remove the password parameter.
+* Install service (example with sc below. Remove the password parameter if you are using a gMSA)
 
 ```batch
 sc.exe create GrouperService binPath= "C:\Program Files\Grouper\GrouperService.exe" start= auto obj= user password= pass
@@ -54,21 +52,21 @@ sc.exe create GrouperService binPath= "C:\Program Files\Grouper\GrouperService.e
 * Update configuration files to match your environment. You are strongly advised to encrtypt all
 secrets (see [Encrypting secrets](#encrypting-secrets) below)
 * Build
-* Deploy to a web server that can do Windows Authentication
+* Deploy to a web site that is configured with Windows Authentication
 
 ### PowerShell module
 
-* Copy the PowerShell module to a folder that is included in the PSModulePath if you want the module to autoload.
+* Copy the PowerShell module to a folder that is included in the PSModulePath (if you want the module to autoload)
 * Build GrouperLib (CompileTargetFramework or CompileTargetCore depending on PowerShell version)
-* Copy GrouperLib.Core.dll and Newtonsoft.Json.dll to the module folder.
+* Copy GrouperLib.Core.dll, Newtonsoft.Json.dll, GrouperLib.Language.dll the module folder (if you want support for Swedish, also copy sv\GrouperLib.Language.resources.dll to <module folder>\sv)
 
 ### Encrypting secrets
 
 It is recommended that all secrets in the configuration files are encrypted. Grouper supports
-DPAPI protected strings in the configuration files. To protect a string with DPAPI you can do
-the following:
+DPAPI protected secrets in all configuration files. To protect a string with DPAPI you do the
+following:
 
-1. Start PowerShell as the user that will run Grouper (if it's a gMSA you can use
+1. Start PowerShell as the user that will run GrouperService or GrouperApi (if it's a gMSA you can use
 [PsExec](https://docs.microsoft.com/en-us/sysinternals/downloads/psexec) to
 start PowerShell: `psexec.exe -i -u DOMAIN\gmsa$ powershell.exe`).
 2. Use tools/ProtectString.ps1 to encrypt the secret.
@@ -81,6 +79,9 @@ Below are some examples of how to perform common tasks. Take a look at the cmdle
 Before you can use the PowerShell module you have to connect to the API using Connect-GrouperApi.
 
 ```PowerShell
+# Connect to the API
+Connect-GrouperApi -Uri 'https://api-server/path/to/api'
+
 # Process a single document
 Get-GrouperDocumentEntry -GroupName 'My Group' | Invoke-Grouper
 
@@ -91,25 +92,35 @@ Get-GrouperDocumentEntry -All | Invoke-Grouper
 Get-GrouperDocumentEntry -GroupName 'My Group' | Edit-GrouperDocument | Save-GrouperDocument -Publish
 
 # Create a new document, edit and save (without publishing)
-# A new document always contains one member object (static) as a placeholder to make the document valid.
+# A new document always contains one member object (static) as a placeholder just to make the document valid.
 # Remove or edit the member object to match your needs.
 New-GrouperDocument -GroupId '4a31e904-a33a-476e-95da-4d0ec7ab602a' -GroupName 'My Group' -Store AzureAd | Edit-GrouperDocument | Save-GrouperDocument
 
 # It is also possible to create new documents by hand. Create a document in your favorite text editor,
-# copy document to clipboard, and...
+# save the document as a JSON file
+Get-Content document.json | ConvertTo-GrouperDocument | Save-GrouperDocument
+
+# ...or straight from the clipboard
 Get-Clipboard | ConvertTo-GrouperDocument | Save-GrouperDocument
 
 # To check if a "hand made" document is valid before converting, use Test-GrouperDocument
-Get-Clipboard | Test-GrouperDocument -OutputErrors
+Get-Content document.json | Test-GrouperDocument -OutputErrors
 ```
 
 ## Group document
 
 A Grouper document contains all information required by Grouper to process a single group.
-Name, id and store are required properties. The document must also contain at least one
-member object that describes what members the group should contain.
+Name, ID and Store are required properties. The document must also contain at least one
+member object that describes the members that the group should contain.
 
-Interval is used by the GrouperService as a recommended (but not guaranteed) processing interval in minutes for the document.
+Interval is used by the GrouperService as a recommended (but not contractual) processing
+interval in minutes for a document. GrouperProcess will try to process the document in
+the given interval. A document with an interval of zero (default) will be processed either
+when GrouperService does a full pass through all published documents, or when the document
+is updated in the document database.
+
+A full pass is done three times a day (at 6 am, 12 pm and 4 pm). This is hardcoded into the
+service (see method ShouldProcessAllDocuments), but may be configurable at a later time.
 
 Below is an example where the group lives in Azure AD and the members come from a student
 roster (elevregister).
@@ -142,8 +153,8 @@ roster (elevregister).
 }
 ```
 
-Grouper documents can be stored anywhere, but some of the PowerShell cmdlets only work with
-documents that are stored in the Grouper database (see additional information below).
+Grouper documents can be stored anywhere, but some of the PowerShell cmdlets, the API and
+the service only work with documents stored in the Grouper database.
 
 ## Member sources
 
