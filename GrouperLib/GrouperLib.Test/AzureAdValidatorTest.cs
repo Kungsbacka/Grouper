@@ -11,7 +11,7 @@ namespace GrouperLib.Test
         private static readonly Guid targetGroupId = Guid.Parse("2422bdbd-8a4d-4996-99db-d9ed29294779");
 
         [Fact]
-        public void TestAzureAdValidatorValidateWithLegalDocument()
+        public void TestValidateWithLegalDocument()
         {
             GrouperDocument document = TestHelpers.MakeDocument(new
             {
@@ -35,7 +35,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestAzureAdValidatorValidateWithBrokenDocument()
+        public void TestValidateWithBrokenDocument()
         {
             GrouperDocument document = TestHelpers.MakeDocument(new
             {

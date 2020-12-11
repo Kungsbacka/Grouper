@@ -9,7 +9,7 @@ namespace GrouperLib.Test
     public class GrouperDocumentMemberTest
     {
         [Fact]
-        public void TestGrouperDocumentMemberEquals()
+        public void TestEquals()
         {
             GrouperDocumentMember member1 = TestHelpers.MakeMember();
             GrouperDocumentMember member2 = TestHelpers.MakeMember();
@@ -17,7 +17,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestGrouperDocumentMemberNotEqualsDifferentSource()
+        public void TestNotEqualsDifferentSource()
         {
             GrouperDocumentMember member1 = TestHelpers.MakeMember(new { Source = GroupMemberSources.Static });
             GrouperDocumentMember member2 = TestHelpers.MakeMember(new { Source = GroupMemberSources.OnPremAdGroup });
@@ -25,7 +25,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestGrouperDocumentMemberNotEqualsDifferentAction()
+        public void TestNotEqualsDifferentAction()
         {
             GrouperDocumentMember member1 = TestHelpers.MakeMember(new { Action = GroupMemberActions.Include });
             GrouperDocumentMember member2 = TestHelpers.MakeMember(new { Action = GroupMemberActions.Exclude });
@@ -33,7 +33,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestGrouperDocumentMemberNotEqualsDifferentRule()
+        public void TestNotEqualsDifferentRule()
         {
             GrouperDocumentMember member1 = TestHelpers.MakeMember(new { Rules = new[] { new { Name = "Upn", Value = "Test" } } });
             GrouperDocumentMember member2 = TestHelpers.MakeMember(new { Rules = new[] { new { Name = "Group", Value = "Test" } } });
@@ -41,14 +41,14 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestGrouperDocumentMemberShouldSerializeMemberType()
+        public void TestShouldSerializeMemberType()
         {
             GrouperDocumentMember member = TestHelpers.MakeMember();
             Assert.False(member.ShouldSerializeMemberType());
         }
 
         [Fact]
-        public void TestGrouperDocumentMemberSerializeSource()
+        public void TestSerializeSource()
         {
             GrouperDocumentMember member = TestHelpers.MakeMember();
             string serializedMember = JsonConvert.SerializeObject(member);
@@ -57,7 +57,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestGrouperDocumentMemberSerializeAction()
+        public void TestSerializeAction()
         {
             GrouperDocumentMember member = TestHelpers.MakeMember();
             string serializedMember = JsonConvert.SerializeObject(member);
@@ -66,7 +66,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestGrouperDocumentMemberRulesListShouldBeImmutable()
+        public void TestRulesListShouldBeImmutable()
         {
             GrouperDocumentMember member = TestHelpers.MakeMember();
             Assert.Throws<NotSupportedException>(() => { member.Rules.RemoveAt(0); });

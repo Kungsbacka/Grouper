@@ -16,7 +16,7 @@ namespace GrouperLib.Test
         private static readonly LogLevels logLevel = LogLevels.Error;
 
         [Fact]
-        public void TestEventLogItemConstruction()
+        public void TestConstruction()
         {
             DateTime time = DateTime.Parse("2020-11-19T21:28:18.3926113+01:00");
             EventLogItem logItem = new EventLogItem(
@@ -38,7 +38,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestEventLogItemConstructionWithDocument()
+        public void TestConstructionWithDocument()
         {
             GrouperDocument document = TestHelpers.MakeDocument();
             EventLogItem logItem = new EventLogItem(document, message, logLevel);
@@ -51,7 +51,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestEventLogItemConstructionWithEmptyGroupDisplayName()
+        public void TestConstructionWithEmptyGroupDisplayName()
         {
             DateTime now = DateTime.Now;
             EventLogItem logItem = new EventLogItem(
@@ -67,7 +67,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestEventLogItemConstructionWithoutGroupStore()
+        public void TestConstructionWithoutGroupStore()
         {
             DateTime now = DateTime.Now;
             EventLogItem logItem = new EventLogItem(
@@ -83,7 +83,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestEventLogItemSerialization()
+        public void TestSerialization()
         {
             string validJson = @"{
   ""logTime"": ""2020-11-19T21:20:11.1702314+01:00"",

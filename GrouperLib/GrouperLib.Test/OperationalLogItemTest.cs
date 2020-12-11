@@ -16,7 +16,7 @@ namespace GrouperLib.Test
         private static readonly GroupMemberOperations operation = GroupMemberOperations.Add;
 
         [Fact]
-        public void TestOperationalLogItemConstruction()
+        public void TestConstruction()
         {
             DateTime now = DateTime.Now;
             OperationalLogItem logItem = new OperationalLogItem(
@@ -40,7 +40,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestOperationalLogItemConstructionWithDocument()
+        public void TestConstructionWithDocument()
         {
             DateTime now = DateTime.Now;
             GrouperDocument document = TestHelpers.MakeDocument();
@@ -57,7 +57,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestOperationalLogItemSerialization()
+        public void TestSerialization()
         {
             string validJson = @"{
   ""logTime"": ""2020-11-19T21:28:18.3926113+01:00"",

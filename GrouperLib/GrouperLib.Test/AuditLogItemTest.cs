@@ -13,7 +13,7 @@ namespace GrouperLib.Test
         private static readonly string info = "Additional information";
 
         [Fact]
-        public void TestAuditLogItemConstruction()
+        public void Testonstruction()
         {
             DateTime time = DateTime.Parse("2020-11-19T21:28:18.3926113+01:00");
             AuditLogItem logItem = new AuditLogItem(time, documentId, actor, action, info);
@@ -25,7 +25,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestAuditLogItemConstructionWithoutActor()
+        public void TestonstructionWithoutActor()
         {
             Assert.Throws<ArgumentNullException>(
                 () => new AuditLogItem(DateTime.Now, documentId, actor: null, action, null)
@@ -33,7 +33,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestAuditLogItemConstructionWithoutAction()
+        public void TestonstructionWithoutAction()
         {
             Assert.Throws<ArgumentNullException>(
                 () => new AuditLogItem(DateTime.Now, documentId, actor, action: null, null)
@@ -41,7 +41,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestAuditLogItemConstructionWithoutTime()
+        public void TestonstructionWithoutTime()
         {
             DateTime now = DateTime.Now;
             AuditLogItem logItem = new AuditLogItem(documentId, actor, action, info);

@@ -8,7 +8,7 @@ namespace GrouperLib.Test
     public class GrouperDocumentTest
     {
         [Fact]
-        public void TestGrouperDocumentCloneWithNewName()
+        public void TestCloneWithNewName()
         {
             GrouperDocument document = TestHelpers.MakeDocument();
             string newGroupName = "New Group Name";
@@ -18,42 +18,42 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestGrouperDocumentShouldSerializeOwnerWithAzureAd()
+        public void TestShouldSerializeOwnerWithAzureAd()
         {
             bool shoudSerializeOwner = TestHelpers.MakeDocument(new { Store = GroupStores.AzureAd }).ShouldSerializeOwner();
             Assert.True(shoudSerializeOwner);
         }
 
         [Fact]
-        public void TestGrouperDocumentShouldSerializeOwnerWithOnPremAd()
+        public void TestShouldSerializeOwnerWithOnPremAd()
         {
             bool shoudSerializeOwner = TestHelpers.MakeDocument(new { Store = GroupStores.OnPremAd }).ShouldSerializeOwner();
             Assert.False(shoudSerializeOwner);
         }
 
         [Fact]
-        public void TestGrouperDocumentShouldSerializeOwnerWithExo()
+        public void TestShouldSerializeOwnerWithExo()
         {
             bool shoudSerializeOwner = TestHelpers.MakeDocument(new { Store = GroupStores.Exo }).ShouldSerializeOwner();
             Assert.False(shoudSerializeOwner);
         }
 
         [Fact]
-        public void TestGrouperDocumentShouldSerializeProcessingIntervalZero()
+        public void TestShouldSerializeProcessingIntervalZero()
         {
             bool shouldSerializeProcessingInterval = TestHelpers.MakeDocument(new { Interval = 0 }).ShouldSerializeProcessingInterval();
             Assert.False(shouldSerializeProcessingInterval);
         }
 
         [Fact]
-        public void TestGrouperDocumentShouldSerializeProcessingIntervalNonZero()
+        public void TestShouldSerializeProcessingIntervalNonZero()
         {
             bool shouldSerializeProcessingInterval = TestHelpers.MakeDocument(new { Interval = 5 }).ShouldSerializeProcessingInterval();
             Assert.True(shouldSerializeProcessingInterval);
         }
 
         [Fact]
-        public void TestGrouperDocumentSerializationOfGroupStore()
+        public void TestSerializationOfGroupStore()
         {
             GrouperDocument document = TestHelpers.MakeDocument();
             string serializedDocument = document.ToJson();
@@ -62,7 +62,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestGrouperDocumentSerializationOfGroupOwnerAction()
+        public void TestSerializationOfGroupOwnerAction()
         {
             GrouperDocument document = TestHelpers.MakeDocument(new { Store = GroupStores.AzureAd, Owner = TestHelpers.DefaultOwnerAction });
             string serializedDocument = document.ToJson();
@@ -71,7 +71,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestGrouperDocumentEquals()
+        public void TestEquals()
         {
             GrouperDocument document1 = TestHelpers.MakeDocument();
             GrouperDocument document2 = TestHelpers.MakeDocument();
@@ -79,7 +79,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestGrouperDocumentNotEquals()
+        public void TestNotEquals()
         {
             Guid guid = Guid.Parse("191de1de-df8c-4f1d-b07c-aec81fff52c1");
             GrouperDocument document1 = TestHelpers.MakeDocument();
@@ -89,14 +89,14 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestGrouperDocumentGetHashCode()
+        public void TestGetHashCode()
         {
             GrouperDocument document = TestHelpers.MakeDocument();
             Assert.Equal(TestHelpers.DefaultDocumentId.GetHashCode(), document.GetHashCode());
         }
 
         [Fact]
-        public void TestGrouperDocumentMembersListShouldBeImmutable()
+        public void TestMembersListShouldBeImmutable()
         {
             GrouperDocument document = TestHelpers.MakeDocument();
             Assert.Throws<NotSupportedException>(() => { document.Members.RemoveAt(0); });

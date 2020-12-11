@@ -6,7 +6,7 @@ namespace GrouperLib.Test
     public class GrouperDocumentRuleTest
     {
         [Fact]
-        public void TestGrouperDocumentRuleEquals()
+        public void TestEquals()
         {
             GrouperDocumentRule rule1 = TestHelpers.MakeRule();
             GrouperDocumentRule rule2 = TestHelpers.MakeRule();
@@ -14,7 +14,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestGrouperDocumentMemberNotEqualsDifferentName()
+        public void TestNotEqualsDifferentName()
         {
             GrouperDocumentRule rule1 = TestHelpers.MakeRule(new { Name = "Upn", Value = "Same" });
             GrouperDocumentRule rule2 = TestHelpers.MakeRule(new { Name = "Group", Value = "Same" });
@@ -22,7 +22,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestGrouperDocumentMemberNotEqualsDifferentValue()
+        public void TestNotEqualsDifferentValue()
         {
             GrouperDocumentRule rule1 = TestHelpers.MakeRule(new { Name = "Upn", Value = "One" });
             GrouperDocumentRule rule2 = TestHelpers.MakeRule(new { Name = "Upn", Value = "Two" });

@@ -6,7 +6,6 @@ namespace GrouperLib.Core
 {
     public class GroupMember
     {
-
         [JsonProperty(PropertyName = "id")]
         public Guid Id { get; }
 
@@ -40,7 +39,7 @@ namespace GrouperLib.Core
 
         public override bool Equals(object obj)
         {
-            if (!(obj is GroupMember member))
+            if (obj is not GroupMember member)
             {
                 return false;
             }

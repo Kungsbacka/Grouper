@@ -11,7 +11,7 @@ namespace GrouperLib.Test
         private static readonly string invalidGuid = "not-a-valid-guid";
 
         [Fact]
-        public void TestGroupInfoConstruction1()
+        public void TestConstruction1()
         {
             GroupInfo info = new GroupInfo(validGuid, "Name", GroupStores.OnPremAd);
             Assert.Equal(validGuid, info.Id);
@@ -20,7 +20,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestGroupInfoConstruction2()
+        public void TestConstruction2()
         {
             GroupInfo info = new GroupInfo(validGuidString, "Name", GroupStores.OnPremAd);
             Assert.Equal(validGuid, info.Id);
@@ -29,7 +29,7 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestGroupInfoConstructionWithInvalidGuid()
+        public void TestConstructionWithInvalidGuid()
         {
             Assert.Throws<ArgumentException>(() => { new GroupInfo(invalidGuid, "Name", GroupStores.OnPremAd); });
         }
