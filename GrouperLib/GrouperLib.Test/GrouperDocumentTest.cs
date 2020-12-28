@@ -2,6 +2,7 @@
 using Xunit;
 using GrouperLib.Core;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace GrouperLib.Test
 {
@@ -68,6 +69,27 @@ namespace GrouperLib.Test
             string serializedDocument = document.ToJson();
             dynamic obj = JObject.Parse(serializedDocument);
             Assert.Equal(TestHelpers.DefaultOwnerAction.ToString(), (string)obj.owner);
+        }
+
+        [Fact]
+        public void TestSerializedNames()
+        {
+            GrouperDocument document = TestHelpers.MakeDocument(
+                new
+                {
+                    Store = GroupStores.AzureAd,
+                    Interval = 10
+                }    
+            );
+            string json = JsonConvert.SerializeObject(document, Formatting.Indented);
+            JObject obj = JObject.Parse(json);
+            Assert.True(obj.ContainsKey("id"));
+            Assert.True(obj.ContainsKey("interval"));
+            Assert.True(obj.ContainsKey("groupId"));
+            Assert.True(obj.ContainsKey("groupName"));
+            Assert.True(obj.ContainsKey("store"));
+            Assert.True(obj.ContainsKey("owner"));
+            Assert.True(obj.ContainsKey("members"));
         }
 
         [Fact]

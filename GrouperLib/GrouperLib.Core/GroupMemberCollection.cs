@@ -7,7 +7,7 @@ namespace GrouperLib.Core
     // because it is going to be used i PowerShell and it is easy to accidentaly enumerate
     // the contents instead of passing the object. To enumerate call AsEnumerable() to get
     // an IEnumerable<GroupMember>.
-    public class GroupMemberCollection
+    public sealed class GroupMemberCollection
     {
         private readonly HashSet<GroupMember> _members;
 
@@ -75,7 +75,6 @@ namespace GrouperLib.Core
             }
             int thisMemberTypes = MemberTypesAsFlags(this);
             int otherMemberTypes = MemberTypesAsFlags(collection);
-
             return thisMemberTypes == otherMemberTypes && thisMemberTypes < 3;
         }
 

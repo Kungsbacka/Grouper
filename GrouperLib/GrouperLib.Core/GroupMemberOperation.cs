@@ -4,7 +4,7 @@ using Newtonsoft.Json.Converters;
 
 namespace GrouperLib.Core
 {
-    public class GroupMemberOperation
+    public sealed class GroupMemberOperation
     {
         [JsonProperty(PropertyName = "groupId")]
         public Guid GroupId { get; }
@@ -13,11 +13,11 @@ namespace GrouperLib.Core
         public string GroupName { get; }
 
         [JsonProperty(PropertyName = "member")]
-        public GroupMember Member { get; private set; }
+        public GroupMember Member { get; }
 
         [JsonProperty(PropertyName = "operation")]
         [JsonConverter(typeof(StringEnumConverter))]
-        public GroupMemberOperations Operation { get; private set; }
+        public GroupMemberOperations Operation { get; }
 
         public GroupMemberOperation(Guid groupId, string groupName, GroupMember member, GroupMemberOperations operation)
         {

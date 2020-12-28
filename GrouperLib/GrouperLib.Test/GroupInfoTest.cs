@@ -1,6 +1,8 @@
 ﻿using System;
 using Xunit;
 using GrouperLib.Core;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace GrouperLib.Test
 {
@@ -32,6 +34,17 @@ namespace GrouperLib.Test
         public void TestConstructionWithInvalidGuid()
         {
             Assert.Throws<ArgumentException>(() => { new GroupInfo(invalidGuid, "Name", GroupStores.OnPremAd); });
+        }
+
+        [Fact]
+        public void TestSerializedNames()
+        {
+            GroupInfo groupInfo = new GroupInfo(Guid.Empty, "Name", GroupStores.AzureAd);
+            string json = JsonConvert.SerializeObject(groupInfo);
+            JObject obj = JObject.Parse(json);
+            Assert.True(obj.ContainsKey("id"));
+            Assert.True(obj.ContainsKey("displayName"));
+            Assert.True(obj.ContainsKey("store"));
         }
     }
 }

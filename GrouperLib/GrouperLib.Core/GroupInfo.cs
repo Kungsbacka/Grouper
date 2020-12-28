@@ -1,11 +1,17 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 
 namespace GrouperLib.Core
 {
     public sealed class GroupInfo
     {
+        [JsonProperty(PropertyName = "id", Order = 1)]
         public Guid Id { get; }
+        
+        [JsonProperty(PropertyName = "displayName", Order = 2)]
         public string DisplayName { get; }
+        
+        [JsonProperty(PropertyName = "store", Order = 3)]
         public GroupStores Store { get; }
 
         public GroupInfo(Guid id, string displayName, GroupStores store)

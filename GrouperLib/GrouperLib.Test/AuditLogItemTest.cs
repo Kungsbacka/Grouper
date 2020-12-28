@@ -2,6 +2,7 @@ using System;
 using Xunit;
 using GrouperLib.Core;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace GrouperLib.Test
 {
@@ -11,11 +12,11 @@ namespace GrouperLib.Test
         private static readonly string actor = "Actor";
         private static readonly string action = "Action";
         private static readonly string info = "Additional information";
+        private static readonly DateTime time = DateTime.Parse("2020-11-19T21:28:18.3926113+01:00");
 
         [Fact]
-        public void Testonstruction()
+        public void TestConstruction()
         {
-            DateTime time = DateTime.Parse("2020-11-19T21:28:18.3926113+01:00");
             AuditLogItem logItem = new AuditLogItem(time, documentId, actor, action, info);
             Assert.Equal(time, logItem.LogTime);
             Assert.Equal(documentId, logItem.DocumentId);
@@ -25,23 +26,19 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestonstructionWithoutActor()
+        public void TestConstructionWithoutActor()
         {
-            Assert.Throws<ArgumentNullException>(
-                () => new AuditLogItem(DateTime.Now, documentId, actor: null, action, null)
-            );
+            Assert.Throws<ArgumentNullException>(() => new AuditLogItem(time, documentId, actor: null, action, null));
         }
 
         [Fact]
-        public void TestonstructionWithoutAction()
+        public void TestConstructionWithoutAction()
         {
-            Assert.Throws<ArgumentNullException>(
-                () => new AuditLogItem(DateTime.Now, documentId, actor, action: null, null)
-            );
+            Assert.Throws<ArgumentNullException>(() => new AuditLogItem(time, documentId, actor, action: null, null));
         }
 
         [Fact]
-        public void TestonstructionWithoutTime()
+        public void TestConstructionWithoutTime()
         {
             DateTime now = DateTime.Now;
             AuditLogItem logItem = new AuditLogItem(documentId, actor, action, info);
@@ -49,19 +46,16 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestAuditLogItemSerialization()
+        public void TestSerializedNames()
         {
-            string expectedJson = @"{
-  ""logTime"": ""2020-11-19T21:28:18.3926113+01:00"",
-  ""documentId"": ""00000000-0000-0000-0000-000000000000"",
-  ""actor"": ""Actor"",
-  ""action"": ""Action"",
-  ""additionalInformation"": ""Additional information""
-}";
-            DateTime time = DateTime.Parse("2020-11-19T21:28:18.3926113+01:00");
-            AuditLogItem logItem = new AuditLogItem(time, Guid.Empty, actor, action, info);
-            string actualJson = JsonConvert.SerializeObject(logItem, Formatting.Indented);
-            Assert.Equal(expectedJson, actualJson);
+            AuditLogItem logItem = new AuditLogItem(time, documentId, actor, action, info);
+            string json = JsonConvert.SerializeObject(logItem);
+            JObject obj = JObject.Parse(json);
+            Assert.True(obj.ContainsKey("logTime"));
+            Assert.True(obj.ContainsKey("documentId"));
+            Assert.True(obj.ContainsKey("actor"));
+            Assert.True(obj.ContainsKey("action"));
+            Assert.True(obj.ContainsKey("additionalInformation"));
         }
     }
 }

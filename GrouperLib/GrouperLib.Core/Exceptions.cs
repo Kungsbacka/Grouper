@@ -2,7 +2,7 @@
 
 namespace GrouperLib.Core
 {
-    public class InvalidGrouperDocumentException : Exception
+    public sealed class InvalidGrouperDocumentException : Exception
     {
         public InvalidGrouperDocumentException()
         {

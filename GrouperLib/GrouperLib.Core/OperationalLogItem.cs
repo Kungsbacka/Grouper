@@ -5,7 +5,7 @@ using System.Text;
 
 namespace GrouperLib.Core
 {
-    public class OperationalLogItem
+    public sealed class OperationalLogItem
     {
         [JsonProperty(PropertyName = "logTime", Order = 1)]
         public DateTime LogTime { get; }

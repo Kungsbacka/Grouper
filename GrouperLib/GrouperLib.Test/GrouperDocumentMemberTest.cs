@@ -51,8 +51,8 @@ namespace GrouperLib.Test
         public void TestSerializeSource()
         {
             GrouperDocumentMember member = TestHelpers.MakeMember();
-            string serializedMember = JsonConvert.SerializeObject(member);
-            dynamic obj = JObject.Parse(serializedMember);
+            string json = JsonConvert.SerializeObject(member);
+            dynamic obj = JObject.Parse(json);
             Assert.Equal(TestHelpers.DefaultGroupMemberSource.ToString(), (string)obj.source);
         }
 
@@ -60,9 +60,20 @@ namespace GrouperLib.Test
         public void TestSerializeAction()
         {
             GrouperDocumentMember member = TestHelpers.MakeMember();
-            string serializedMember = JsonConvert.SerializeObject(member);
-            dynamic obj = JObject.Parse(serializedMember);
+            string json = JsonConvert.SerializeObject(member);
+            dynamic obj = JObject.Parse(json);
             Assert.Equal(TestHelpers.DefaultGroupMemberAction.ToString(), (string)obj.action);
+        }
+
+        [Fact]
+        public void TestSerializedNames()
+        {
+            GrouperDocumentMember member = TestHelpers.MakeMember();
+            string json = JsonConvert.SerializeObject(member);
+            JObject obj = JObject.Parse(json);
+            Assert.True(obj.ContainsKey("source"));
+            Assert.True(obj.ContainsKey("action"));
+            Assert.True(obj.ContainsKey("rules"));
         }
 
         [Fact]

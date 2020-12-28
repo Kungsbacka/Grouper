@@ -4,7 +4,7 @@ using Newtonsoft.Json.Converters;
 
 namespace GrouperLib.Core
 {
-    public class GroupMember
+    public sealed class GroupMember
     {
         [JsonProperty(PropertyName = "id")]
         public Guid Id { get; }

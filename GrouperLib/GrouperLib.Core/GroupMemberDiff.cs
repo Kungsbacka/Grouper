@@ -25,23 +25,15 @@ namespace GrouperLib.Core
             GroupMemberCollection removeMemberCollection, GroupMemberCollection unchangedMemberCollection,
             double changeRatio)
         {
-            if (addMemberCollection is null)
-            {
-                throw new ArgumentNullException(nameof(addMemberCollection));
-            }
-            if (removeMemberCollection is null)
-            {
-                throw new ArgumentNullException(nameof(removeMemberCollection));
-            }
-            if (unchangedMemberCollection is null)
-            {
-                throw new ArgumentNullException(nameof(unchangedMemberCollection));
-            }
             Document = document ?? throw new ArgumentNullException(nameof(document));
-            Add = addMemberCollection.AsEnumerable();
-            Remove = removeMemberCollection.AsEnumerable();
-            Unchanged = unchangedMemberCollection.AsEnumerable();
+            Add = addMemberCollection?.AsEnumerable() ?? throw new ArgumentNullException(nameof(addMemberCollection));
+            Remove = removeMemberCollection?.AsEnumerable() ?? throw new ArgumentNullException(nameof(removeMemberCollection));
+            Unchanged = unchangedMemberCollection?.AsEnumerable() ?? throw new ArgumentNullException(nameof(unchangedMemberCollection));
             ChangeRatio = changeRatio;
+            if (addMemberCollection == removeMemberCollection || addMemberCollection == unchangedMemberCollection || removeMemberCollection == unchangedMemberCollection)
+            {
+                throw new ArgumentException("All collections must be separate objects");
+            }
         }
     }
 }

@@ -1,5 +1,7 @@
 ﻿using Xunit;
 using GrouperLib.Core;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace GrouperLib.Test
 {
@@ -27,6 +29,16 @@ namespace GrouperLib.Test
             GrouperDocumentRule rule1 = TestHelpers.MakeRule(new { Name = "Upn", Value = "One" });
             GrouperDocumentRule rule2 = TestHelpers.MakeRule(new { Name = "Upn", Value = "Two" });
             Assert.False(rule1.Equals(rule2));
+        }
+
+        [Fact]
+        public void TestSerializedNames()
+        {
+            GrouperDocumentRule rule = TestHelpers.MakeRule();
+            string json = JsonConvert.SerializeObject(rule);
+            JObject obj = JObject.Parse(json);
+            Assert.True(obj.ContainsKey("name"));
+            Assert.True(obj.ContainsKey("value"));
         }
     }
 }

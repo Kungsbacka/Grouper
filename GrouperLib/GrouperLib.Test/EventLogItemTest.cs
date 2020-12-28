@@ -3,6 +3,7 @@ using Xunit;
 using GrouperLib.Core;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 
 namespace GrouperLib.Test
 {
@@ -14,11 +15,11 @@ namespace GrouperLib.Test
         private static readonly GroupStores store = GroupStores.OnPremAd;
         private static readonly string message = "Message";
         private static readonly LogLevels logLevel = LogLevels.Error;
+        private static readonly DateTime time = DateTime.Parse("2020-11-19T21:28:18.3926113+01:00");
 
         [Fact]
         public void TestConstruction()
         {
-            DateTime time = DateTime.Parse("2020-11-19T21:28:18.3926113+01:00");
             EventLogItem logItem = new EventLogItem(
                 logTime: time,
                 documentId: documentId,
@@ -53,9 +54,8 @@ namespace GrouperLib.Test
         [Fact]
         public void TestConstructionWithEmptyGroupDisplayName()
         {
-            DateTime now = DateTime.Now;
             EventLogItem logItem = new EventLogItem(
-                logTime: now,
+                logTime: time,
                 documentId: documentId,
                 groupId: groupId,
                 groupDisplayName: string.Empty,
@@ -69,9 +69,8 @@ namespace GrouperLib.Test
         [Fact]
         public void TestConstructionWithoutGroupStore()
         {
-            DateTime now = DateTime.Now;
             EventLogItem logItem = new EventLogItem(
-                logTime: now,
+                logTime: time,
                 documentId: documentId,
                 groupId: groupId,
                 groupDisplayName: groupName,
@@ -83,18 +82,8 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestSerialization()
+        public void TestSerializedNames()
         {
-            string validJson = @"{
-  ""logTime"": ""2020-11-19T21:20:11.1702314+01:00"",
-  ""documentId"": ""3cbc0481-23b0-4860-a58a-7a723ee250c5"",
-  ""groupId"": ""baefe5f4-d404-491d-89d0-fb192afa3c1d"",
-  ""groupDisplayName"": ""Test Group"",
-  ""groupStore"": ""OnPremAd"",
-  ""message"": ""Message"",
-  ""logLevel"": ""Error""
-}";
-            DateTime time = DateTime.Parse("2020-11-19T21:20:11.1702314+01:00");
             EventLogItem logItem = new EventLogItem(
                 logTime: time,
                 documentId: documentId,
@@ -104,8 +93,15 @@ namespace GrouperLib.Test
                 message: message,
                 logLevel: logLevel
             );
-            string json = JsonConvert.SerializeObject(logItem, Formatting.Indented);
-            Assert.Equal(validJson, json);
+            string json = JsonConvert.SerializeObject(logItem);
+            JObject obj = JObject.Parse(json); 
+            Assert.True(obj.ContainsKey("logTime"));
+            Assert.True(obj.ContainsKey("documentId"));
+            Assert.True(obj.ContainsKey("groupId"));
+            Assert.True(obj.ContainsKey("groupDisplayName"));
+            Assert.True(obj.ContainsKey("groupStore"));
+            Assert.True(obj.ContainsKey("message"));
+            Assert.True(obj.ContainsKey("logLevel"));
         }
     }
 }
