@@ -154,7 +154,7 @@ roster (elevregister).
 ```
 
 Grouper documents can be stored anywhere, but some of the PowerShell cmdlets, the API and
-the service only work with documents stored in the Grouper database.
+the service can only work with documents stored in the Grouper database.
 
 ## Member sources
 
