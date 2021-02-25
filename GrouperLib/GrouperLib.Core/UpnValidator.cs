@@ -1,4 +1,5 @@
 ﻿using GrouperLib.Language;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -33,6 +34,10 @@ namespace GrouperLib.Core
         // Reference: https://social.technet.microsoft.com/wiki/contents/articles/52250.active-directory-user-principal-name.aspx
         private bool IsUpnValid(string upn)
         {
+            if (upn == null)
+            {
+                throw new ArgumentNullException(nameof(upn));
+            }
             string[] parts = upn.Split('@');
             if (parts.Length != 2)
             {
