@@ -1,6 +1,8 @@
 ﻿using System;
 using Xunit;
 using GrouperLib.Core;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace GrouperLib.Test
 {
@@ -9,15 +11,40 @@ namespace GrouperLib.Test
         [Fact]
         public void TestConstruction()
         {
+            GroupMember member = new GroupMember(Guid.Empty, "Member", GroupMemberTypes.OnPremAd);
+            GroupMemberOperations operation = GroupMemberOperations.Add;
+            GroupMemberOperation memberOperation = new GroupMemberOperation(TestHelpers.DefaultDocumentId, TestHelpers.DefaultGroupName, member, operation);
+            Assert.Equal(TestHelpers.DefaultDocumentId, memberOperation.GroupId);
+            Assert.Equal(TestHelpers.DefaultGroupName, memberOperation.GroupName);
+            Assert.Equal(member, memberOperation.Member);
+            Assert.Equal(operation, memberOperation.Operation);
+        }
+
+        [Fact]
+        public void TestConstructionWithDocument()
+        {
             GrouperDocument document = TestHelpers.MakeDocument();
             GroupMember member = new GroupMember(Guid.Empty, "Member", GroupMemberTypes.OnPremAd);
             GroupMemberOperations operation = GroupMemberOperations.Add;
             GroupMemberOperation memberOperation = new GroupMemberOperation(document, member, operation);
             Assert.Equal(document.GroupId, memberOperation.GroupId);
-            
-            // CONTINUE HERE
+            Assert.Equal(document.GroupName, memberOperation.GroupName);
+            Assert.Equal(member, memberOperation.Member);
+            Assert.Equal(operation, memberOperation.Operation);
+        }
 
-            //Assert.Equal(member.Id)
+        [Fact]
+        public void TestSerialzedNames()
+        {
+            GroupMember member = new GroupMember(Guid.Empty, "Member", GroupMemberTypes.OnPremAd);
+            GroupMemberOperations operation = GroupMemberOperations.Add;
+            GroupMemberOperation memberOperation = new GroupMemberOperation(TestHelpers.DefaultDocumentId, TestHelpers.DefaultGroupName, member, operation);
+            string json = JsonConvert.SerializeObject(memberOperation);
+            JObject obj = JObject.Parse(json);
+            Assert.True(obj.ContainsKey("groupId"));
+            Assert.True(obj.ContainsKey("groupName"));
+            Assert.True(obj.ContainsKey("member"));
+            Assert.True(obj.ContainsKey("operation"));
         }
     }
 }

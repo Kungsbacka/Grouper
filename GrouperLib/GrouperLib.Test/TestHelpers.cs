@@ -79,7 +79,7 @@ namespace GrouperLib.Test
             var defType = def.GetType();
             return (GrouperDocumentRule)Activator.CreateInstance(typeof(GrouperDocumentRule), BindingFlags.Instance | BindingFlags.NonPublic, binder: null, culture: null, args: new object[] {
                 null != defType.GetProperty("Name")  ? def.Name             : DefaultRuleName,
-                null != defType.GetProperty("Value") ? def.Value.ToString() : DefaultRuleValue
+                null != defType.GetProperty("Value") ? def.Value?.ToString() : DefaultRuleValue
             });
         }
     }

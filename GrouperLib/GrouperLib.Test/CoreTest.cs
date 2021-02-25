@@ -1,6 +1,9 @@
 ﻿using System;
 using Xunit;
 using GrouperLib.Core;
+using Moq;
+using System.Collections.Generic;
+using Moq.Protected;
 
 namespace GrouperLib.Test
 {
