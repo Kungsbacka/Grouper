@@ -13,14 +13,5 @@ namespace GrouperLib.Core
             }
             return value.Equals(other, StringComparison.OrdinalIgnoreCase);
         }
-
-        public static string NullIfEmpty(this string str)
-        {
-            if (string.IsNullOrEmpty(str))
-            {
-                return null;
-            }
-            return str;
-        }
     }
 }
