@@ -10,6 +10,14 @@ namespace GrouperApi.Controllers
     [ApiController]
     public class ErrorController : ControllerBase
     {
+
+        private readonly IStringResourceHelper _stringResourceHelper;
+
+        public ErrorController(IStringResourceHelper stringResourceHelper)
+        {
+            _stringResourceHelper = stringResourceHelper;
+        }
+
         [Route("/error")]
         public IActionResult Error()
         {
@@ -17,17 +25,17 @@ namespace GrouperApi.Controllers
             {
                 if (values.Count > 0)
                 {
-                    LanguageHelper.SetLanguage(values[0]);
+                    _stringResourceHelper.SetLanguage(values[0]);
                 }
             }
             var feature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
             if (feature?.Error is ChangeRatioException)
             {
-                return Problem(LanguageHelper.GetErrorText(ResourceString.ErrorBelowChangeLimit));
+                return Problem(_stringResourceHelper.GetString(ResourceString.ErrorBelowChangeLimit));
             }
             if (feature?.Error is InvalidGrouperDocumentException)
             {
-                return Problem(LanguageHelper.GetErrorText(ResourceString.ErrorGrouperDocumentNotValid));
+                return Problem(_stringResourceHelper.GetString(ResourceString.ErrorGrouperDocumentNotValid));
             }
             return Problem();
         }

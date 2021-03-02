@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using GrouperLib.Backend;
 using GrouperLib.Config;
 using GrouperLib.Core;
@@ -19,10 +20,12 @@ namespace GrouperApi.Controllers
     public class DocumentController : ControllerBase
     {
         private readonly GrouperConfiguration _config;
+        private readonly IStringResourceHelper _stringResourceHelper;
 
-        public DocumentController(Microsoft.Extensions.Options.IOptions<GrouperConfiguration> config)
+        public DocumentController(IOptions<GrouperConfiguration> config, IStringResourceHelper stringResourceHelper)
         {
             _config = config.Value ?? throw new ArgumentNullException();
+            _stringResourceHelper = stringResourceHelper;
         }
 
         [HttpGet("all")]
@@ -161,7 +164,7 @@ namespace GrouperApi.Controllers
         [HttpPost("validate")]
         public async Task<IActionResult> ValidateDocument(string lang)
         {
-            LanguageHelper.SetLanguage(lang);
+            _stringResourceHelper.SetLanguage(lang);
             using StreamReader stream = new StreamReader(Request.Body);
             string document = await stream.ReadToEndAsync();
             List<ValidationError> errors = new List<ValidationError>();

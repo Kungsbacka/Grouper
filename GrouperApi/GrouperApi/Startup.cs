@@ -1,4 +1,5 @@
 using GrouperLib.Config;
+using GrouperLib.Language;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -21,6 +22,7 @@ namespace GrouperApi
             services.AddControllers()
                 .AddNewtonsoftJson();
             services.Configure<GrouperConfiguration>(Configuration.GetSection("Grouper"));
+            services.AddSingleton<IStringResourceHelper, StringResourceHelper>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
