@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json;
-using GrouperLib.Language;
+﻿using GrouperLib.Language;
+using Newtonsoft.Json;
 
 namespace GrouperLib.Core
 {
@@ -11,7 +11,7 @@ namespace GrouperLib.Core
         [JsonProperty(PropertyName = "errorId", Order = 2)]
         public string ErrorId { get; }
 
-        [JsonProperty(PropertyName = "errorId", Order = 3)]
+        [JsonProperty(PropertyName = "errorMessage", Order = 3)]
         public string ErrorMessage { get; }
 
         public ValidationError(string propertyName, string errorId)
