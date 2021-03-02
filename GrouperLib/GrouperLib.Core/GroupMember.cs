@@ -1,6 +1,6 @@
-﻿using System;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using System;
 
 namespace GrouperLib.Core
 {
@@ -11,7 +11,7 @@ namespace GrouperLib.Core
 
         [JsonProperty(PropertyName = "displayName")]
         public string DisplayName { get; }
-        
+
         [JsonProperty(PropertyName = "memberType")]
         [JsonConverter(typeof(StringEnumConverter))]
         public GroupMemberTypes MemberType { get; }

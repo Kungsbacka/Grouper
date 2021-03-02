@@ -159,7 +159,7 @@ namespace GrouperLib.Database
             );
         }
 
-        public async Task<IList<GrouperDocumentEntry>> GetEntriesByProcessingInterval(int min, int max = int.MaxValue, GroupStores? store  = null, bool includeUnpublished = false, bool includeDeleted = false)
+        public async Task<IList<GrouperDocumentEntry>> GetEntriesByProcessingInterval(int min, int max = int.MaxValue, GroupStores? store = null, bool includeUnpublished = false, bool includeDeleted = false)
         {
             return await InternalGetDocumentEntriesAsync("dbo.get_document_by_processing_interval",
                 new Dictionary<string, object>() {

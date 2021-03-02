@@ -28,7 +28,7 @@ namespace GrouperLib.Store
             _dnCache = MemoryCache.Default;
             _cachePolicy = new CacheItemPolicy()
             {
-                SlidingExpiration = TimeSpan.FromMinutes(30),                
+                SlidingExpiration = TimeSpan.FromMinutes(30),
             };
         }
 

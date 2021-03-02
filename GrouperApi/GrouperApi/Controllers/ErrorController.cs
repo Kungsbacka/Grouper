@@ -1,9 +1,9 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
+﻿using GrouperLib.Backend;
+using GrouperLib.Core;
+using GrouperLib.Language;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using GrouperLib.Language;
-using GrouperLib.Backend;
-using GrouperLib.Core;
 
 namespace GrouperApi.Controllers
 {

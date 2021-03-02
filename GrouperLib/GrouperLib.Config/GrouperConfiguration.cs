@@ -10,7 +10,7 @@ namespace GrouperLib.Config
 {
     public class GrouperConfiguration
     {
-        public enum Role {GroupStore, MemberSource, GroupOwnerSource}
+        public enum Role { GroupStore, MemberSource, GroupOwnerSource }
 
         public Role[] AzureAdRole { get; set; }
         public string AzureAdClientSecret { get; set; }

@@ -1,16 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Options;
-using GrouperLib.Backend;
+﻿using GrouperLib.Backend;
 using GrouperLib.Config;
 using GrouperLib.Core;
 using GrouperLib.Database;
 using GrouperLib.Language;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace GrouperApi.Controllers
 {
@@ -93,7 +93,7 @@ namespace GrouperApi.Controllers
                 return BadRequest();
             }
             Grouper backend = GetGrouperBackend();
-            GroupMemberDiff diff =  await backend.GetMemberDiffAsync(entry.Document, unchanged);
+            GroupMemberDiff diff = await backend.GetMemberDiffAsync(entry.Document, unchanged);
             return Ok(diff);
         }
 

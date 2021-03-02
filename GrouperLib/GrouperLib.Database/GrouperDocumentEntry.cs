@@ -22,7 +22,7 @@ namespace GrouperLib.Database
         }
         private readonly List<string> _tags;
 
-        public GrouperDocumentEntry(GrouperDocument document,int revision, DateTime revisionCreated, bool isPublished, bool isDeleted, string[] tags)
+        public GrouperDocumentEntry(GrouperDocument document, int revision, DateTime revisionCreated, bool isPublished, bool isDeleted, string[] tags)
         {
             if (revision < 1)
             {

@@ -42,7 +42,8 @@ namespace GrouperLib.Core
         }
         private readonly List<GrouperDocumentMember> _members;
 
-        public GroupMemberTypes MemberType {
+        public GroupMemberTypes MemberType
+        {
             get
             {
                 return Store == GroupStores.OnPremAd ? GroupMemberTypes.OnPremAd : GroupMemberTypes.AzureAd;
@@ -80,7 +81,7 @@ namespace GrouperLib.Core
 
         public bool ShouldSerializeOwner() => Store == GroupStores.AzureAd;
 
-        public bool ShouldSerializeProcessingInterval() =>  ProcessingInterval > 0;
+        public bool ShouldSerializeProcessingInterval() => ProcessingInterval > 0;
 
         public bool ShouldSerializeMemberType() => false;
 

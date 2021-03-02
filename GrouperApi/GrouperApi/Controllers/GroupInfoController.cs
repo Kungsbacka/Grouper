@@ -1,10 +1,11 @@
-﻿using System;
-using System.Threading.Tasks;
-using GrouperLib.Backend;
+﻿using GrouperLib.Backend;
 using GrouperLib.Config;
 using GrouperLib.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using System;
+using System.Threading.Tasks;
 
 namespace GrouperApi.Controllers
 {
@@ -15,7 +16,7 @@ namespace GrouperApi.Controllers
     {
         private readonly GrouperConfiguration _config;
 
-        public GroupInfoController(Microsoft.Extensions.Options.IOptions<GrouperConfiguration> config)
+        public GroupInfoController(IOptions<GrouperConfiguration> config)
         {
             _config = config.Value ?? throw new ArgumentNullException();
         }
