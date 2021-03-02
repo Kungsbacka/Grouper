@@ -33,7 +33,7 @@ namespace GrouperLib.Core
 
         public void ExceptWith(GroupMemberCollection collection) => _members.ExceptWith(collection.AsEnumerable());
 
-        protected void SymmetricExceptWith(GroupMemberCollection collection) => _members.SymmetricExceptWith(collection.AsEnumerable());
+        public void SymmetricExceptWith(GroupMemberCollection collection) => _members.SymmetricExceptWith(collection.AsEnumerable());
 
         public void IntersectWith(GroupMemberCollection collection) => _members.IntersectWith(collection.AsEnumerable());
 
