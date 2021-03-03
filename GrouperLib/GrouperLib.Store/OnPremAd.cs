@@ -240,11 +240,15 @@ namespace GrouperLib.Store
             {
                 using (DirectoryEntry directoryEntry = new DirectoryEntry($"LDAP://<GUID={groupId}>"))
                 {
-                    directoryEntry.RefreshCache(new string[] { "displayName" });
+                    directoryEntry.RefreshCache(new string[] { "displayName", "cn" });
                     string displayName = null;
                     if (directoryEntry.Properties["displayName"].Count == 1)
                     {
                         displayName = (string)directoryEntry.Properties["displayName"][0];
+                    }
+                    if (displayName == null)
+                    {
+                        displayName = (string)directoryEntry.Properties["cn"][0];
                     }
                     groupInfo = new GroupInfo(groupId, displayName, GroupStores.OnPremAd);
                 }
