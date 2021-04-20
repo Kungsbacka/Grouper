@@ -17,7 +17,7 @@ namespace GrouperLib.Store
             return new GroupNotFoundException($"Group with id {GroupId} not found in store.", innerException);
         }
 
-        public static GroupNotFoundException Create(Guid id) => Create(id, null);
+        public static GroupNotFoundException Create(Guid groupId) => Create(groupId, null);
 
     }
 
