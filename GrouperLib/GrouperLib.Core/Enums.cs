@@ -2,7 +2,7 @@
 {
     public enum GroupOwnerActions { AddAll, KeepExisting, MatchSource }
     public enum GroupMemberActions { Include, Exclude }
-    public enum GroupStores { OnPremAd, AzureAd, Exo }
+    public enum GroupStores { OnPremAd, AzureAd, Exo, OpenE }
     public enum GroupMemberSources { Personalsystem, Elevregister, OnPremAdGroup, OnPremAdQuery, AzureAdGroup, ExoGroup, CustomView, Static }
     public enum GroupMemberTypes { OnPremAd, AzureAd }
     public enum GroupMemberOperations { Add, Remove, None }

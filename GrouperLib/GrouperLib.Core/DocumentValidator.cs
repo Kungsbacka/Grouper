@@ -45,7 +45,8 @@ namespace GrouperLib.Core
         private static readonly Dictionary<GroupStores, ResourceLocation> storeLocations = new Dictionary<GroupStores, ResourceLocation>() {
             { GroupStores.OnPremAd, ResourceLocation.OnPrem },
             { GroupStores.AzureAd, ResourceLocation.Azure },
-            { GroupStores.Exo, ResourceLocation.Azure }
+            { GroupStores.Exo, ResourceLocation.Azure },
+            { GroupStores.OpenE, ResourceLocation.OnPrem }
         };
 
         private static readonly Regex guidRegex = new Regex(

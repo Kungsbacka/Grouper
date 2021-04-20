@@ -46,7 +46,14 @@ namespace GrouperLib.Core
         {
             get
             {
-                return Store == GroupStores.OnPremAd ? GroupMemberTypes.OnPremAd : GroupMemberTypes.AzureAd;
+                switch (Store)
+                {
+                    case GroupStores.OnPremAd:
+                    case GroupStores.OpenE:
+                        return GroupMemberTypes.OnPremAd;
+                    default:
+                        return GroupMemberTypes.AzureAd;
+                }
             }
         }
 

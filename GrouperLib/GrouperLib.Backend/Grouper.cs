@@ -77,6 +77,10 @@ namespace GrouperLib.Backend
             {
                 grouper.AddLogger(new LogDb(config));
             }
+            if (!string.IsNullOrEmpty(config.OpenEDatabaseConnectionString))
+            {
+                grouper.AddGroupStore(new OpenE(config));
+            }
             return grouper;
         }
 

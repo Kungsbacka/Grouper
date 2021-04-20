@@ -31,6 +31,8 @@ namespace GrouperLib.Config
         public string MemberDatabaseConnectionString { get; set; }
         public string DocumentDatabaseConnectionString { get; set; }
         public string LogDatabaseConnectionString { get; set; }
+        public string OpenEDatabaseConnectionString { get; set; }
+
         public double ChangeRatioLowerLimit { get; set; }
 
         public bool AzureAdHasRole(Role role) => AzureAdRole.Any(r => r.Equals(role));
