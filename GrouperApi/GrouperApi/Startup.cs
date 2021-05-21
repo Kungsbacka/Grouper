@@ -1,3 +1,4 @@
+using GrouperLib.Backend;
 using GrouperLib.Config;
 using GrouperLib.Language;
 using Microsoft.AspNetCore.Builder;
@@ -22,19 +23,26 @@ namespace GrouperApi
             services.AddControllers()
                 .AddNewtonsoftJson();
             services.Configure<GrouperConfiguration>(Configuration.GetSection("Grouper"));
+            GrouperConfiguration config = new GrouperConfiguration();
+            ConfigurationBinder.Bind(Configuration.GetSection("Grouper"), config);
             services.AddSingleton<IStringResourceHelper, StringResourceHelper>();
+            services.AddSingleton((_) =>
+            {
+                return Grouper.CreateFromConfig(config);
+            });
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+
+            app.UseDeveloperExceptionPage();
             if (env.IsDevelopment())
             {
-                // app.UseDeveloperExceptionPage();
-                app.UseExceptionHandler("/error");
+                // app.UseExceptionHandler("/error");
             }
             else
             {
-                app.UseExceptionHandler("/error");
+                // app.UseExceptionHandler("/error");
             }
 
             app.UseHttpsRedirection();

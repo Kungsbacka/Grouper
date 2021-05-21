@@ -21,11 +21,13 @@ namespace GrouperApi.Controllers
     {
         private readonly GrouperConfiguration _config;
         private readonly IStringResourceHelper _stringResourceHelper;
+        private readonly Grouper _grouperBackend;
 
-        public DocumentController(IOptions<GrouperConfiguration> config, IStringResourceHelper stringResourceHelper)
+        public DocumentController(IOptions<GrouperConfiguration> config, Grouper grouper, IStringResourceHelper stringResourceHelper)
         {
             _config = config.Value ?? throw new ArgumentNullException();
             _stringResourceHelper = stringResourceHelper;
+            _grouperBackend = grouper ?? throw new ArgumentNullException(nameof(grouper));
         }
 
         [HttpGet("all")]
@@ -92,16 +94,15 @@ namespace GrouperApi.Controllers
             {
                 return BadRequest();
             }
-            Grouper backend = GetGrouperBackend();
-            GroupMemberDiff diff = await backend.GetMemberDiffAsync(entry.Document, unchanged);
+            // Grouper backend = GetGrouperBackend();
+            GroupMemberDiff diff = await _grouperBackend.GetMemberDiffAsync(entry.Document, unchanged);
             return Ok(diff);
         }
 
         [HttpPost("diff")]
         public async Task<IActionResult> GetDiffAsync(bool unchanged)
         {
-            Grouper backend = GetGrouperBackend();
-            GroupMemberDiff diff = await backend.GetMemberDiffAsync(await Helper.MakeDocumentAsync(Request), unchanged);
+            GroupMemberDiff diff = await _grouperBackend.GetMemberDiffAsync(await Helper.MakeDocumentAsync(Request), unchanged);
             return Ok(diff);
         }
 
@@ -170,11 +171,6 @@ namespace GrouperApi.Controllers
             List<ValidationError> errors = new List<ValidationError>();
             GrouperDocument.FromJson(document, errors);
             return Ok(errors);
-        }
-
-        private Grouper GetGrouperBackend()
-        {
-            return Grouper.CreateFromConfig(_config);
         }
 
         private DocumentDb GetDocumentDb()
