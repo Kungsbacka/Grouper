@@ -58,9 +58,9 @@ namespace GrouperLib.Core
         }
 
         [JsonConstructor]
-#pragma warning disable IDE0051 // Remove unused private members - Used when deserializing from JSON
+#pragma warning disable IDE0051 // "Remove unused private members" - Used when deserializing from JSON
         private GrouperDocument(Guid id, int interval, Guid groupId, string groupName, GroupStores store, GroupOwnerActions owner, List<GrouperDocumentMember> members)
-#pragma warning restore IDE0051 // Remove unused private members
+#pragma warning restore IDE0051 // "Remove unused private members"
         {
             Id = id;
             ProcessingInterval = interval;

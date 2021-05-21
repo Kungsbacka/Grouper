@@ -21,7 +21,7 @@ namespace GrouperLib.Core
         {
             get
             {
-                return _rules.AsReadOnly();
+                return _rules?.AsReadOnly();
             }
         }
         private readonly List<GrouperDocumentRule> _rules;
@@ -29,9 +29,9 @@ namespace GrouperLib.Core
         public bool ShouldSerializeMemberType() => false;
 
         [JsonConstructor]
-#pragma warning disable IDE0051 // Remove unused private members - Used when deserializing from JSON
+#pragma warning disable IDE0051 // "Remove unused private members" - Used when deserializing from JSON
         private GrouperDocumentMember(GroupMemberSources source, GroupMemberActions action, List<GrouperDocumentRule> rules)
-#pragma warning restore IDE0051 // Remove unused private members
+#pragma warning restore IDE0051 // "Remove unused private members"
         {
             Source = source;
             Action = action;

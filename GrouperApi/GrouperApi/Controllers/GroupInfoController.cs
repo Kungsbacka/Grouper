@@ -14,11 +14,11 @@ namespace GrouperApi.Controllers
     [Route("[controller]")]
     public class GroupInfoController : ControllerBase
     {
-        private readonly GrouperConfiguration _config;
+        private readonly Grouper _grouperBackend;
 
-        public GroupInfoController(IOptions<GrouperConfiguration> config)
+        public GroupInfoController(Grouper grouper)
         {
-            _config = config.Value ?? throw new ArgumentNullException();
+            _grouperBackend = grouper ?? throw new ArgumentNullException(nameof(grouper));
         }
 
         [HttpPost]
@@ -26,18 +26,13 @@ namespace GrouperApi.Controllers
         {
             try
             {
-                GroupInfo info = await GetGrouperBackend().GetGroupInfoAsync(await Helper.MakeDocumentAsync(Request));
+                GroupInfo info = await _grouperBackend.GetGroupInfoAsync(await Helper.MakeDocumentAsync(Request));
                 return Ok(info);
             }
             catch
             {
                 return Ok();
             }
-        }
-
-        private Grouper GetGrouperBackend()
-        {
-            return Grouper.CreateFromConfig(_config);
         }
     }
 }
