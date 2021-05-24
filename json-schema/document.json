@@ -52,7 +52,8 @@
       "enum": [
         "AzureAd",
         "OnPremAd",
-        "Exo"
+        "Exo",
+        "OpenE"
       ],
       "title": "Group store",
       "default": "",
