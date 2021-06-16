@@ -34,23 +34,14 @@ namespace GrouperApi
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-
             app.UseDeveloperExceptionPage();
             if (env.IsDevelopment())
             {
-                // app.UseExceptionHandler("/error");
+                app.UseExceptionHandler("/error");
             }
-            else
-            {
-                // app.UseExceptionHandler("/error");
-            }
-
             app.UseHttpsRedirection();
-
             app.UseRouting();
-
             app.UseAuthorization();
-
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
