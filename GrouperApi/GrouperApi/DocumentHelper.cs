@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace GrouperApi
 {
-    internal static class Helper
+    internal static class DocumentHelper
     {
         public static async Task<GrouperDocument> MakeDocumentAsync(HttpRequest request)
         {

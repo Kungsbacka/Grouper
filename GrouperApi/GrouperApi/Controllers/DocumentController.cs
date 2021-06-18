@@ -21,13 +21,11 @@ namespace GrouperApi.Controllers
     {
         private readonly GrouperConfiguration _config;
         private readonly IStringResourceHelper _stringResourceHelper;
-        private readonly Grouper _grouperBackend;
 
-        public DocumentController(IOptions<GrouperConfiguration> config, Grouper grouper, IStringResourceHelper stringResourceHelper)
+        public DocumentController(IOptions<GrouperConfiguration> config, IStringResourceHelper stringResourceHelper)
         {
             _config = config.Value ?? throw new ArgumentNullException();
             _stringResourceHelper = stringResourceHelper;
-            _grouperBackend = grouper ?? throw new ArgumentNullException(nameof(grouper));
         }
 
         [HttpGet("all")]
@@ -86,26 +84,6 @@ namespace GrouperApi.Controllers
             return Ok(entries);
         }
 
-        [HttpGet("diff/{id:guid}")]
-        public async Task<IActionResult> GetDiffForStoredDocumentAsync(Guid id, bool unchanged)
-        {
-            GrouperDocumentEntry entry = (await GetDocumentDb().GetEntriesByDocumentIdAsync(id)).FirstOrDefault();
-            if (entry == null)
-            {
-                return BadRequest();
-            }
-            // Grouper backend = GetGrouperBackend();
-            GroupMemberDiff diff = await _grouperBackend.GetMemberDiffAsync(entry.Document, unchanged);
-            return Ok(diff);
-        }
-
-        [HttpPost("diff")]
-        public async Task<IActionResult> GetDiffAsync(bool unchanged)
-        {
-            GroupMemberDiff diff = await _grouperBackend.GetMemberDiffAsync(await Helper.MakeDocumentAsync(Request), unchanged);
-            return Ok(diff);
-        }
-
         [HttpPost("publish/{id:guid}")]
         public async Task<IActionResult> PublishDocumentAsync(Guid id)
         {
@@ -144,7 +122,7 @@ namespace GrouperApi.Controllers
         [HttpPost]
         public async Task<IActionResult> StoreDocumentAsync()
         {
-            await GetDocumentDb().StoreDocumentAsync(await Helper.MakeDocumentAsync(Request));
+            await GetDocumentDb().StoreDocumentAsync(await DocumentHelper.MakeDocumentAsync(Request));
             return Ok();
         }
 

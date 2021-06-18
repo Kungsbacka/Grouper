@@ -26,7 +26,7 @@ namespace GrouperApi.Controllers
         {
             try
             {
-                GroupInfo info = await _grouperBackend.GetGroupInfoAsync(await Helper.MakeDocumentAsync(Request));
+                GroupInfo info = await _grouperBackend.GetGroupInfoAsync(await DocumentHelper.MakeDocumentAsync(Request));
                 return Ok(info);
             }
             catch

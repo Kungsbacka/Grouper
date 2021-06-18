@@ -1,9 +1,7 @@
 ﻿using GrouperLib.Backend;
-using GrouperLib.Config;
 using GrouperLib.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -22,10 +20,17 @@ namespace GrouperApi.Controllers
             _grouperBackend = grouper ?? throw new ArgumentNullException(nameof(grouper));
         }
 
+        [HttpPost("diff")]
+        public async Task<IActionResult> GetDiffAsync(bool unchanged)
+        {
+            GroupMemberDiff diff = await _grouperBackend.GetMemberDiffAsync(await DocumentHelper.MakeDocumentAsync(Request), unchanged);
+            return Ok(diff);
+        }
+
         [HttpPost("invoke")]
         public async Task<IActionResult> InvokeGrouper(bool ignoreChangelimit)
         {
-            GrouperDocument document = await Helper.MakeDocumentAsync(Request);
+            GrouperDocument document = await DocumentHelper.MakeDocumentAsync(Request);
             GroupMemberDiff diff = await _grouperBackend.GetMemberDiffAsync(document);
             await _grouperBackend.UpdateGroupAsync(diff, ignoreChangelimit);
             var changes = new List<OperationalLogItem>();
