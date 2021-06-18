@@ -17,13 +17,13 @@ namespace GrouperLib.Store
         private readonly CacheItemPolicy _cachePolicy;
         private const uint LDAP_NO_SUCH_OBJECT = 0x80072030;
 
-        public OnPremAd(string userName, string password, bool passwordIsDpapiProtected)
+        public OnPremAd(string userName, string password)
         {
             // userName and password are optional
             if (!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(password))
             {
                 _userName = userName;
-                _password = GrouperConfiguration.GetSensitiveString(password, passwordIsDpapiProtected);
+                _password = password;
             }
             _dnCache = MemoryCache.Default;
             _cachePolicy = new CacheItemPolicy()
@@ -34,12 +34,11 @@ namespace GrouperLib.Store
 
         public OnPremAd(GrouperConfiguration config) : this(
             userName: config.OnPremAdUserName,
-            password: config.OnPremAdPassword,
-            passwordIsDpapiProtected: config.OnPremAdPasswordIsDpapiProtected)
+            password: config.OnPremAdPassword)
         {
         }
 
-        public OnPremAd() : this(null, null, false)
+        public OnPremAd() : this(null, null)
         {
         }
 

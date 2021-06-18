@@ -28,7 +28,7 @@ namespace GrouperLib.Store
             RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant
         );
 
-        public Exo(string userName, string password, bool passwordIsDpapiProtected)
+        public Exo(string userName, string password)
         {
             if (string.IsNullOrEmpty(userName))
             {
@@ -38,9 +38,8 @@ namespace GrouperLib.Store
             {
                 throw new ArgumentNullException(nameof(password));
             }
-            string plaintextPassword = GrouperConfiguration.GetSensitiveString(password, passwordIsDpapiProtected);
             SecureString securePassword = new SecureString();
-            foreach (char c in plaintextPassword)
+            foreach (char c in password)
             {
                 securePassword.AppendChar(c);
             }
@@ -49,8 +48,7 @@ namespace GrouperLib.Store
 
         public Exo(GrouperConfiguration config) : this(
             userName: config.ExchangeUserName,
-            password: config.ExchangePassword,
-            passwordIsDpapiProtected: config.ExchangePasswordIsDpapiProtected)
+            password: config.ExchangePassword)
         {
         }
 

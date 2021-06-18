@@ -24,7 +24,7 @@ namespace GrouperLib.Store
             RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant
         );
 
-        public AzureAd(string tenantId, string clientId, string clientSecret, bool clientSecretIsDpapiProtected)
+        public AzureAd(string tenantId, string clientId, string clientSecret)
         {
             if (!Guid.TryParse(tenantId, out _))
             {
@@ -39,15 +39,14 @@ namespace GrouperLib.Store
                 throw new ArgumentNullException(nameof(clientSecret));
             }
             _clientId = clientId;
-            _clientSecret = GrouperConfiguration.GetSensitiveString(clientSecret, clientSecretIsDpapiProtected);
+            _clientSecret = clientSecret;
             _authorityUri = new Uri($"https://login.microsoftonline.com/{tenantId}");
         }
 
         public AzureAd(GrouperConfiguration config) : this(
             tenantId: config.AzureAdTenantId,
             clientId: config.AzureAdClientId,
-            clientSecret: config.AzureAdClientSecret,
-            clientSecretIsDpapiProtected: config.AzureAdClientSecretIsDpapiProtected)
+            clientSecret: config.AzureAdClientSecret)
         {
         }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection;
@@ -10,39 +11,75 @@ namespace GrouperLib.Config
 {
     public class GrouperConfiguration
     {
+        private readonly HashSet<string> _dpapiProtectedSettings = new HashSet<string>();
+        private string azureAdClientSecret;
+        private string azureAdClientId;
+        private string azureAdTenantId;
+        private string exchangeUserName;
+        private string exchangePassword;
+        private string onPremAdUserName;
+        private string onPremAdPassword;
+        private string memberDatabaseConnectionString;
+        private string documentDatabaseConnectionString;
+        private string logDatabaseConnectionString;
+        private string openEDatabaseConnectionString;
+
+
+        public string[] DpapiProtectedSettings
+        {
+            get
+            {
+                return _dpapiProtectedSettings.ToArray();
+            }
+            set
+            {
+                _dpapiProtectedSettings.Clear();
+                _dpapiProtectedSettings.UnionWith(value);
+            }
+        }
+
         public enum Role { GroupStore, MemberSource, GroupOwnerSource }
 
         public Role[] AzureAdRole { get; set; }
-        public string AzureAdClientSecret { get; set; }
-        public bool AzureAdClientSecretIsDpapiProtected { get; set; }
-        public string AzureAdClientId { get; set; }
-        public string AzureAdTenantId { get; set; }
+
+        public string AzureAdClientSecret { get => Unprotect(nameof(AzureAdClientSecret), azureAdClientSecret); set => azureAdClientSecret = value; }
+        public string AzureAdClientId { get => Unprotect(nameof(AzureAdClientId), azureAdClientId); set => azureAdClientId = value; }
+        public string AzureAdTenantId { get => Unprotect(nameof(AzureAdTenantId), azureAdTenantId); set => azureAdTenantId = value; }
 
         public Role[] ExchangeRole { get; set; }
-        public string ExchangeUserName { get; set; }
-        public string ExchangePassword { get; set; }
-        public bool ExchangePasswordIsDpapiProtected { get; set; }
+        public string ExchangeUserName { get => Unprotect(nameof(ExchangeUserName), exchangeUserName); set => exchangeUserName = value; }
+        public string ExchangePassword { get => Unprotect(nameof(ExchangePassword), exchangePassword); set => exchangePassword = value; }
 
         public Role[] OnPremAdRole { get; set; }
-        public string OnPremAdUserName { get; set; }
-        public string OnPremAdPassword { get; set; }
-        public bool OnPremAdPasswordIsDpapiProtected { get; set; }
+        public string OnPremAdUserName { get => Unprotect(nameof(OnPremAdUserName), onPremAdUserName); set => onPremAdUserName = value; }
+        public string OnPremAdPassword { get => Unprotect(nameof(OnPremAdPassword), onPremAdPassword); set => onPremAdPassword = value; }
 
-        public string MemberDatabaseConnectionString { get; set; }
-        public string DocumentDatabaseConnectionString { get; set; }
-        public string LogDatabaseConnectionString { get; set; }
-        public string OpenEDatabaseConnectionString { get; set; }
+        public string MemberDatabaseConnectionString { get => Unprotect(nameof(MemberDatabaseConnectionString), memberDatabaseConnectionString); set => memberDatabaseConnectionString = value; }
+        public string DocumentDatabaseConnectionString { get => Unprotect(nameof(DocumentDatabaseConnectionString), documentDatabaseConnectionString); set => documentDatabaseConnectionString = value; }
+        public string LogDatabaseConnectionString { get => Unprotect(nameof(LogDatabaseConnectionString), logDatabaseConnectionString); set => logDatabaseConnectionString = value; }
+        public string OpenEDatabaseConnectionString { get => Unprotect(nameof(OpenEDatabaseConnectionString), openEDatabaseConnectionString); set => openEDatabaseConnectionString = value; }
 
         public double ChangeRatioLowerLimit { get; set; }
 
         public bool AzureAdHasRole(Role role) => AzureAdRole.Any(r => r.Equals(role));
         public bool ExchangeHasRole(Role role) => ExchangeRole.Any(r => r.Equals(role));
         public bool OnPremAdHasRole(Role role) => OnPremAdRole.Any(r => r.Equals(role));
+        
+        private string Unprotect(string setting, string value)
+        {
+            if (!string.IsNullOrEmpty(value) && _dpapiProtectedSettings.Contains(setting))
+            {
+                byte[] secureBytes = Convert.FromBase64String(value);
+                byte[] unprotectedBytes = ProtectedData.Unprotect(secureBytes, null, DataProtectionScope.CurrentUser);
+                return Encoding.Unicode.GetString(unprotectedBytes);
+            }
+            return value;
+        }
 
         public static GrouperConfiguration CreateFromHashtable(Hashtable hashtable)
         {
             GrouperConfiguration config = new GrouperConfiguration();
-            foreach (PropertyInfo propertyInfo in config.GetType().GetProperties())
+            foreach (PropertyInfo propertyInfo in config.GetType().GetProperties(BindingFlags.Public))
             {
                 if (hashtable.ContainsKey(propertyInfo.Name))
                 {
@@ -53,6 +90,10 @@ namespace GrouperLib.Config
                     }
                     propertyInfo.SetValue(config, value);
                 }
+            }
+            if (hashtable.ContainsKey("DpapiProtectedSettings"))
+            {
+                config._dpapiProtectedSettings.UnionWith((string[])hashtable["DpapiProtectedSettings"]);
             }
             return config;
         }
@@ -85,23 +126,12 @@ namespace GrouperLib.Config
                     }
                 }
             }
-            return config;
-        }
-
-        public static string UnprotectString(string protectedString)
-        {
-            byte[] secureBytes = Convert.FromBase64String(protectedString);
-            byte[] unprotectedBytes = ProtectedData.Unprotect(secureBytes, null, DataProtectionScope.CurrentUser);
-            return Encoding.Unicode.GetString(unprotectedBytes);
-        }
-
-        public static string GetSensitiveString(string sensitive, bool isProtected)
-        {
-            if (isProtected)
+            string protectedSettings = appSettings["DpapiProtectedSettings"];
+            if (protectedSettings != null)
             {
-                return UnprotectString(sensitive);
+                config._dpapiProtectedSettings.UnionWith(protectedSettings.Split(','));
             }
-            return sensitive;
+            return config;
         }
     }
 }
