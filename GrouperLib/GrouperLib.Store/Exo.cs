@@ -1,26 +1,27 @@
 ﻿using GrouperLib.Config;
 using GrouperLib.Core;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Security;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-
-// Reference: https://blogs.msdn.microsoft.com/wushuai/2016/09/18/access-exchange-online-by-powershell-in-c/
 
 namespace GrouperLib.Store
 {
     public class Exo : IMemberSource, IGroupStore, IDisposable
     {
-        private readonly string _connectionUri = "https://outlook.office365.com/powershell";
-        private readonly string _configurationName = "Microsoft.Exchange";
-        private readonly PSCredential _credential;
+        private readonly X509Certificate2 _certificate;
+        private readonly string _appId;
+        private readonly string _organization;
         private Runspace _runspace;
-        private object _session;
+        private bool _initialized;
         private bool _disposed;
 
         private static readonly Regex guidRegex = new Regex(
@@ -28,205 +29,123 @@ namespace GrouperLib.Store
             RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant
         );
 
-        public Exo(string userName, string password)
+        public Exo(string organization, string appId, X509Certificate2 certificate)
         {
-            if (string.IsNullOrEmpty(userName))
-            {
-                throw new ArgumentNullException(nameof(userName));
-            }
-            if (string.IsNullOrEmpty(password))
-            {
-                throw new ArgumentNullException(nameof(password));
-            }
-            SecureString securePassword = new SecureString();
-            foreach (char c in password)
-            {
-                securePassword.AppendChar(c);
-            }
-            _credential = new PSCredential(userName, securePassword);
+            _organization = organization ?? throw new ArgumentNullException(nameof(organization));
+            _appId = appId ?? throw new ArgumentNullException(nameof(appId));
+            _certificate = certificate ?? throw new ArgumentNullException(nameof(certificate));
         }
 
-        public Exo(GrouperConfiguration config) : this(
-            userName: config.ExchangeUserName,
-            password: config.ExchangePassword)
+        public Exo(GrouperConfiguration config)
         {
-        }
+            _organization = config.ExchangeOrganization ?? throw new ArgumentNullException(nameof(config.ExchangeOrganization));
+            _appId = config.ExchangeAppId ?? throw new ArgumentNullException(nameof(config.ExchangeAppId));
+            
+            string certificateFilePath = config.ExchangeCertificateFilePath;
+            string certificateThumbprint = config.ExchangeCertificateThumbprint;
+            string certificateAsBase64 = config.ExchangeCertificateAsBase64;
+            string certificatePassword = "";
+            int num = (certificateFilePath   is null ? 0 : 1)
+                    + (certificateThumbprint is null ? 0 : 1)
+                    + (certificateAsBase64   is null ? 0 : 1);
 
-        private void CreateSession()
-        {
-            if (_runspace == null)
+            if (num != 1)
             {
-                InitialSessionState iss = InitialSessionState.CreateDefault();
-                _runspace = RunspaceFactory.CreateRunspace(iss);
-                _runspace.Open();
-                PowerShell ps = PowerShell.Create();
-                ps.Runspace = _runspace;
-                ps.Commands.AddCommand("New-PSSession")
-                    .AddParameter("ConfigurationName", _configurationName)
-                    .AddParameter("ConnectionUri", _connectionUri)
-                    .AddParameter("Credential", _credential)
-                    .AddParameter("Authentication", "Basic")
-                    .AddParameter("AllowRedirection", true);
-                var result = ps.Invoke();
-                if (ps.HadErrors || result.Count != 1)
+                throw new ArgumentException(
+                    $"You must specify one of {nameof(config.ExchangeCertificateFilePath)}, {nameof(config.ExchangeCertificateThumbprint)} or {nameof(config.ExchangeCertificateAsBase64)} in the configuration"
+                );
+            }
+
+            if (certificateFilePath is not null || certificateAsBase64 is not null)
+            {
+                certificatePassword = config.ExchangeCertificatePassword ?? throw new ArgumentNullException(nameof(config.ExchangeCertificatePassword));
+            }
+
+            if (certificateFilePath is not null)
+            {
+                _certificate = Helpers.GetCertificateFromFile(certificateFilePath, certificatePassword);
+                return;
+            }
+
+            if (certificateThumbprint is not null)
+            {
+                if (config.ExchangeCertificateStoreLocation is null)
                 {
-                    Exception exception = null;
-                    if (ps.Streams.Error.Count > 0)
-                    {
-                        exception = ps.Streams.Error[0].Exception;
-                    }
-                    throw new InvalidOperationException("Failed to connect to Exchange Online", exception);
+                    throw new ArgumentNullException(
+                        $"If certificate is loaded from store {nameof(config.ExchangeCertificateStoreLocation)} must be specified in the configuration"
+                    );
                 }
-                _session = result[0];
+
+                _certificate = Helpers.GetCertificateFromStore(certificateThumbprint, config.ExchangeCertificateStoreLocation.Value);
+                return;
             }
+
+            _certificate = Helpers.GetCertificateFromBase64String(certificateAsBase64, certificatePassword);
         }
 
-        // Investigate how to make this async
-        // ?? await Task.Factory.FromAsync(_ps.BeginInvoke(), pResult => _ps.EndInvoke(pResult));
-        private Collection<PSObject> InvokeCommand(string command)
+        private void Connect()
         {
-            CreateSession();
-            using PowerShell ps = PowerShell.Create()
-                .AddCommand("Invoke-Command")
-                .AddParameter("ScriptBlock", ScriptBlock.Create(command))
-                .AddParameter("Session", _session);
+            if (_initialized)
+            {
+                return;
+            }
+
+            if (_runspace != null)
+            {
+                _runspace.Dispose();
+                _runspace = null;
+            }
+
+            InitialSessionState iss = InitialSessionState.CreateDefault2();
+            iss.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.RemoteSigned;
+            string script = @"
+                param($Organization, $AppId, $Certificate)
+                    Import-Module ExchangeOnlineManagement -MinimumVersion '2.0.5'
+                    $params = @{
+                        Organization = $Organization
+                        AppId = $AppId
+                        Certificate = $Certificate
+                        CommandName = @('Get-DistributionGroup','Get-DistributionGroupMember','Add-DistributionGroupMember','Remove-DistributionGroupMember')
+                        ShowBanner = $false
+                        ShowProgress = $false
+                    }
+                    Connect-ExchangeOnline @params
+            ";
+            _runspace = RunspaceFactory.CreateRunspace(iss);
+            _runspace.Open();
+            using PowerShell ps = PowerShell.Create();
             ps.Runspace = _runspace;
+            ps.AddScript(script)
+                .AddParameter("Organization", _organization)
+                .AddParameter("AppId", _appId)
+                .AddParameter("Certificate", _certificate);
             var result = ps.Invoke();
             if (ps.HadErrors)
             {
-                if (ps.Streams.Error.Count > 0)
-                {
-                    throw ps.Streams.Error[0].Exception;
-                }
-                throw new InvalidOperationException($"An unknown error occured while executing command {command}");
+                throw new AggregateException("Error creating Exchange Online PowerShell session",
+                    ps.Streams.Error.Select(e => e.Exception).ToArray());
             }
+
+            _initialized = true;
+        }     
+
+        private Collection<PSObject> InvokeCommand(string command, IDictionary parameters)
+        {
+            Connect();
+            using PowerShell ps = PowerShell.Create();
+            ps.Runspace = _runspace;
+            ps.AddCommand(command).AddParameters(parameters);    
+            var result = ps.Invoke();
+            if (ps.HadErrors)
+            {
+                if (ps.HadErrors || result.Count != 1)
+                {
+                    throw new AggregateException($"Error while invoking command {command}",
+                        ps.Streams.Error.Select(e => e.Exception).ToArray());
+                }
+            }
+
             return result;
-        }
-
-        public async Task GetGroupMembersAsync(GroupMemberCollection memberCollection, Guid groupId)
-        {
-            string command = $"Get-DistributionGroupMember -Identity '{groupId}' -ErrorAction 'Stop'";
-            Collection<PSObject> result;
-            try
-            {
-                result = InvokeCommand(command);
-            }
-            catch (RemoteException ex)
-            {
-                if (IsNotFoundError(ex))
-                {
-                    Exception notFoundException = CreateNotFoundException(groupId, null, ex);
-                    if (notFoundException != null)
-                    {
-                        throw notFoundException;
-                    }
-                }
-                throw;
-            }
-            if (result != null)
-            {
-                foreach (var member in result)
-                {
-                    memberCollection.Add(new GroupMember(
-                        id: (string)member.Properties["ExternalDirectoryObjectId"].Value,
-                        displayName: (string)member.Properties["PrimarySmtpAddress"].Value,
-                        memberType: GroupMemberTypes.AzureAd
-                    ));
-                }
-            }
-            await Task.FromResult(0);
-        }
-
-        public async Task AddGroupMemberAsync(GroupMember member, Guid groupId)
-        {
-            if (member is null)
-            {
-                throw new ArgumentNullException(nameof(member));
-            }
-            if (member.MemberType != GroupMemberTypes.AzureAd)
-            {
-                throw new ArgumentException(nameof(member), "Can only add members of type 'AzureAd'");
-            }
-            string command = $"Add-DistributionGroupMember -Identity '{groupId}' -Member '{member.Id}' -ErrorAction 'Stop'";
-            try
-            {
-                InvokeCommand(command);
-            }
-            catch (RemoteException ex)
-            {
-                if (IsNotFoundError(ex))
-                {
-                    Exception notFoundException = CreateNotFoundException(groupId, member.Id, ex);
-                    if (notFoundException != null)
-                    {
-                        throw notFoundException;
-                    }
-                }
-                throw;
-            }
-            await Task.FromResult(0);
-        }
-
-        public async Task RemoveGroupMemberAsync(GroupMember member, Guid groupId)
-        {
-            if (member is null)
-            {
-                throw new ArgumentNullException(nameof(member));
-            }
-            if (member.MemberType != GroupMemberTypes.AzureAd)
-            {
-                throw new ArgumentException(nameof(member), "Can only remove members of type 'AzureAd'");
-            }
-            string command = $"Remove-DistributionGroupMember -Identity '{groupId}' -Member '{member.Id}' -Confirm:$false -ErrorAction 'Stop'";
-            try
-            {
-                InvokeCommand(command);
-            }
-            catch (RemoteException ex)
-            {
-                if (IsNotFoundError(ex))
-                {
-                    Exception notFoundException = CreateNotFoundException(groupId, member.Id, ex);
-                    if (notFoundException != null)
-                    {
-                        throw notFoundException;
-                    }
-                }
-                throw;
-            }
-            await Task.FromResult(0);
-        }
-
-        public async Task<GroupInfo> GetGroupInfoAsync(Guid groupId)
-        {
-            GroupInfo groupInfo = null;
-            string command = $"Get-DistributionGroup -Identity '{groupId}' -ErrorAction 'Stop'";
-            Collection<PSObject> result;
-            try
-            {
-                result = InvokeCommand(command);
-            }
-            catch (RemoteException ex)
-            {
-                if (IsNotFoundError(ex))
-                {
-                    Exception notFoundException = CreateNotFoundException(groupId, null, ex);
-                    if (notFoundException != null)
-                    {
-                        throw notFoundException;
-                    }
-                }
-                throw;
-            }
-            if (result != null && result.Count > 0)
-            {
-                groupInfo = new GroupInfo(
-                    id: groupId,
-                    displayName: (string)result[0].Properties["DisplayName"].Value,
-                    store: GroupStores.Exo
-                );
-            }
-            return await Task.FromResult(groupInfo);
         }
 
         private bool IsNotFoundError(RemoteException ex)
@@ -251,7 +170,170 @@ namespace GrouperLib.Store
                     break;
                 }
             }
+
             return exception;
+        }
+
+        public async Task GetGroupMembersAsync(GroupMemberCollection memberCollection, Guid groupId)
+        {
+            string command = "Get-DistributionGroupMember";
+            Hashtable parameters = new()
+            {
+                { "Identity", groupId.ToString() },
+                { "ErrorAction", "Stop"}
+            };
+
+            Collection<PSObject> result;
+            try
+            {
+                result = InvokeCommand(command, parameters);
+            }
+            catch (RemoteException ex)
+            {
+                if (IsNotFoundError(ex))
+                {
+                    Exception notFoundException = CreateNotFoundException(groupId, null, ex);
+                    if (notFoundException != null)
+                    {
+                        throw notFoundException;
+                    }
+                }
+                throw;
+            }
+
+            if (result != null)
+            {
+                foreach (var member in result)
+                {
+                    memberCollection.Add(new GroupMember(
+                        id: (string)member.Properties["ExternalDirectoryObjectId"].Value,
+                        displayName: (string)member.Properties["PrimarySmtpAddress"].Value,
+                        memberType: GroupMemberTypes.AzureAd
+                    ));
+                }
+            }
+
+            await Task.FromResult(0);
+        }
+
+        public async Task AddGroupMemberAsync(GroupMember member, Guid groupId)
+        {
+            if (member is null)
+            {
+                throw new ArgumentNullException(nameof(member));
+            }
+
+            if (member.MemberType != GroupMemberTypes.AzureAd)
+            {
+                throw new ArgumentException(nameof(member), "Can only add members of type 'AzureAd'");
+            }
+
+            string command = "Add-DistributionGroupMember";
+            Hashtable parameters = new()
+            {
+                { "Identity", groupId.ToString() },
+                { "Member", member.Id.ToString() },
+                { "ErrorAction", "Stop"}
+            };
+
+            try
+            {
+                InvokeCommand(command, parameters);
+            }
+            catch (RemoteException ex)
+            {
+                if (IsNotFoundError(ex))
+                {
+                    Exception notFoundException = CreateNotFoundException(groupId, member.Id, ex);
+                    if (notFoundException != null)
+                    {
+                        throw notFoundException;
+                    }
+                }
+                throw;
+            }
+
+            await Task.FromResult(0);
+        }
+
+        public async Task RemoveGroupMemberAsync(GroupMember member, Guid groupId)
+        {
+            if (member is null)
+            {
+                throw new ArgumentNullException(nameof(member));
+            }
+
+            if (member.MemberType != GroupMemberTypes.AzureAd)
+            {
+                throw new ArgumentException(nameof(member), "Can only remove members of type 'AzureAd'");
+            }
+
+            string command = "Remove-DistributionGroupMember";
+            Hashtable parameters = new()
+            {
+                { "Identity", groupId.ToString() },
+                { "Member", member.Id.ToString() },
+                { "Confirm", false },
+                { "ErrorAction", "Stop"}
+            };
+
+            try
+            {
+                InvokeCommand(command, parameters);
+            }
+            catch (RemoteException ex)
+            {
+                if (IsNotFoundError(ex))
+                {
+                    Exception notFoundException = CreateNotFoundException(groupId, member.Id, ex);
+                    if (notFoundException != null)
+                    {
+                        throw notFoundException;
+                    }
+                }
+                throw;
+            }
+            await Task.FromResult(0);
+        }
+
+        public async Task<GroupInfo> GetGroupInfoAsync(Guid groupId)
+        {
+            GroupInfo groupInfo = null;
+            string command = "Get-DistributionGroup";
+            Hashtable parameters = new()
+            {
+                { "Identity", groupId.ToString() },
+                { "ErrorAction", "Stop"}
+            };
+
+            Collection<PSObject> result;
+            try
+            {
+                result = InvokeCommand(command, parameters);
+            }
+            catch (RemoteException ex)
+            {
+                if (IsNotFoundError(ex))
+                {
+                    Exception notFoundException = CreateNotFoundException(groupId, null, ex);
+                    if (notFoundException != null)
+                    {
+                        throw notFoundException;
+                    }
+                }
+                throw;
+            }
+
+            if (result != null && result.Count > 0)
+            {
+                groupInfo = new GroupInfo(
+                    id: groupId,
+                    displayName: (string)result[0].Properties["DisplayName"].Value,
+                    store: GroupStores.Exo
+                );
+            }
+
+            return await Task.FromResult(groupInfo);
         }
 
         public async Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember, GroupMemberTypes memberType)
@@ -266,15 +348,11 @@ namespace GrouperLib.Store
             );
         }
 
-        public IEnumerable<GroupMemberSources> GetSupportedGrouperMemberSources()
-        {
-            return new GroupMemberSources[] { GroupMemberSources.ExoGroup };
-        }
+        public IEnumerable<GroupMemberSources> GetSupportedGrouperMemberSources() => 
+            new GroupMemberSources[] { GroupMemberSources.ExoGroup };
 
-        public IEnumerable<GroupStores> GetSupportedGroupStores()
-        {
-            return new GroupStores[] { GroupStores.Exo };
-        }
+        public IEnumerable<GroupStores> GetSupportedGroupStores() => 
+            new GroupStores[] { GroupStores.Exo };
 
         protected virtual void Dispose(bool disposing)
         {

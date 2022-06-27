@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -15,6 +16,7 @@ namespace GrouperLib.Store
     {
         readonly string _clientId;
         readonly string _clientSecret;
+        X509Certificate2 _certificate;
         readonly Uri _authorityUri;
         DateTimeOffset _tokenExpiresOn;
         GraphServiceClient _graphClient;
@@ -24,7 +26,27 @@ namespace GrouperLib.Store
             RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant
         );
 
+        // public AzureAd(string tenantId, string clientId, string clientSecret)
+        // public AzureAd(string tenantId, string clientId, string clientSecret)
+
+
         public AzureAd(string tenantId, string clientId, string clientSecret)
+        {
+            ValidateCommonParameters(tenantId, clientId);
+            _clientSecret = clientSecret ?? throw new ArgumentNullException(nameof(clientSecret));
+            _clientId = clientId;
+            _authorityUri = new Uri($"https://login.microsoftonline.com/{tenantId}");
+        }
+
+        public AzureAd(string tenantId, string clientId, X509Certificate2 certificate)
+        {
+            ValidateCommonParameters(tenantId, clientId);
+            _certificate = certificate ?? throw new ArgumentNullException(nameof(certificate));
+            _clientId = clientId;
+            _authorityUri = new Uri($"https://login.microsoftonline.com/{tenantId}");
+        }
+
+        private void ValidateCommonParameters(string tenantId, string clientId)
         {
             if (!Guid.TryParse(tenantId, out _))
             {
@@ -34,29 +56,83 @@ namespace GrouperLib.Store
             {
                 throw new ArgumentException(nameof(clientId), "Argument is not a valid GUID.");
             }
-            if (string.IsNullOrEmpty(clientSecret))
-            {
-                throw new ArgumentNullException(nameof(clientSecret));
-            }
-            _clientId = clientId;
-            _clientSecret = clientSecret;
-            _authorityUri = new Uri($"https://login.microsoftonline.com/{tenantId}");
         }
 
-        public AzureAd(GrouperConfiguration config) : this(
-            tenantId: config.AzureAdTenantId,
-            clientId: config.AzureAdClientId,
-            clientSecret: config.AzureAdClientSecret)
+        public AzureAd(GrouperConfiguration config)
         {
+            string tenantId = config.AzureAdTenantId;
+            string clientId = config.AzureAdClientId;
+            ValidateCommonParameters(tenantId, clientId);
+
+
+            string clientSecret = config.AzureAdClientSecret;
+            string certificateFilePath = config.AzureAdCertificateFilePath;
+            string certificateThumbprint = config.AzureAdCertificateThumbprint;
+            string certificateAsBase64 = config.AzureAdCertificateAsBase64;
+            string certificatePassword = "";
+
+            int num = (clientSecret is null ? 0 : 1)
+                    + (certificateFilePath is null ? 0 : 1)
+                    + (certificateThumbprint is null ? 0 : 1)
+                    + (certificateAsBase64 is null ? 0 : 1);
+
+            if (num != 1)
+            {
+                throw new ArgumentException(
+                    $"You must specify one of {nameof(config.AzureAdClientSecret)}, {nameof(config.AzureAdCertificateFilePath)}, {nameof(config.AzureAdCertificateThumbprint)} or {nameof(config.AzureAdCertificateAsBase64)} in the configuration"
+                );
+            }
+
+            if (clientSecret is not null)
+            {
+                _clientSecret = clientSecret;
+                return;
+            }
+
+            if (certificateFilePath is not null || certificateAsBase64 is not null)
+            {
+                certificatePassword = config.AzureAdCertificatePassword;
+                if (certificatePassword == null)
+                {
+                    throw new ArgumentNullException(nameof(config.AzureAdCertificatePassword));
+                }
+            }
+
+            if (certificateFilePath is not null)
+            {
+                _certificate = Helpers.GetCertificateFromFile(certificateFilePath, certificatePassword);
+                return;
+            }
+
+            if (certificateThumbprint is not null)
+            {
+                if (config.AzureAdCertificateStoreLocation is null)
+                {
+                    throw new ArgumentNullException(
+                        $"If certificate is loaded from store {nameof(config.AzureAdCertificateStoreLocation)} must be specified in the configuration"
+                    );
+                }
+                _certificate = Helpers.GetCertificateFromStore(certificateThumbprint, config.AzureAdCertificateStoreLocation.Value);
+                return;
+            }
+
+            _certificate = Helpers.GetCertificateFromBase64String(certificateAsBase64, certificatePassword);
         }
 
         private async Task CreateGraphClient()
         {
-            var confidentialClientApp = ConfidentialClientApplicationBuilder
+            var confidentialClientAppBuilder = ConfidentialClientApplicationBuilder
                 .Create(_clientId)
-                .WithClientSecret(_clientSecret)
-                .WithAuthority(_authorityUri)
-                .Build();
+                .WithAuthority(_authorityUri);
+            if (_clientSecret is not null)
+            {
+                confidentialClientAppBuilder = confidentialClientAppBuilder.WithClientSecret(_clientSecret);
+            }
+            else
+            {
+                confidentialClientAppBuilder = confidentialClientAppBuilder.WithCertificate(_certificate);
+            }
+            var confidentialClientApp = confidentialClientAppBuilder.Build();
             string[] scopes = new[] { "https://graph.microsoft.com/.default" };
             var authenticationResult = await confidentialClientApp.AcquireTokenForClient(scopes).ExecuteAsync();
             _tokenExpiresOn = authenticationResult.ExpiresOn;
@@ -95,7 +171,7 @@ namespace GrouperLib.Store
                         {
                             memberCollection.Add(new GroupMember(Guid.Parse(member.Id), member.Id, GroupMemberTypes.AzureAd));
                         }
-                    }
+                    } 
                 }
                 while (members.NextPageRequest != null && (members = await members.NextPageRequest.GetAsync()).Count > 0);
             }

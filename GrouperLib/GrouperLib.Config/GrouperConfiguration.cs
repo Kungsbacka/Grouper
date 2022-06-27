@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace GrouperLib.Config
@@ -15,8 +16,16 @@ namespace GrouperLib.Config
         private string azureAdClientSecret;
         private string azureAdClientId;
         private string azureAdTenantId;
-        private string exchangeUserName;
-        private string exchangePassword;
+        private string azureAdCertificateFilePath;
+        private string azureAdCertificatePassword;
+        private string azureAdCertificateThumbprint;
+        private string azureAdCertificateAsBase64;
+        private string exchangeOrganization;
+        private string exchangeAppId;
+        private string exchangeCertificateFilePath;
+        private string exchangeCertificatePassword;
+        private string exchangeCertificateThumbprint;
+        private string exchangeCertificateAsBase64;
         private string onPremAdUserName;
         private string onPremAdPassword;
         private string memberDatabaseConnectionString;
@@ -46,9 +55,21 @@ namespace GrouperLib.Config
         public string AzureAdClientId { get => Unprotect(nameof(AzureAdClientId), azureAdClientId); set => azureAdClientId = value; }
         public string AzureAdTenantId { get => Unprotect(nameof(AzureAdTenantId), azureAdTenantId); set => azureAdTenantId = value; }
 
+        public string AzureAdCertificatePassword { get => Unprotect(nameof(AzureAdCertificatePassword), azureAdCertificatePassword); set => azureAdCertificatePassword = value; }
+        public string AzureAdCertificateFilePath { get => Unprotect(nameof(AzureAdCertificateFilePath), azureAdCertificateFilePath); set => azureAdCertificateFilePath = value; }
+        public string AzureAdCertificateThumbprint { get => Unprotect(nameof(AzureAdCertificateThumbprint), azureAdCertificateThumbprint); set => azureAdCertificateThumbprint = value; }
+        public StoreLocation? AzureAdCertificateStoreLocation { get; set; }
+        public string AzureAdCertificateAsBase64 { get => Unprotect(nameof(AzureAdCertificateAsBase64), azureAdCertificateAsBase64); set => azureAdCertificateAsBase64 = value; }
+
         public Role[] ExchangeRole { get; set; }
-        public string ExchangeUserName { get => Unprotect(nameof(ExchangeUserName), exchangeUserName); set => exchangeUserName = value; }
-        public string ExchangePassword { get => Unprotect(nameof(ExchangePassword), exchangePassword); set => exchangePassword = value; }
+        public string ExchangeOrganization { get => Unprotect(nameof(ExchangeOrganization), exchangeOrganization); set => exchangeOrganization = value; }
+        public string ExchangeAppId { get => Unprotect(nameof(ExchangeAppId), exchangeAppId); set => exchangeAppId = value; }
+        public string ExchangeCertificatePassword { get => Unprotect(nameof(ExchangeCertificatePassword), exchangeCertificatePassword); set => exchangeCertificatePassword = value; }
+        public string ExchangeCertificateFilePath { get => Unprotect(nameof(ExchangeCertificateFilePath), exchangeCertificateFilePath); set => exchangeCertificateFilePath = value; }
+        public string ExchangeCertificateThumbprint { get => Unprotect(nameof(ExchangeCertificateThumbprint), exchangeCertificateThumbprint); set => exchangeCertificateThumbprint = value; }
+        public StoreLocation? ExchangeCertificateStoreLocation { get; set; }
+        public string ExchangeCertificateAsBase64 { get => Unprotect(nameof(ExchangeCertificateAsBase64), exchangeCertificateAsBase64); set => exchangeCertificateAsBase64 = value; }
+
 
         public Role[] OnPremAdRole { get; set; }
         public string OnPremAdUserName { get => Unprotect(nameof(OnPremAdUserName), onPremAdUserName); set => onPremAdUserName = value; }
@@ -74,6 +95,12 @@ namespace GrouperLib.Config
                 return Encoding.Unicode.GetString(unprotectedBytes);
             }
             return value;
+        }
+
+        private static bool IsNullableEnum(Type t)
+        {
+            Type u = Nullable.GetUnderlyingType(t);
+            return (u != null) && u.IsEnum;
         }
 
         public static GrouperConfiguration CreateFromHashtable(Hashtable hashtable)
@@ -119,6 +146,10 @@ namespace GrouperLib.Config
                         propertyInfo.SetValue(config,
                             value.Split(',').Select(t => (Role)Enum.Parse(typeof(Role), t.Trim())).ToArray()
                         );
+                    }
+                    else if (IsNullableEnum(propertyInfo.PropertyType))
+                    {
+                        propertyInfo.SetValue(config, Enum.Parse(Nullable.GetUnderlyingType(propertyInfo.PropertyType), value));
                     }
                     else
                     {
