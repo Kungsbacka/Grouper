@@ -147,6 +147,10 @@ namespace GrouperLib.Config
                             value.Split(',').Select(t => (Role)Enum.Parse(typeof(Role), t.Trim())).ToArray()
                         );
                     }
+                    else if (propertyInfo.PropertyType == typeof(string[]))
+                    {
+                        propertyInfo.SetValue(config, value.Split(','));
+                    }
                     else if (IsNullableEnum(propertyInfo.PropertyType))
                     {
                         propertyInfo.SetValue(config, Enum.Parse(Nullable.GetUnderlyingType(propertyInfo.PropertyType), value));

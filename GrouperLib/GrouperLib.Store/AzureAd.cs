@@ -63,7 +63,8 @@ namespace GrouperLib.Store
             string tenantId = config.AzureAdTenantId;
             string clientId = config.AzureAdClientId;
             ValidateCommonParameters(tenantId, clientId);
-
+            _clientId = clientId;
+            _authorityUri = new Uri($"https://login.microsoftonline.com/{tenantId}");
 
             string clientSecret = config.AzureAdClientSecret;
             string certificateFilePath = config.AzureAdCertificateFilePath;
@@ -115,7 +116,6 @@ namespace GrouperLib.Store
                 _certificate = Helpers.GetCertificateFromStore(certificateThumbprint, config.AzureAdCertificateStoreLocation.Value);
                 return;
             }
-
             _certificate = Helpers.GetCertificateFromBase64String(certificateAsBase64, certificatePassword);
         }
 

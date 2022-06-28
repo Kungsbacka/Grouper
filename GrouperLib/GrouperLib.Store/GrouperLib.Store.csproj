@@ -13,7 +13,7 @@
     <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" />
     <PackageReference Include="System.DirectoryServices" Version="6.0.0" />
     <PackageReference Include="Microsoft.Graph" Version="4.32.0" />
-    <PackageReference Include="Microsoft.Identity.Client" Version="4.44.0" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.45.0" />
     <PackageReference Include="System.Runtime.Caching" Version="6.0.0" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="4.1.0" />
   </ItemGroup>
