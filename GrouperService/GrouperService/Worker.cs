@@ -3,7 +3,6 @@ using GrouperLib.Config;
 using GrouperLib.Core;
 using GrouperLib.Database;
 using GrouperLib.Store;
-using Microsoft.Graph;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
