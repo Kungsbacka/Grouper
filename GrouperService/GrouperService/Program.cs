@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.ServiceProcess;
 
 namespace GrouperService
@@ -9,7 +10,7 @@ namespace GrouperService
         {
             if (Environment.UserInteractive)
             {
-                Console.WriteLine("Debug mode - press <enter> to stop...");
+                Console.WriteLine("Intreactive mode - press <enter> to stop...");
                 Worker worker = new Worker();
                 worker.Start();
                 Console.ReadLine();
@@ -17,9 +18,9 @@ namespace GrouperService
             }
             else
             {
-                ServiceBase[] ServicesToRun;
-                ServicesToRun = new ServiceBase[] { new GrouperService() };
-                ServiceBase.Run(ServicesToRun);
+                ServiceBase[] servicesToRun;
+                servicesToRun = new ServiceBase[] { new GrouperService() };
+                ServiceBase.Run(servicesToRun);
             }
         }
     }

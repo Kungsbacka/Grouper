@@ -149,8 +149,15 @@ namespace GrouperService
                 // Get documents that changed since the last timer event.
                 // It doesn't matter if we miss a document. It will be processed in the next full run
                 DateTime start = DateTime.Now.AddMilliseconds(-_workInterval);
-                entries.AddRange(_documentDb.GetEntriesByAgeAsync(start).GetAwaiter().GetResult());
-
+                try
+                {
+                    entries.AddRange(_documentDb.GetEntriesByAgeAsync(start).GetAwaiter().GetResult());
+                }
+                catch (Exception ex)
+                {
+                    WriteToEventLog(ex.ToString(), EventLogEntryType.Error);
+                    throw;
+                }
                 // Get documents that have a processing interval hint and
                 // where the interval has passed.
                 IEnumerable<GrouperDocumentEntry> entriesWithInterval =
