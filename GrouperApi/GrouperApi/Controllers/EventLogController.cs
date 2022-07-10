@@ -4,9 +4,6 @@ using GrouperLib.Database;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace GrouperApi.Controllers
 {
@@ -19,7 +16,7 @@ namespace GrouperApi.Controllers
 
         public EventLogController(IOptions<GrouperConfiguration> config)
         {
-            _config = config.Value ?? throw new ArgumentNullException();
+            _config = config?.Value ?? throw new ArgumentNullException(nameof(config));
         }
 
         [HttpGet]

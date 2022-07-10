@@ -1,11 +1,7 @@
 ﻿using GrouperLib.Backend;
-using GrouperLib.Config;
 using GrouperLib.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using System;
-using System.Threading.Tasks;
 
 namespace GrouperApi.Controllers
 {
@@ -24,15 +20,8 @@ namespace GrouperApi.Controllers
         [HttpPost]
         public async Task<IActionResult> GetGroupInfo()
         {
-            try
-            {
                 GroupInfo info = await _grouperBackend.GetGroupInfoAsync(await DocumentHelper.MakeDocumentAsync(Request));
                 return Ok(info);
-            }
-            catch
-            {
-                return Ok();
-            }
         }
     }
 }

@@ -2,12 +2,12 @@
 using GrouperLib.Core;
 using GrouperLib.Language;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GrouperApi.Controllers
 {
     [ApiController]
+    [Route("[controller]")]
     public class ErrorController : ControllerBase
     {
 
@@ -18,7 +18,7 @@ namespace GrouperApi.Controllers
             _stringResourceHelper = stringResourceHelper;
         }
 
-        [Route("/error")]
+        [HttpGet]
         public IActionResult Error()
         {
             if (HttpContext.Request.Query.TryGetValue("lang", out var values))

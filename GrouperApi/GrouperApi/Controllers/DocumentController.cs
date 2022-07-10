@@ -1,16 +1,10 @@
-﻿using GrouperLib.Backend;
-using GrouperLib.Config;
+﻿using GrouperLib.Config;
 using GrouperLib.Core;
 using GrouperLib.Database;
 using GrouperLib.Language;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace GrouperApi.Controllers
 {
@@ -24,7 +18,7 @@ namespace GrouperApi.Controllers
 
         public DocumentController(IOptions<GrouperConfiguration> config, IStringResourceHelper stringResourceHelper)
         {
-            _config = config.Value ?? throw new ArgumentNullException();
+            _config = config?.Value ?? throw new ArgumentNullException(nameof(config));
             _stringResourceHelper = stringResourceHelper;
         }
 
@@ -141,19 +135,27 @@ namespace GrouperApi.Controllers
         }
 
         [HttpPost("validate")]
-        public async Task<IActionResult> ValidateDocument(string lang)
+        public async Task<IActionResult> ValidateDocument(string? lang)
+        {
+            if (string.IsNullOrEmpty(lang))
+            {
+                _stringResourceHelper.SetLanguage("en");
+            }
+            else
         {
             _stringResourceHelper.SetLanguage(lang);
-            using StreamReader stream = new StreamReader(Request.Body);
+            }
+            using StreamReader stream = new(Request.Body);
             string document = await stream.ReadToEndAsync();
-            List<ValidationError> errors = new List<ValidationError>();
+            List<ValidationError> errors = new();
             GrouperDocument.FromJson(document, errors);
             return Ok(errors);
         }
 
         private DocumentDb GetDocumentDb()
         {
-            return new DocumentDb(_config.DocumentDatabaseConnectionString, ControllerContext.HttpContext.User.Identity.Name);
+            string currentUser = ControllerContext.HttpContext.User.Identity?.Name ?? throw new InvalidOperationException("Can not determine current user name");
+            return new DocumentDb(_config.DocumentDatabaseConnectionString, currentUser);
         }
     }
 }

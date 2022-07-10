@@ -1,7 +1,4 @@
 ﻿using GrouperLib.Core;
-using Microsoft.AspNetCore.Http;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace GrouperApi
 {
@@ -9,7 +6,7 @@ namespace GrouperApi
     {
         public static async Task<GrouperDocument> MakeDocumentAsync(HttpRequest request)
         {
-            using StreamReader stream = new StreamReader(request.Body);
+            using StreamReader stream = new(request.Body);
             string document = await stream.ReadToEndAsync();
             return GrouperDocument.FromJson(document);
         }
