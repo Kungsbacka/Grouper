@@ -1,25 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+	</PropertyGroup>
 
-  <PropertyGroup>
-    <LangVersion>10</LangVersion>
-  </PropertyGroup>
+	<PropertyGroup>
+		<LangVersion>10</LangVersion>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\GrouperLib.Language\GrouperLib.Language.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\GrouperLib.Language\GrouperLib.Language.csproj" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>GrouperLib.Test</_Parameter1>
-    </AssemblyAttribute>
-  </ItemGroup>
+	<ItemGroup>
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+			<_Parameter1>GrouperLib.Test</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
 
 </Project>
