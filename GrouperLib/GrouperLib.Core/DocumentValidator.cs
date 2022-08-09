@@ -268,7 +268,7 @@ namespace GrouperLib.Core
             }
             foreach (GrouperDocumentMember member in documentMembers)
             {
-                if (memberSources.TryGetValue(member.Source, out DocumentMemberValidationRules memberSourceInfo))
+                if (member != null && memberSources.TryGetValue(member.Source, out DocumentMemberValidationRules memberSourceInfo))
                 {
                     if (memberSourceInfo.Location != ResourceLocation.Independent && memberSourceInfo.Location != groupLocation)
                     {
@@ -277,7 +277,7 @@ namespace GrouperLib.Core
                 }
                 else
                 {
-                    validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Source), ResourceString.ValidationErrorInvalidMemberSource, member.Source));
+                    validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Source), ResourceString.ValidationErrorInvalidMemberSource, member?.Source));
                 }
             }
             if (validationErrors.Count > 0)
