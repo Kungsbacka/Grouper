@@ -25,4 +25,5 @@ ValidationErrorRuleValueDoesNotValidate | Rule value is invalid \(Rule name: \{0
 ValidationErrorRuleValueIsNullOrEmpty | Rule value is missing \(Rule: \{0\}\)
 ValidationErrorSourceGroupSameAsTarget | The same group cannot be used both as member source and target group
 ValidationErrorStoreNotRecognized | The validator does not recognize the group store \{0\}
+ValidationJsonMissingError | The JSON string is null or empty
 ValidationJsonParsingError | An error occured while parsing JSON document on line \{0\} column \{1\}\. The error message is: \{2\}

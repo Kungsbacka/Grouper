@@ -28,6 +28,7 @@
         public const string ValidationErrorRuleValueIsNullOrEmpty = "ValidationErrorRuleValueIsNullOrEmpty";
         public const string ValidationErrorSourceGroupSameAsTarget = "ValidationErrorSourceGroupSameAsTarget";
         public const string ValidationErrorStoreNotRecognized = "ValidationErrorStoreNotRecognized";
+        public const string ValidationJsonMissingError = "ValidationJsonMissingError";
         public const string ValidationJsonParsingError = "ValidationJsonParsingError";
     }
 }

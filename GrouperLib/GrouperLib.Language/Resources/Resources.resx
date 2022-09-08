@@ -195,6 +195,9 @@
   <data name="ValidationErrorStoreNotRecognized" xml:space="preserve">
     <value>The validator does not recognize the group store {0}</value>
   </data>
+  <data name="ValidationJsonMissingError" xml:space="preserve">
+    <value>The JSON string is null or empty</value>
+  </data>
   <data name="ValidationJsonParsingError" xml:space="preserve">
     <value>An error occured while parsing JSON document on line {0} column {1}. The error message is: {2}</value>
   </data>

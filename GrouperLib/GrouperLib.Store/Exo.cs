@@ -96,10 +96,9 @@ namespace GrouperLib.Store
                 _runspace = null;
             }
 
-            InitialSessionState iss = InitialSessionState.CreateDefault2();
-            iss.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.RemoteSigned;
             string script = @"
                 param($Organization, $AppId, $Certificate)
+                    Set-ExecutionPolicy 'RemoteSigned'
                     Import-Module ExchangeOnlineManagement -MinimumVersion '2.0.5'
                     $params = @{
                         Organization = $Organization
@@ -111,7 +110,7 @@ namespace GrouperLib.Store
                     }
                     Connect-ExchangeOnline @params
             ";
-            _runspace = RunspaceFactory.CreateRunspace(iss);
+            _runspace = RunspaceFactory.CreateRunspace();
             _runspace.Open();
             using PowerShell ps = PowerShell.Create();
             ps.Runspace = _runspace;

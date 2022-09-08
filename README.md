@@ -12,24 +12,21 @@ database and updates group members.
 ## Dependencies
 
 The PowerShell module work with both PowerShell 5.1 and PowerShell 7. GrouperLib is targeting .NET Standard 2.0 and have been
-successfully built for both .NET Framework 4.7.2 and .NET Core 3.0.
+successfully built for both .NET Framework 4.8 and .NET Core 6.0.
 
-Dependencies can vary depending on what kind of groups are involved (Azure AD, on-premise AD or EXO) and where information
-about members are coming from. Below is a list of all external dependencies:
+Dependencies can vary depending on what kind of groups Grouper should manage (Azure AD, on-premise AD or EXO) and what sources
+are used for members. Below is a list of all external dependencies:
 
 * Access to Azure AD and an Azure AD app registration with permission to read and write group members.
 * Access to on-premise AD and a user account (or gMSA) with permission to read and write group members.
 * Access to Exchange Online and a user account with permission to read and write distribution group members.
 * Access to a database for Grouper documents (more information below).
 * Access to a log database
-* Access to a metadirectory or similar to use as a source for group members.
+* Access to a metadirectory database for information about group members.
 
 ## API
 
-GrouperApi exposes the most important functions for working with documents and updating groups.
-
-The API uses Windows Authentication just to get the API up and running faster, but a transition to OIDC/OAuth2
-will likely happen in the near future.
+GrouperApi exposes the most important functions for working with documents and groups.
 
 ## Deploying
 
@@ -48,11 +45,13 @@ sc.exe create GrouperService binPath= "C:\Program Files\Grouper\GrouperService.e
 
 ### API
 
-* Copy appsetting.example.json to appsettings.Development.json and appsettings.Production.json
+* Copy appsetting.Example.json to appsettings.Development.json and appsettings.Production.json
 * Update configuration files to match your environment. You are strongly advised to encrtypt all
 secrets (see [Encrypting secrets](#encrypting-secrets) below)
 * Build
-* Deploy to a web site that is configured with Windows Authentication
+* Deploy to a web site that is configured with Windows Authentication. If you want to use Exchange Online
+as a group store och member source, you have to also install PowerShell 7 or later and the Exchange Online
+PowerShell module (ExchangeOnlineManagement).
 
 ### PowerShell module
 
@@ -69,6 +68,16 @@ following:
 start PowerShell: `psexec.exe -i -u DOMAIN\gmsa$ powershell.exe`).
 2. Use tools/ProtectString.ps1 to encrypt the secret.
 3. Paste the protected string into the configuration file.
+
+### Certificate authentication
+
+If you use certificate authentication for Azure AD and Exchange Online, and you store the certificates
+in the LocalMachine store, you have to give the service account read permissions to the private key.
+You can do this using tools/GrantPrivateKeyAccess.ps1.
+
+1. Import certificate (including private key) to Cert:\LocalMachine\My.
+2. Give the service account read access to the key by running tools/GrantPrivateKeyAccess as 
+Administrator.
 
 ## Grouper documents
 

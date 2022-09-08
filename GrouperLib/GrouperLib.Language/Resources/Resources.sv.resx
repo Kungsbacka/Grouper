@@ -195,6 +195,9 @@
   <data name="ValidationErrorStoreNotRecognized" xml:space="preserve">
     <value>Validatorn känner inte igen gruppkatalogen {0}</value>
   </data>
+  <data name="ValidationJsonMissingError" xml:space="preserve">
+    <value>JSON-strängen är null eller tom</value>
+  </data>
   <data name="ValidationJsonParsingError" xml:space="preserve">
     <value>Ett fel uppstod när JSON-dokumentet skulle tolkas. Felet finns på rad {0} position {1}. Felmeddelandet är: {2}</value>
   </data>

@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 
 namespace GrouperLib.Core
@@ -367,6 +368,11 @@ namespace GrouperLib.Core
 
         internal static GrouperDocument DeserializeAndValidate(string json, List<ValidationError> validationErrors)
         {
+            if (string.IsNullOrEmpty(json))
+            {
+                validationErrors.Add(new ValidationError(nameof(json), ResourceString.ValidationJsonMissingError));
+                return null;
+            }
             GrouperDocument document = null;
             try
             {
@@ -379,6 +385,10 @@ namespace GrouperLib.Core
             catch (JsonSerializationException ex)
             {
                 validationErrors.Add(new ValidationError(nameof(json), ResourceString.ValidationJsonParsingError, 0, 0, ex.Message));
+            }
+            if (document == null)
+            {
+                validationErrors.Add(new ValidationError(nameof(json), ResourceString.DefaultValidationError));
             }
             if (validationErrors.Count > 0)
             {

@@ -1,4 +1,4 @@
-using GrouperLib.Backend;
+﻿using GrouperLib.Backend;
 using GrouperLib.Config;
 using GrouperLib.Language;
 using Microsoft.AspNetCore.Authentication.Negotiate;
@@ -55,6 +55,6 @@ namespace GrouperApi
             app.UseAuthorization();
             app.MapControllers();
             app.Run();
+        }
     }
-}
 }
