@@ -14,16 +14,16 @@ namespace GrouperLib.Backend
         private ILogger _logger;
         private bool _disposed;
         private readonly double _changeRatioLowerLimit;
-        private readonly Dictionary<GroupMemberSources, IMemberSource> _memberSources;
-        private readonly Dictionary<GroupStores, IGroupOwnerSource> _ownerSources;
-        private readonly Dictionary<GroupStores, IGroupStore> _groupStores;
+        private readonly Dictionary<GroupMemberSource, IMemberSource> _memberSources;
+        private readonly Dictionary<GroupStore, IGroupOwnerSource> _ownerSources;
+        private readonly Dictionary<GroupStore, IGroupStore> _groupStores;
 
         public Grouper(double changeRatioLowerLimit)
         {
             _changeRatioLowerLimit = changeRatioLowerLimit;
-            _memberSources = new Dictionary<GroupMemberSources, IMemberSource>();
-            _ownerSources = new Dictionary<GroupStores, IGroupOwnerSource>();
-            _groupStores = new Dictionary<GroupStores, IGroupStore>();
+            _memberSources = new Dictionary<GroupMemberSource, IMemberSource>();
+            _ownerSources = new Dictionary<GroupStore, IGroupOwnerSource>();
+            _groupStores = new Dictionary<GroupStore, IGroupStore>();
         }
 
         public static Grouper CreateFromConfig(GrouperConfiguration config)
@@ -86,7 +86,7 @@ namespace GrouperLib.Backend
 
         public Grouper AddMemberSource(IMemberSource memberSource)
         {
-            foreach (GroupMemberSources source in memberSource.GetSupportedGrouperMemberSources())
+            foreach (GroupMemberSource source in memberSource.GetSupportedGrouperMemberSources())
             {
                 if (_memberSources.ContainsKey(source))
                 {
@@ -99,7 +99,7 @@ namespace GrouperLib.Backend
 
         public Grouper AddGroupStore(IGroupStore groupStore)
         {
-            foreach (GroupStores store in groupStore.GetSupportedGroupStores())
+            foreach (GroupStore store in groupStore.GetSupportedGroupStores())
             {
                 if (_groupStores.ContainsKey(store))
                 {
@@ -112,7 +112,7 @@ namespace GrouperLib.Backend
 
         public Grouper AddGroupOwnerSource(IGroupOwnerSource ownerSource)
         {
-            foreach (GroupStores store in ownerSource.GetSupportedGroupStores())
+            foreach (GroupStore store in ownerSource.GetSupportedGroupStores())
             {
                 if (_ownerSources.ContainsKey(store))
                 {
@@ -140,11 +140,11 @@ namespace GrouperLib.Backend
             IGroupOwnerSource ownerSource = GetOwnerSource(document);
             if (ownerSource != null)
             {
-                if (document.Owner != GroupOwnerActions.MatchSource)
+                if (document.Owner != GroupOwnerAction.MatchSource)
                 {
                     var owners = new GroupMemberCollection();
                     await ownerSource.GetGroupOwnersAsync(owners, document.GroupId);
-                    if (document.Owner == GroupOwnerActions.KeepExisting)
+                    if (document.Owner == GroupOwnerAction.KeepExisting)
                     {
                         owners.IntersectWith(currentMembers);
                     }
@@ -189,12 +189,12 @@ namespace GrouperLib.Backend
             foreach (GroupMember member in memberDiff.Remove)
             {
                 await store.RemoveGroupMemberAsync(member, memberDiff.Document.GroupId);
-                await _logger?.StoreOperationalLogItemAsync(new OperationalLogItem(memberDiff.Document, GroupMemberOperations.Remove, member));
+                await _logger?.StoreOperationalLogItemAsync(new OperationalLogItem(memberDiff.Document, GroupMemberOperation.Remove, member));
             }
             foreach (GroupMember member in memberDiff.Add)
             {
                 await store.AddGroupMemberAsync(member, memberDiff.Document.GroupId);
-                await _logger?.StoreOperationalLogItemAsync(new OperationalLogItem(memberDiff.Document, GroupMemberOperations.Add, member));
+                await _logger?.StoreOperationalLogItemAsync(new OperationalLogItem(memberDiff.Document, GroupMemberOperation.Add, member));
             }
         }
 
@@ -216,13 +216,13 @@ namespace GrouperLib.Backend
         {
             var include = new GroupMemberCollection();
             var exclude = new GroupMemberCollection();
-            if (!(document.Members.Any(m => m.Action == GroupMemberActions.Include)))
+            if (!(document.Members.Any(m => m.Action == GroupMemberAction.Include)))
             {
                 include.Add(currentMembers);
             }
             foreach (GrouperDocumentMember member in document.Members)
             {
-                var memberCollection = member.Action == GroupMemberActions.Exclude ? exclude : include;
+                var memberCollection = member.Action == GroupMemberAction.Exclude ? exclude : include;
                 IMemberSource source = GetMemberSource(member);
                 await source.GetMembersFromSourceAsync(memberCollection, member, document.MemberType);
             }
@@ -263,11 +263,11 @@ namespace GrouperLib.Backend
             {
                 if (disposing)
                 {
-                    if (_memberSources.TryGetValue(GroupMemberSources.ExoGroup, out IMemberSource source))
+                    if (_memberSources.TryGetValue(GroupMemberSource.ExoGroup, out IMemberSource source))
                     {
                         ((Exo)source).Dispose();
                     }
-                    if (_groupStores.TryGetValue(GroupStores.Exo, out IGroupStore store))
+                    if (_groupStores.TryGetValue(GroupStore.Exo, out IGroupStore store))
                     {
                         ((Exo)store).Dispose();
                     }

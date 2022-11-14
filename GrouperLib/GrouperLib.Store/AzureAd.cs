@@ -165,11 +165,11 @@ namespace GrouperLib.Store
                     {
                         if (member is User u)
                         {
-                            memberCollection.Add(new GroupMember(Guid.Parse(u.Id), u.UserPrincipalName, GroupMemberTypes.AzureAd));
+                            memberCollection.Add(new GroupMember(Guid.Parse(u.Id), u.UserPrincipalName, GroupMemberType.AzureAd));
                         }
                         else
                         {
-                            memberCollection.Add(new GroupMember(Guid.Parse(member.Id), member.Id, GroupMemberTypes.AzureAd));
+                            memberCollection.Add(new GroupMember(Guid.Parse(member.Id), member.Id, GroupMemberType.AzureAd));
                         }
                     } 
                 }
@@ -187,7 +187,7 @@ namespace GrouperLib.Store
 
         public async Task AddGroupMemberAsync(GroupMember member, Guid groupId)
         {
-            if (member.MemberType != GroupMemberTypes.AzureAd)
+            if (member.MemberType != GroupMemberType.AzureAd)
             {
                 throw new ArgumentException(nameof(member), "Can only add members of type 'AzureAd'");
             }
@@ -214,7 +214,7 @@ namespace GrouperLib.Store
 
         public async Task RemoveGroupMemberAsync(GroupMember member, Guid groupId)
         {
-            if (member.MemberType != GroupMemberTypes.AzureAd)
+            if (member.MemberType != GroupMemberType.AzureAd)
             {
                 throw new ArgumentException(nameof(member), "Can only remove members of type 'AzureAd'");
             }
@@ -249,11 +249,11 @@ namespace GrouperLib.Store
                     {
                         if (owner is User u)
                         {
-                            memberCollection.Add(new GroupMember(Guid.Parse(u.Id), u.UserPrincipalName, GroupMemberTypes.AzureAd));
+                            memberCollection.Add(new GroupMember(Guid.Parse(u.Id), u.UserPrincipalName, GroupMemberType.AzureAd));
                         }
                         else
                         {
-                            memberCollection.Add(new GroupMember(Guid.Parse(owner.Id), owner.Id, GroupMemberTypes.AzureAd));
+                            memberCollection.Add(new GroupMember(Guid.Parse(owner.Id), owner.Id, GroupMemberType.AzureAd));
                         }
                     }
                 }
@@ -302,9 +302,9 @@ namespace GrouperLib.Store
             return exception;
         }
 
-        public async Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember, GroupMemberTypes memberType)
+        public async Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember, GroupMemberType memberType)
         {
-            if (memberType != GroupMemberTypes.AzureAd)
+            if (memberType != GroupMemberType.AzureAd)
             {
                 throw new ArgumentException("Invalid member type", nameof(memberType));
             }
@@ -320,7 +320,7 @@ namespace GrouperLib.Store
             try
             {
                 var group = await _graphClient.Groups[groupId.ToString()].Request().GetAsync();
-                return new GroupInfo(groupId, group.DisplayName, GroupStores.AzureAd);
+                return new GroupInfo(groupId, group.DisplayName, GroupStore.AzureAd);
             }
             catch (ServiceException ex)
             {
@@ -332,14 +332,14 @@ namespace GrouperLib.Store
             }
         }
 
-        public IEnumerable<GroupMemberSources> GetSupportedGrouperMemberSources()
+        public IEnumerable<GroupMemberSource> GetSupportedGrouperMemberSources()
         {
-            return new GroupMemberSources[] { GroupMemberSources.AzureAdGroup };
+            return new GroupMemberSource[] { GroupMemberSource.AzureAdGroup };
         }
 
-        public IEnumerable<GroupStores> GetSupportedGroupStores()
+        public IEnumerable<GroupStore> GetSupportedGroupStores()
         {
-            return new GroupStores[] { GroupStores.AzureAd };
+            return new GroupStore[] { GroupStore.AzureAd };
         }
     }
 }

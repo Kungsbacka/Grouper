@@ -25,7 +25,7 @@ namespace GrouperLib.Database
         public MemberDb(GrouperConfiguration configuration)
             : this(configuration.MemberDatabaseConnectionString) { }
 
-        private async Task GetMembersAsync(string storedProcedure, GroupMemberTypes memberType, GroupMemberCollection memberCollection, IDictionary<string, object> parameters)
+        private async Task GetMembersAsync(string storedProcedure, GroupMemberType memberType, GroupMemberCollection memberCollection, IDictionary<string, object> parameters)
         {
             using (var conn = new SqlConnection(_connectionString))
             {
@@ -43,7 +43,7 @@ namespace GrouperLib.Database
                     {
                         while (await reader.ReadAsync())
                         {
-                            if (memberType == GroupMemberTypes.OnPremAd)
+                            if (memberType == GroupMemberType.OnPremAd)
                             {
                                 Guid id = reader.GetNullable<Guid>(1);
                                 if (id != Guid.Empty)
@@ -51,7 +51,7 @@ namespace GrouperLib.Database
                                     memberCollection.Add(new GroupMember(
                                         id: id,
                                         displayName: reader.GetNullable<string>(0),
-                                        memberType: GroupMemberTypes.OnPremAd
+                                        memberType: GroupMemberType.OnPremAd
                                     ));
                                 }
                             }
@@ -63,7 +63,7 @@ namespace GrouperLib.Database
                                     memberCollection.Add(new GroupMember(
                                         id: id,
                                         displayName: reader.GetNullable<string>(0),
-                                        memberType: GroupMemberTypes.AzureAd
+                                        memberType: GroupMemberType.AzureAd
                                     ));
                                 }
                             }
@@ -73,7 +73,7 @@ namespace GrouperLib.Database
             }
         }
 
-        private async Task GetMembersFromPersonalsystemAsync(GroupMemberCollection memberCollection, GrouperDocumentMember member, GroupMemberTypes memberType)
+        private async Task GetMembersFromPersonalsystemAsync(GroupMemberCollection memberCollection, GrouperDocumentMember member, GroupMemberType memberType)
         {
             var befattning = new List<string>();
             string organisation = null;
@@ -103,7 +103,7 @@ namespace GrouperLib.Database
             );
         }
 
-        private async Task GetMembersFromElevregisterAsync(GroupMemberCollection memberCollection, GrouperDocumentMember member, GroupMemberTypes memberType)
+        private async Task GetMembersFromElevregisterAsync(GroupMemberCollection memberCollection, GrouperDocumentMember member, GroupMemberType memberType)
         {
             var arskurs = new List<string>();
             bool elev = true;
@@ -160,7 +160,7 @@ namespace GrouperLib.Database
             );
         }
 
-        private async Task GetMembersFromUpnAsync(GroupMemberCollection memberCollection, GrouperDocumentMember member, GroupMemberTypes memberType)
+        private async Task GetMembersFromUpnAsync(GroupMemberCollection memberCollection, GrouperDocumentMember member, GroupMemberType memberType)
         {
             await GetMembersAsync("dbo.spGrouperStaticMember", memberType, memberCollection,
                 new Dictionary<string, object>()
@@ -170,7 +170,7 @@ namespace GrouperLib.Database
             );
         }
 
-        private async Task GetMembersFromCustomViewAsync(GroupMemberCollection memberCollection, GrouperDocumentMember member, GroupMemberTypes memberType)
+        private async Task GetMembersFromCustomViewAsync(GroupMemberCollection memberCollection, GrouperDocumentMember member, GroupMemberType memberType)
         {
             await GetMembersAsync("dbo.spGrouperCustomView", memberType, memberCollection,
                 new Dictionary<string, object>()
@@ -180,20 +180,20 @@ namespace GrouperLib.Database
             );
         }
 
-        public async Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember, GroupMemberTypes memberType)
+        public async Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember, GroupMemberType memberType)
         {
             switch (grouperMember.Source)
             {
-                case GroupMemberSources.Elevregister:
+                case GroupMemberSource.Elevregister:
                     await GetMembersFromElevregisterAsync(memberCollection, grouperMember, memberType);
                     break;
-                case GroupMemberSources.Personalsystem:
+                case GroupMemberSource.Personalsystem:
                     await GetMembersFromPersonalsystemAsync(memberCollection, grouperMember, memberType);
                     break;
-                case GroupMemberSources.Static:
+                case GroupMemberSource.Static:
                     await GetMembersFromUpnAsync(memberCollection, grouperMember, memberType);
                     break;
-                case GroupMemberSources.CustomView:
+                case GroupMemberSource.CustomView:
                     await GetMembersFromCustomViewAsync(memberCollection, grouperMember, memberType);
                     break;
                 default:
@@ -201,14 +201,14 @@ namespace GrouperLib.Database
             }
         }
 
-        public IEnumerable<GroupMemberSources> GetSupportedGrouperMemberSources()
+        public IEnumerable<GroupMemberSource> GetSupportedGrouperMemberSources()
         {
-            return new GroupMemberSources[]
+            return new GroupMemberSource[]
             {
-                GroupMemberSources.Elevregister,
-                GroupMemberSources.Personalsystem,
-                GroupMemberSources.Static,
-                GroupMemberSources.CustomView
+                GroupMemberSource.Elevregister,
+                GroupMemberSource.Personalsystem,
+                GroupMemberSource.Static,
+                GroupMemberSource.CustomView
             };
         }
     }

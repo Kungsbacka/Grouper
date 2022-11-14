@@ -2,6 +2,7 @@
 using Xunit;
 using GrouperLib.Core;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace GrouperLib.Test
 {
@@ -83,7 +84,7 @@ namespace GrouperLib.Test
         }
 
 
-        private bool IsUpnValid(string upn)
+        private static bool IsUpnValid(string upn)
         {
             GrouperDocument document = TestHelpers.MakeDocument(new
             {
@@ -91,7 +92,7 @@ namespace GrouperLib.Test
                 {
                     new
                     {
-                        Source = GroupMemberSources.Static,
+                        Source = GroupMemberSource.Static,
                         Rules = new []
                         {
                             new
@@ -105,7 +106,7 @@ namespace GrouperLib.Test
             });
             UpnValidator upnValidator = new UpnValidator();
             List<ValidationError> validationErrors = new List<ValidationError>();
-            upnValidator.Validate(document, document.Members[0], validationErrors);
+            upnValidator.Validate(document, document.Members.First(), validationErrors);
             return validationErrors.Count == 0;
         }
     }

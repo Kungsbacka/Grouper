@@ -11,9 +11,9 @@ namespace GrouperLib.Test
         private static readonly Guid groupId = Guid.Parse("baefe5f4-d404-491d-89d0-fb192afa3c1d");
         private static readonly Guid targetId = Guid.Parse("1905ae2d-ec75-4362-943e-2f8f9d58f3f9");
         private static readonly string groupName = "Test Group";
-        private static readonly GroupStores store = GroupStores.OnPremAd;
+        private static readonly GroupStore store = GroupStore.OnPremAd;
         private static readonly string targetName = "target@example.com";
-        private static readonly GroupMemberOperations operation = GroupMemberOperations.Add;
+        private static readonly GroupMemberOperation operation = GroupMemberOperation.Add;
 
         [Fact]
         public void TestConstruction()
@@ -45,7 +45,7 @@ namespace GrouperLib.Test
             DateTime now = DateTime.Now;
             GrouperDocument document = TestHelpers.MakeDocument();
             OperationalLogItem logItem = new OperationalLogItem(document, operation,
-                new GroupMember(targetId, targetName, GroupMemberTypes.OnPremAd));
+                new GroupMember(targetId, targetName, GroupMemberType.OnPremAd));
             Assert.True(logItem.LogTime >= now);
             Assert.Equal(TestHelpers.DefaultDocumentId, logItem.DocumentId);
             Assert.Equal(TestHelpers.DefaultGroupId, logItem.GroupId);

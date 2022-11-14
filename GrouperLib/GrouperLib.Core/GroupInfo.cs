@@ -12,16 +12,16 @@ namespace GrouperLib.Core
         public string DisplayName { get; }
 
         [JsonProperty(PropertyName = "store", Order = 3)]
-        public GroupStores Store { get; }
+        public GroupStore Store { get; }
 
-        public GroupInfo(Guid id, string displayName, GroupStores store)
+        public GroupInfo(Guid id, string displayName, GroupStore store)
         {
             Id = id;
             DisplayName = displayName;
             Store = store;
         }
 
-        public GroupInfo(string id, string displayName, GroupStores store)
+        public GroupInfo(string id, string displayName, GroupStore store)
         {
             if (Guid.TryParse(id, out Guid guid))
             {

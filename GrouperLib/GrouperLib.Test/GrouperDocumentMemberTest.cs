@@ -19,16 +19,16 @@ namespace GrouperLib.Test
         [Fact]
         public void TestNotEqualsDifferentSource()
         {
-            GrouperDocumentMember member1 = TestHelpers.MakeMember(new { Source = GroupMemberSources.Static });
-            GrouperDocumentMember member2 = TestHelpers.MakeMember(new { Source = GroupMemberSources.OnPremAdGroup });
+            GrouperDocumentMember member1 = TestHelpers.MakeMember(new { Source = GroupMemberSource.Static });
+            GrouperDocumentMember member2 = TestHelpers.MakeMember(new { Source = GroupMemberSource.OnPremAdGroup });
             Assert.False(member1.Equals(member2));
         }
 
         [Fact]
         public void TestNotEqualsDifferentAction()
         {
-            GrouperDocumentMember member1 = TestHelpers.MakeMember(new { Action = GroupMemberActions.Include });
-            GrouperDocumentMember member2 = TestHelpers.MakeMember(new { Action = GroupMemberActions.Exclude });
+            GrouperDocumentMember member1 = TestHelpers.MakeMember(new { Action = GroupMemberAction.Include });
+            GrouperDocumentMember member2 = TestHelpers.MakeMember(new { Action = GroupMemberAction.Exclude });
             Assert.False(member1.Equals(member2));
         }
 
@@ -74,13 +74,6 @@ namespace GrouperLib.Test
             Assert.True(obj.ContainsKey("source"));
             Assert.True(obj.ContainsKey("action"));
             Assert.True(obj.ContainsKey("rules"));
-        }
-
-        [Fact]
-        public void TestRulesListShouldBeImmutable()
-        {
-            GrouperDocumentMember member = TestHelpers.MakeMember();
-            Assert.Throws<NotSupportedException>(() => { member.Rules.RemoveAt(0); });
         }
     }
 }

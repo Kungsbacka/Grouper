@@ -83,7 +83,7 @@ namespace GrouperLib.Core
             int flags = 0;
             foreach (GroupMember member in collection.AsEnumerable())
             {
-                if (member.MemberType == GroupMemberTypes.OnPremAd)
+                if (member.MemberType == GroupMemberType.OnPremAd)
                 {
                     flags |= 1;
                 }

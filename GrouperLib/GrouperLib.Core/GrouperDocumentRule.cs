@@ -12,12 +12,10 @@ namespace GrouperLib.Core
         public string Value { get; }
 
         [JsonConstructor]
-#pragma warning disable IDE0051 // Remove unused private members - Used when deserializing from JSON
-        private GrouperDocumentRule(string name, string value)
-#pragma warning restore IDE0051 // Remove unused private members
+        public GrouperDocumentRule(string name, string value)
         {
-            Name = name;
-            Value = value;
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Value = value ?? throw new ArgumentNullException(nameof(value));
         }
 
         internal GrouperDocumentRule(GrouperDocumentRule documentRule)
@@ -50,7 +48,7 @@ namespace GrouperLib.Core
 
         public override string ToString()
         {
-            return $"{{Name: {Name}, Value: {Value}}}";
+            return $"{Name} => {Value}";
         }
     }
 

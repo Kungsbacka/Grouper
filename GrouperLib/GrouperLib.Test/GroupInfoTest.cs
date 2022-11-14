@@ -15,31 +15,31 @@ namespace GrouperLib.Test
         [Fact]
         public void TestConstruction1()
         {
-            GroupInfo info = new GroupInfo(validGuid, "Name", GroupStores.OnPremAd);
+            GroupInfo info = new GroupInfo(validGuid, "Name", GroupStore.OnPremAd);
             Assert.Equal(validGuid, info.Id);
             Assert.Equal("Name", info.DisplayName);
-            Assert.Equal(GroupStores.OnPremAd, info.Store);
+            Assert.Equal(GroupStore.OnPremAd, info.Store);
         }
 
         [Fact]
         public void TestConstruction2()
         {
-            GroupInfo info = new GroupInfo(validGuidString, "Name", GroupStores.OnPremAd);
+            GroupInfo info = new GroupInfo(validGuidString, "Name", GroupStore.OnPremAd);
             Assert.Equal(validGuid, info.Id);
             Assert.Equal("Name", info.DisplayName);
-            Assert.Equal(GroupStores.OnPremAd, info.Store);
+            Assert.Equal(GroupStore.OnPremAd, info.Store);
         }
 
         [Fact]
         public void TestConstructionWithInvalidGuid()
         {
-            Assert.Throws<ArgumentException>(() => { new GroupInfo(invalidGuid, "Name", GroupStores.OnPremAd); });
+            Assert.Throws<ArgumentException>(() => { new GroupInfo(invalidGuid, "Name", GroupStore.OnPremAd); });
         }
 
         [Fact]
         public void TestSerializedNames()
         {
-            GroupInfo groupInfo = new GroupInfo(Guid.Empty, "Name", GroupStores.AzureAd);
+            GroupInfo groupInfo = new GroupInfo(Guid.Empty, "Name", GroupStore.AzureAd);
             string json = JsonConvert.SerializeObject(groupInfo);
             JObject obj = JObject.Parse(json);
             Assert.True(obj.ContainsKey("id"));

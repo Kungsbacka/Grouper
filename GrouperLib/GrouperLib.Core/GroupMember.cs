@@ -14,16 +14,16 @@ namespace GrouperLib.Core
 
         [JsonProperty(PropertyName = "memberType")]
         [JsonConverter(typeof(StringEnumConverter))]
-        public GroupMemberTypes MemberType { get; }
+        public GroupMemberType MemberType { get; }
 
-        public GroupMember(Guid id, string displayName, GroupMemberTypes memberType)
+        public GroupMember(Guid id, string displayName, GroupMemberType memberType)
         {
             Id = id;
             DisplayName = displayName ?? throw new ArgumentNullException(nameof(displayName));
             MemberType = memberType;
         }
 
-        public GroupMember(string id, string displayName, GroupMemberTypes memberType)
+        public GroupMember(string id, string displayName, GroupMemberType memberType)
         {
             if (Guid.TryParse(id, out Guid guid))
             {

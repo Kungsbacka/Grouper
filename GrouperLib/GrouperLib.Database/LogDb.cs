@@ -47,7 +47,7 @@ namespace GrouperLib.Database
                                 groupDisplayName: reader.GetNullable<string>(3),
                                 groupStore: reader.GetNullable<string>(4),
                                 message: reader.GetString(6),
-                                logLevel: (LogLevels)reader.GetByte(5)
+                                logLevel: (LogLevel)reader.GetByte(5)
                             ));
                         }
                     }
@@ -203,7 +203,7 @@ namespace GrouperLib.Database
 
         public async Task StoreOperationalLogItemAsync(OperationalLogItem logItem)
         {
-            if (logItem.Operation == GroupMemberOperations.None)
+            if (logItem.Operation == GroupMemberOperation.None)
             {
                 throw new InvalidOperationException("Can not store operational log items with operation 'None'.");
             }

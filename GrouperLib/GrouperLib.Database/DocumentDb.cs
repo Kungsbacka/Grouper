@@ -99,7 +99,7 @@ namespace GrouperLib.Database
             );
         }
 
-        public async Task<IList<GrouperDocumentEntry>> GetAllEntriesAsync(GroupStores? store = null, bool includeUnpublished = false, bool includeDeleted = false)
+        public async Task<IList<GrouperDocumentEntry>> GetAllEntriesAsync(GroupStore? store = null, bool includeUnpublished = false, bool includeDeleted = false)
         {
             return await InternalGetDocumentEntriesAsync("dbo.get_all_documents",
                 new Dictionary<string, object>() {
@@ -121,7 +121,7 @@ namespace GrouperLib.Database
             );
         }
 
-        public async Task<IList<GrouperDocumentEntry>> GetEntriesByGroupIdAsync(Guid groupId, GroupStores? store = null, bool includeUnpublished = false, bool includeDeleted = false)
+        public async Task<IList<GrouperDocumentEntry>> GetEntriesByGroupIdAsync(Guid groupId, GroupStore? store = null, bool includeUnpublished = false, bool includeDeleted = false)
         {
             return await InternalGetDocumentEntriesAsync("dbo.get_document_by_group_id",
                 new Dictionary<string, object>() {
@@ -133,7 +133,7 @@ namespace GrouperLib.Database
             );
         }
 
-        public async Task<IList<GrouperDocumentEntry>> GetEntriesByGroupNameAsync(string groupName, GroupStores? store = null, bool includeUnpublished = false, bool includeDeleted = false)
+        public async Task<IList<GrouperDocumentEntry>> GetEntriesByGroupNameAsync(string groupName, GroupStore? store = null, bool includeUnpublished = false, bool includeDeleted = false)
         {
             string translatedGroupName = Helpers.TranslateWildcard(groupName);
             return await InternalGetDocumentEntriesAsync("dbo.get_document_by_group_name",
@@ -146,7 +146,7 @@ namespace GrouperLib.Database
             );
         }
 
-        public async Task<IList<GrouperDocumentEntry>> GetEntriesByAgeAsync(DateTime start, DateTime? end = null, GroupStores? store = null, bool includeUnpublished = false, bool includeDeleted = false)
+        public async Task<IList<GrouperDocumentEntry>> GetEntriesByAgeAsync(DateTime start, DateTime? end = null, GroupStore? store = null, bool includeUnpublished = false, bool includeDeleted = false)
         {
             return await InternalGetDocumentEntriesAsync("dbo.get_document_by_age",
                 new Dictionary<string, object>() {
@@ -159,7 +159,7 @@ namespace GrouperLib.Database
             );
         }
 
-        public async Task<IList<GrouperDocumentEntry>> GetEntriesByProcessingInterval(int min, int max = int.MaxValue, GroupStores? store = null, bool includeUnpublished = false, bool includeDeleted = false)
+        public async Task<IList<GrouperDocumentEntry>> GetEntriesByProcessingInterval(int min, int max = int.MaxValue, GroupStore? store = null, bool includeUnpublished = false, bool includeDeleted = false)
         {
             return await InternalGetDocumentEntriesAsync("dbo.get_document_by_processing_interval",
                 new Dictionary<string, object>() {
@@ -172,7 +172,7 @@ namespace GrouperLib.Database
             );
         }
 
-        public async Task<IList<GrouperDocumentEntry>> GetEntriesByMemberRuleAsync(string ruleName, string ruleValue, GroupStores? store = null, bool includeUnpublished = false, bool includeDeleted = false)
+        public async Task<IList<GrouperDocumentEntry>> GetEntriesByMemberRuleAsync(string ruleName, string ruleValue, GroupStore? store = null, bool includeUnpublished = false, bool includeDeleted = false)
         {
             string translatedRuleValue = Helpers.TranslateWildcard(ruleValue);
             return await InternalGetDocumentEntriesAsync("dbo.get_document_by_member_rule",
@@ -186,7 +186,7 @@ namespace GrouperLib.Database
             );
         }
 
-        public async Task<IList<GrouperDocumentEntry>> GetEntriesByMemberSourceAsync(GroupMemberSources source, GroupStores? store = null, bool includeUnpublished = false, bool includeDeleted = false)
+        public async Task<IList<GrouperDocumentEntry>> GetEntriesByMemberSourceAsync(GroupMemberSource source, GroupStore? store = null, bool includeUnpublished = false, bool includeDeleted = false)
         {
             return await InternalGetDocumentEntriesAsync("dbo.get_document_by_member_source",
                 new Dictionary<string, object>() {
@@ -198,7 +198,7 @@ namespace GrouperLib.Database
             );
         }
 
-        public async Task<IList<GrouperDocumentEntry>> GetUnpublishedEntriesAsync(GroupStores? store = null)
+        public async Task<IList<GrouperDocumentEntry>> GetUnpublishedEntriesAsync(GroupStore? store = null)
         {
             return await InternalGetDocumentEntriesAsync("dbo.get_unpublished_documents",
                 new Dictionary<string, object>() {
@@ -207,7 +207,7 @@ namespace GrouperLib.Database
             );
         }
 
-        public async Task<IList<GrouperDocumentEntry>> GetDeletedEntriesAsync(GroupStores? store = null)
+        public async Task<IList<GrouperDocumentEntry>> GetDeletedEntriesAsync(GroupStore? store = null)
         {
             return await InternalGetDocumentEntriesAsync("dbo.get_deleted_documents",
                 new Dictionary<string, object>() {

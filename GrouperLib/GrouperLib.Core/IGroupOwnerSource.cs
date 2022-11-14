@@ -8,6 +8,6 @@ namespace GrouperLib.Core
     {
         Task GetGroupOwnersAsync(GroupMemberCollection memberCollection, Guid groupId);
 
-        IEnumerable<GroupStores> GetSupportedGroupStores();
+        IEnumerable<GroupStore> GetSupportedGroupStores();
     }
 }

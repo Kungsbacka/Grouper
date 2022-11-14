@@ -15,11 +15,11 @@ namespace GrouperLib.Test
             double ratio = 0.5;
             GrouperDocument doc = TestHelpers.MakeDocument();
             GroupMemberCollection add = new GroupMemberCollection();
-            add.Add(new GroupMember(Guid.Empty, "M1", GroupMemberTypes.AzureAd));
+            add.Add(new GroupMember(Guid.Empty, "M1", GroupMemberType.AzureAd));
             GroupMemberCollection remove = new GroupMemberCollection();
-            remove.Add(new GroupMember(Guid.Empty, "M2", GroupMemberTypes.AzureAd));
+            remove.Add(new GroupMember(Guid.Empty, "M2", GroupMemberType.AzureAd));
             GroupMemberCollection unchanged = new GroupMemberCollection();
-            unchanged.Add(new GroupMember(Guid.Empty, "M3", GroupMemberTypes.AzureAd));
+            unchanged.Add(new GroupMember(Guid.Empty, "M3", GroupMemberType.AzureAd));
             GroupMemberDiff diff = new GroupMemberDiff(doc, add, remove, unchanged, ratio);
             Assert.NotNull(diff.Add.FirstOrDefault(m => m.DisplayName == "M1"));
             Assert.NotNull(diff.Remove.FirstOrDefault(m => m.DisplayName == "M2"));

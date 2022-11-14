@@ -12,9 +12,9 @@ namespace GrouperLib.Test
         private static readonly Guid documentId = Guid.Parse("3cbc0481-23b0-4860-a58a-7a723ee250c5");
         private static readonly Guid groupId = Guid.Parse("baefe5f4-d404-491d-89d0-fb192afa3c1d");
         private static readonly string groupName = "Test Group";
-        private static readonly GroupStores store = GroupStores.OnPremAd;
+        private static readonly GroupStore store = GroupStore.OnPremAd;
         private static readonly string message = "Message";
-        private static readonly LogLevels logLevel = LogLevels.Error;
+        private static readonly LogLevel logLevel = LogLevel.Error;
         private static readonly DateTime time = DateTime.Parse("2020-11-19T21:28:18.3926113+01:00");
 
         [Fact]

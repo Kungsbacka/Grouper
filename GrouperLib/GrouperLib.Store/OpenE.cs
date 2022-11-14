@@ -45,7 +45,7 @@ namespace GrouperLib.Store
                         reader = await cmd.ExecuteReaderAsync();
                         if (await reader.ReadAsync())
                         {
-                            return new GroupInfo(groupId, reader.GetString(1), GroupStores.OpenE);
+                            return new GroupInfo(groupId, reader.GetString(1), GroupStore.OpenE);
                         }
                     }
                     catch (SqlException e)
@@ -88,7 +88,7 @@ namespace GrouperLib.Store
                             memberCollection.Add(new GroupMember(
                                 reader.GetGuid(1),
                                 reader.GetString(2),
-                                GroupMemberTypes.OnPremAd
+                                GroupMemberType.OnPremAd
                             ));
                         }
                     }
@@ -152,9 +152,9 @@ namespace GrouperLib.Store
             }
         }
 
-        public IEnumerable<GroupStores> GetSupportedGroupStores()
+        public IEnumerable<GroupStore> GetSupportedGroupStores()
         {
-            return new GroupStores[] { GroupStores.OpenE };
+            return new GroupStore[] { GroupStore.OpenE };
         }
     }
 }

@@ -3,6 +3,7 @@ using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Dynamic;
 using System.Linq;
 using System.Text;
 
@@ -25,76 +26,89 @@ namespace GrouperLib.Core
 
         [JsonProperty(PropertyName = "store", Order = 5)]
         [JsonConverter(typeof(StringEnumConverter))]
-        public GroupStores Store { get; }
+        public GroupStore Store { get; }
 
         [DefaultValue("KeepExisting")]
         [JsonProperty(PropertyName = "owner", Order = 6, DefaultValueHandling = DefaultValueHandling.Populate)]
         [JsonConverter(typeof(StringEnumConverter))]
-        public GroupOwnerActions Owner { get; }
+        public GroupOwnerAction Owner { get; }
 
         [JsonProperty(PropertyName = "members", Order = 7)]
-        public IList<GrouperDocumentMember> Members
-        {
-            get
-            {
-                return _members.AsReadOnly();
-            }
-        }
+        public IReadOnlyCollection<GrouperDocumentMember> Members => _members.AsReadOnly();
         private readonly List<GrouperDocumentMember> _members;
 
-        public GroupMemberTypes MemberType
+        public GroupMemberType MemberType
         {
             get
             {
                 switch (Store)
                 {
-                    case GroupStores.OnPremAd:
-                    case GroupStores.OpenE:
-                        return GroupMemberTypes.OnPremAd;
+                    case GroupStore.OnPremAd:
+                    case GroupStore.OpenE:
+                        return GroupMemberType.OnPremAd;
                     default:
-                        return GroupMemberTypes.AzureAd;
+                        return GroupMemberType.AzureAd;
                 }
             }
         }
 
         [JsonConstructor]
-#pragma warning disable IDE0051 // "Remove unused private members" - Used when deserializing from JSON
-        private GrouperDocument(Guid id, int interval, Guid groupId, string groupName, GroupStores store, GroupOwnerActions owner, List<GrouperDocumentMember> members)
-#pragma warning restore IDE0051 // "Remove unused private members"
+        private GrouperDocument(Guid id, int interval, Guid groupId, string groupName, GroupStore store, GroupOwnerAction owner, IReadOnlyCollection<GrouperDocumentMember> members)
         {
+            if (string.IsNullOrEmpty(groupName))
+            {
+                throw new ArgumentException("Parameter cannot be null or empty", nameof(groupName));
+            }
+            if (members == null)
+            {
+                throw new ArgumentNullException(nameof(members));
+            }
             Id = id;
             ProcessingInterval = interval;
             GroupId = groupId;
             GroupName = groupName;
             Store = store;
             Owner = owner;
-            _members = members;
+            _members = members.Select(m => new GrouperDocumentMember(m)).ToList();
         }
 
-        private GrouperDocument(GrouperDocument document, string groupName)
-        {
-            if (string.IsNullOrEmpty(groupName))
-            {
-                throw new ArgumentException("Parameter cannot be null or empty", nameof(groupName));
-            }
-            GroupName = groupName;
-            // Copy all other properties
-            Id = document.Id;
-            GroupId = document.GroupId;
-            Store = document.Store;
-            Owner = document.Owner;
-            _members = document.Members.Select(m => new GrouperDocumentMember(m)).ToList();
-        }
-
-        public bool ShouldSerializeOwner() => Store == GroupStores.AzureAd;
+        public bool ShouldSerializeOwner() => Store == GroupStore.AzureAd;
 
         public bool ShouldSerializeProcessingInterval() => ProcessingInterval > 0;
 
         public bool ShouldSerializeMemberType() => false;
 
+
+        public static GrouperDocument Create(Guid id, int interval, Guid groupId, string groupName, GroupStore store, GroupOwnerAction owner, IReadOnlyCollection<GrouperDocumentMember> members, List<ValidationError> validationErrors)
+        {
+            if (validationErrors == null)
+            {
+                throw new ArgumentNullException(nameof(validationErrors));
+            }
+            GrouperDocument document = new(id, interval, groupId, groupName, store, owner, members);
+            DocumentValidator.Validate(document, validationErrors);
+            if (validationErrors.Count > 0)
+            {
+                return null;
+            }
+            return document;
+        }
+
+        public static GrouperDocument Create(Guid id, int interval, Guid groupId, string groupName, GroupStore store, GroupOwnerAction owner, IReadOnlyCollection<GrouperDocumentMember> members)
+        {
+            List<ValidationError> validationErrors = new List<ValidationError>();
+            GrouperDocument document = Create(id, interval, groupId, groupName, store, owner, members, validationErrors);
+            if (document == null)
+            {
+                throw new InvalidGrouperDocumentException();
+            }
+            return document;
+        }
+
+
         public GrouperDocument CloneWithNewGroupName(string groupName)
         {
-            return new GrouperDocument(this, groupName);
+            return new GrouperDocument(Id, ProcessingInterval, GroupId, groupName, Store, Owner, Members);
         }
 
         public string ToJson(Formatting formatting = Formatting.Indented)
@@ -150,14 +164,14 @@ namespace GrouperLib.Core
                 sb.Append("       Member Rules: ");
                 sb.AppendLine(Members.Count.ToString());
                 int maxIndent = (int)Math.Floor(Math.Log10(Members.Count));
-                for (int i = 0; i < Members.Count; i++)
+                int i = 0;
+                foreach (var member in Members)
                 {
                     int indent = maxIndent + 4;
                     if (i >= 9)
                     {
                         indent -= (int)Math.Floor(Math.Log10(i + 1));
                     }
-                    GrouperDocumentMember member = Members[i];
                     sb.Append(new string(' ', indent));
                     sb.Append('(');
                     sb.Append(i + 1);
@@ -165,6 +179,7 @@ namespace GrouperLib.Core
                     sb.Append(member.Action);
                     sb.Append(": ");
                     sb.AppendLine(member.Source.ToString());
+                    i++;
                 }
                 return sb.ToString();
             }

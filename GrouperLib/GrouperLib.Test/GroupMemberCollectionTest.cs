@@ -8,15 +8,15 @@ namespace GrouperLib.Test
     public class GroupMemberCollectionTest
     {
         private static readonly GroupMember azureMember1 = 
-            new GroupMember("9e9abe09-5e43-4f61-a09a-f1aa370be6c1", "Azure Member 1", GroupMemberTypes.AzureAd);
+            new GroupMember("9e9abe09-5e43-4f61-a09a-f1aa370be6c1", "Azure Member 1", GroupMemberType.AzureAd);
         private static readonly GroupMember azureMember2 = 
-            new GroupMember("4a13ddd8-f5d4-4671-b734-949cc956a06f", "Azure Member 2", GroupMemberTypes.AzureAd);
+            new GroupMember("4a13ddd8-f5d4-4671-b734-949cc956a06f", "Azure Member 2", GroupMemberType.AzureAd);
         private static readonly GroupMember azureMember3 =
-            new GroupMember("b9ba0fda-2dad-4b85-b95e-a6c614aa3ab9", "Azure Member 3", GroupMemberTypes.AzureAd);
+            new GroupMember("b9ba0fda-2dad-4b85-b95e-a6c614aa3ab9", "Azure Member 3", GroupMemberType.AzureAd);
         private static readonly GroupMember onpremMember1 = 
-            new GroupMember("20c58480-458a-4dfa-abc3-b509ac1846a3", "On-prem Member 1", GroupMemberTypes.OnPremAd);
+            new GroupMember("20c58480-458a-4dfa-abc3-b509ac1846a3", "On-prem Member 1", GroupMemberType.OnPremAd);
         private static readonly GroupMember onpremMember2 = 
-            new GroupMember("0fb7bb07-45aa-4eb9-8190-7cc96a1fa791", "On-prem Member 2", GroupMemberTypes.OnPremAd);
+            new GroupMember("0fb7bb07-45aa-4eb9-8190-7cc96a1fa791", "On-prem Member 2", GroupMemberType.OnPremAd);
 
         [Fact]
         public void TestCountZero()

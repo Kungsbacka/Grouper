@@ -4,7 +4,7 @@ using System;
 
 namespace GrouperLib.Core
 {
-    public sealed class GroupMemberOperation
+    public sealed class GroupMemberTask
     {
         [JsonProperty(PropertyName = "groupId")]
         public Guid GroupId { get; }
@@ -17,9 +17,9 @@ namespace GrouperLib.Core
 
         [JsonProperty(PropertyName = "operation")]
         [JsonConverter(typeof(StringEnumConverter))]
-        public GroupMemberOperations Operation { get; }
+        public GroupMemberOperation Operation { get; }
 
-        public GroupMemberOperation(Guid groupId, string groupName, GroupMember member, GroupMemberOperations operation)
+        public GroupMemberTask(Guid groupId, string groupName, GroupMember member, GroupMemberOperation operation)
         {
             GroupId = groupId;
             GroupName = groupName;
@@ -27,7 +27,7 @@ namespace GrouperLib.Core
             Operation = operation;
         }
 
-        public GroupMemberOperation(GrouperDocument document, GroupMember member, GroupMemberOperations operation)
+        public GroupMemberTask(GrouperDocument document, GroupMember member, GroupMemberOperation operation)
             : this(document.GroupId, document.GroupName, member, operation)
         {
         }

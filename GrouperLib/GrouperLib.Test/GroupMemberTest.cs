@@ -15,62 +15,62 @@ namespace GrouperLib.Test
         [Fact]
         public void TestConstruction1()
         {
-            GroupMember member = new GroupMember(validGuid, "Name", GroupMemberTypes.OnPremAd);
+            GroupMember member = new GroupMember(validGuid, "Name", GroupMemberType.OnPremAd);
             Assert.Equal(validGuid, member.Id);
             Assert.Equal("Name", member.DisplayName);
-            Assert.Equal(GroupMemberTypes.OnPremAd, member.MemberType);
+            Assert.Equal(GroupMemberType.OnPremAd, member.MemberType);
         }
 
         [Fact]
         public void TestConstruction2()
         {
-            GroupMember member = new GroupMember(validGuidString, "Name", GroupMemberTypes.OnPremAd);
+            GroupMember member = new GroupMember(validGuidString, "Name", GroupMemberType.OnPremAd);
             Assert.Equal(validGuid, member.Id);
             Assert.Equal("Name", member.DisplayName);
-            Assert.Equal(GroupMemberTypes.OnPremAd, member.MemberType);
+            Assert.Equal(GroupMemberType.OnPremAd, member.MemberType);
         }
 
         [Fact]
         public void TestConstructionInvalidGuid()
         {
-            Assert.Throws<ArgumentException>(() => { new GroupMember(invalidGuid, "Name", GroupMemberTypes.OnPremAd); });
+            Assert.Throws<ArgumentException>(() => { new GroupMember(invalidGuid, "Name", GroupMemberType.OnPremAd); });
         }
 
         [Fact]
         public void TestEquals()
         {
-            GroupMember member1 = new GroupMember(validGuid, "Name", GroupMemberTypes.OnPremAd);
-            GroupMember member2 = new GroupMember(validGuid, "Different name", GroupMemberTypes.OnPremAd);
+            GroupMember member1 = new GroupMember(validGuid, "Name", GroupMemberType.OnPremAd);
+            GroupMember member2 = new GroupMember(validGuid, "Different name", GroupMemberType.OnPremAd);
             Assert.True(member1.Equals(member2));
         }
 
         [Fact]
         public void TestNotEquals1()
         {
-            GroupMember member1 = new GroupMember(validGuid, "Name", GroupMemberTypes.OnPremAd);
-            GroupMember member2 = new GroupMember(anotherValidGuid, "Name", GroupMemberTypes.OnPremAd);
+            GroupMember member1 = new GroupMember(validGuid, "Name", GroupMemberType.OnPremAd);
+            GroupMember member2 = new GroupMember(anotherValidGuid, "Name", GroupMemberType.OnPremAd);
             Assert.False(member1.Equals(member2));
         }
 
         [Fact]
         public void TestNotEquals2()
         {
-            GroupMember member1 = new GroupMember(validGuid, "Name", GroupMemberTypes.OnPremAd);
-            GroupMember member2 = new GroupMember(validGuid, "Name", GroupMemberTypes.AzureAd);
+            GroupMember member1 = new GroupMember(validGuid, "Name", GroupMemberType.OnPremAd);
+            GroupMember member2 = new GroupMember(validGuid, "Name", GroupMemberType.AzureAd);
             Assert.False(member1.Equals(member2));
         }
 
         [Fact]
         public void TestGetHashCode()
         {
-            GroupMember member = new GroupMember(validGuid, "Name", GroupMemberTypes.OnPremAd);
+            GroupMember member = new GroupMember(validGuid, "Name", GroupMemberType.OnPremAd);
             Assert.Equal(validGuid.GetHashCode(), member.GetHashCode());
         }
 
         [Fact]
         public void TestToString()
         {
-            GroupMember member = new GroupMember(validGuid, "Name", GroupMemberTypes.OnPremAd);
+            GroupMember member = new GroupMember(validGuid, "Name", GroupMemberType.OnPremAd);
             Assert.Equal("Name", member.ToString());
         }
     }

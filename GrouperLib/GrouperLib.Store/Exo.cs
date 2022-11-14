@@ -207,7 +207,7 @@ namespace GrouperLib.Store
                     memberCollection.Add(new GroupMember(
                         id: (string)member.Properties["ExternalDirectoryObjectId"].Value,
                         displayName: (string)member.Properties["PrimarySmtpAddress"].Value,
-                        memberType: GroupMemberTypes.AzureAd
+                        memberType: GroupMemberType.AzureAd
                     ));
                 }
             }
@@ -222,7 +222,7 @@ namespace GrouperLib.Store
                 throw new ArgumentNullException(nameof(member));
             }
 
-            if (member.MemberType != GroupMemberTypes.AzureAd)
+            if (member.MemberType != GroupMemberType.AzureAd)
             {
                 throw new ArgumentException(nameof(member), "Can only add members of type 'AzureAd'");
             }
@@ -262,7 +262,7 @@ namespace GrouperLib.Store
                 throw new ArgumentNullException(nameof(member));
             }
 
-            if (member.MemberType != GroupMemberTypes.AzureAd)
+            if (member.MemberType != GroupMemberType.AzureAd)
             {
                 throw new ArgumentException(nameof(member), "Can only remove members of type 'AzureAd'");
             }
@@ -328,16 +328,16 @@ namespace GrouperLib.Store
                 groupInfo = new GroupInfo(
                     id: groupId,
                     displayName: (string)result[0].Properties["DisplayName"].Value,
-                    store: GroupStores.Exo
+                    store: GroupStore.Exo
                 );
             }
 
             return await Task.FromResult(groupInfo);
         }
 
-        public async Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember, GroupMemberTypes memberType)
+        public async Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember, GroupMemberType memberType)
         {
-            if (memberType != GroupMemberTypes.AzureAd)
+            if (memberType != GroupMemberType.AzureAd)
             {
                 throw new ArgumentException("Invalid member type", nameof(memberType));
             }
@@ -347,11 +347,11 @@ namespace GrouperLib.Store
             );
         }
 
-        public IEnumerable<GroupMemberSources> GetSupportedGrouperMemberSources() => 
-            new GroupMemberSources[] { GroupMemberSources.ExoGroup };
+        public IEnumerable<GroupMemberSource> GetSupportedGrouperMemberSources() => 
+            new GroupMemberSource[] { GroupMemberSource.ExoGroup };
 
-        public IEnumerable<GroupStores> GetSupportedGroupStores() => 
-            new GroupStores[] { GroupStores.Exo };
+        public IEnumerable<GroupStore> GetSupportedGroupStores() => 
+            new GroupStore[] { GroupStore.Exo };
 
         protected virtual void Dispose(bool disposing)
         {

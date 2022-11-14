@@ -10,18 +10,18 @@ namespace GrouperLib.Core
     {
         [JsonProperty(PropertyName = "source", Order = 1)]
         [JsonConverter(typeof(StringEnumConverter))]
-        public GroupMemberSources Source { get; }
+        public GroupMemberSource Source { get; }
 
         [JsonProperty(PropertyName = "action", Order = 2)]
         [JsonConverter(typeof(StringEnumConverter))]
-        public GroupMemberActions Action { get; }
+        public GroupMemberAction Action { get; }
 
         [JsonProperty(PropertyName = "rules", Order = 3)]
-        public IList<GrouperDocumentRule> Rules
+        public IReadOnlyCollection<GrouperDocumentRule> Rules
         {
             get
             {
-                return _rules?.AsReadOnly();
+                return _rules.AsReadOnly();
             }
         }
         private readonly List<GrouperDocumentRule> _rules;
@@ -29,13 +29,11 @@ namespace GrouperLib.Core
         public bool ShouldSerializeMemberType() => false;
 
         [JsonConstructor]
-#pragma warning disable IDE0051 // "Remove unused private members" - Used when deserializing from JSON
-        private GrouperDocumentMember(GroupMemberSources source, GroupMemberActions action, List<GrouperDocumentRule> rules)
-#pragma warning restore IDE0051 // "Remove unused private members"
+        public GrouperDocumentMember(GroupMemberSource source, GroupMemberAction action, List<GrouperDocumentRule> rules)
         {
             Source = source;
             Action = action;
-            _rules = rules;
+            _rules = rules ?? throw new ArgumentNullException(nameof(rules));
         }
 
         internal GrouperDocumentMember(GrouperDocumentMember documentMember)
@@ -54,14 +52,6 @@ namespace GrouperLib.Core
             if (Source != member.Source || Action != member.Action)
             {
                 return false;
-            }
-            if (Rules == null || member.Rules == null)
-            {
-                return Rules == null && member.Rules == null;
-            }
-            if (Rules.Count == 0 && member.Rules.Count == 0)
-            {
-                return true;
             }
             if (Rules.Count != member.Rules.Count)
             {

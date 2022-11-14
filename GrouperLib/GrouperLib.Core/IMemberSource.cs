@@ -5,8 +5,8 @@ namespace GrouperLib.Core
 {
     public interface IMemberSource
     {
-        Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember, GroupMemberTypes memberType);
+        Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember, GroupMemberType memberType);
 
-        IEnumerable<GroupMemberSources> GetSupportedGrouperMemberSources();
+        IEnumerable<GroupMemberSource> GetSupportedGrouperMemberSources();
     }
 }

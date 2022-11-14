@@ -2,6 +2,7 @@
 using Xunit;
 using GrouperLib.Core;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace GrouperLib.Test
 {
@@ -21,7 +22,7 @@ namespace GrouperLib.Test
                 {
                     new
                     {
-                        Source = GroupMemberSources.OnPremAdGroup,
+                        Source = GroupMemberSource.OnPremAdGroup,
                         Rules = new []
                         {
                             new
@@ -35,7 +36,7 @@ namespace GrouperLib.Test
             });
             ICustomValidator validator = new OnPremAdValidator();
             List<ValidationError> errors = new List<ValidationError>();
-            validator.Validate(document, document.Members[0], errors);
+            validator.Validate(document, document.Members.First(), errors);
             Assert.True(errors.Count == 0);
         }
 
@@ -49,7 +50,7 @@ namespace GrouperLib.Test
                 {
                     new
                     {
-                        Source = GroupMemberSources.OnPremAdGroup,
+                        Source = GroupMemberSource.OnPremAdGroup,
                         Rules = new[]
                         {
                             new
@@ -63,7 +64,7 @@ namespace GrouperLib.Test
             });
             ICustomValidator validator = new OnPremAdValidator();
             List<ValidationError> errors = new List<ValidationError>();
-            validator.Validate(document, document.Members[0], errors);
+            validator.Validate(document, document.Members.First(), errors);
             Assert.True(errors.Count > 0);
         }
     }

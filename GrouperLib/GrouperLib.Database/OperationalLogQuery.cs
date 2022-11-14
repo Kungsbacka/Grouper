@@ -11,14 +11,14 @@ namespace GrouperLib.Database
         public Guid? DocumentId { get; set; }
         public Guid? GroupId { get; set; }
         public Guid? TargetId { get; set; }
-        private GroupMemberOperations? _operation;
-        public GroupMemberOperations? Operation
+        private GroupMemberOperation? _operation;
+        public GroupMemberOperation? Operation
         {
             get => _operation;
 
             set
             {
-                if (value == GroupMemberOperations.None)
+                if (value == GroupMemberOperation.None)
                 {
                     throw new ArgumentException("Log items with operation 'None' are not stored in the database and cannot be used as a search filter.", nameof(value));
                 }

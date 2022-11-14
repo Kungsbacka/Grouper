@@ -3,7 +3,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 
 namespace GrouperLib.Core
@@ -43,11 +42,11 @@ namespace GrouperLib.Core
             }
         }
 
-        private static readonly Dictionary<GroupStores, ResourceLocation> storeLocations = new Dictionary<GroupStores, ResourceLocation>() {
-            { GroupStores.OnPremAd, ResourceLocation.OnPrem },
-            { GroupStores.AzureAd, ResourceLocation.Azure },
-            { GroupStores.Exo, ResourceLocation.Azure },
-            { GroupStores.OpenE, ResourceLocation.OnPrem }
+        private static readonly Dictionary<GroupStore, ResourceLocation> storeLocations = new Dictionary<GroupStore, ResourceLocation>() {
+            { GroupStore.OnPremAd, ResourceLocation.OnPrem },
+            { GroupStore.AzureAd, ResourceLocation.Azure },
+            { GroupStore.Exo, ResourceLocation.Azure },
+            { GroupStore.OpenE, ResourceLocation.OnPrem }
         };
 
         private static readonly Regex guidRegex = new Regex(
@@ -97,9 +96,9 @@ namespace GrouperLib.Core
             RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant
         );
 
-        private static readonly Dictionary<GroupMemberSources, DocumentMemberValidationRules> memberSources = new Dictionary<GroupMemberSources, DocumentMemberValidationRules>()
+        private static readonly Dictionary<GroupMemberSource, DocumentMemberValidationRules> memberSources = new Dictionary<GroupMemberSource, DocumentMemberValidationRules>()
         {
-            { GroupMemberSources.Personalsystem, new DocumentMemberValidationRules()
+            { GroupMemberSource.Personalsystem, new DocumentMemberValidationRules()
                 {
                     Location = ResourceLocation.Independent,
                     RuleSets = new string[][] {
@@ -117,7 +116,7 @@ namespace GrouperLib.Core
                     MultipleRulesAllowed = new string[] {"Befattning"}
                 }
             },
-            { GroupMemberSources.Elevregister, new DocumentMemberValidationRules()
+            { GroupMemberSource.Elevregister, new DocumentMemberValidationRules()
                 {
                     Location = ResourceLocation.Independent,
                     RuleSets = new string[][]
@@ -148,7 +147,7 @@ namespace GrouperLib.Core
                     MultipleRulesAllowed = new string[] {"Årskurs"}
                 }
             },
-            { GroupMemberSources.OnPremAdGroup, new DocumentMemberValidationRules()
+            { GroupMemberSource.OnPremAdGroup, new DocumentMemberValidationRules()
                 {
                     Location = ResourceLocation.OnPrem,
                     RuleSets = new string[][]
@@ -165,7 +164,7 @@ namespace GrouperLib.Core
                     }
                 }
             },
-            { GroupMemberSources.OnPremAdQuery, new DocumentMemberValidationRules()
+            { GroupMemberSource.OnPremAdQuery, new DocumentMemberValidationRules()
                 {
                     Location = ResourceLocation.OnPrem,
                     RuleSets = new string[][]
@@ -175,7 +174,7 @@ namespace GrouperLib.Core
                     }
                 }
             },
-            { GroupMemberSources.AzureAdGroup, new DocumentMemberValidationRules()
+            { GroupMemberSource.AzureAdGroup, new DocumentMemberValidationRules()
                 {
                     Location = ResourceLocation.Azure,
                     RuleSets = new string[][] { new string[] {"Group"} },
@@ -189,7 +188,7 @@ namespace GrouperLib.Core
                     }
                 }
             },
-            { GroupMemberSources.ExoGroup, new DocumentMemberValidationRules()
+            { GroupMemberSource.ExoGroup, new DocumentMemberValidationRules()
                 {
                     Location = ResourceLocation.Azure,
                     RuleSets = new string[][] { new string[] {"Group"} },
@@ -199,13 +198,13 @@ namespace GrouperLib.Core
                     }
                 }
             },
-            { GroupMemberSources.CustomView, new DocumentMemberValidationRules()
+            { GroupMemberSource.CustomView, new DocumentMemberValidationRules()
                 {
                     Location = ResourceLocation.Independent,
                     RuleSets = new string[][] { new string[] {"View"} }
                 }
             },
-            { GroupMemberSources.Static, new DocumentMemberValidationRules()
+            { GroupMemberSource.Static, new DocumentMemberValidationRules()
                 {
                     Location = ResourceLocation.Independent,
                     RuleSets = new string[][] { new string[] {"Upn"} },
@@ -261,7 +260,7 @@ namespace GrouperLib.Core
             }
         }
 
-        private static void InternalValidateMembers(IList<GrouperDocumentMember> documentMembers, GroupStores groupStore, ResourceLocation groupLocation, List<ValidationError> validationErrors)
+        private static void InternalValidateMembers(IReadOnlyCollection<GrouperDocumentMember> documentMembers, GroupStore groupStore, ResourceLocation groupLocation, List<ValidationError> validationErrors)
         {
             if (documentMembers == null || documentMembers.Count == 0)
             {
@@ -299,7 +298,7 @@ namespace GrouperLib.Core
             }
         }
 
-        private static void InternalValidateRules(IList<GrouperDocumentRule> documentRules, GroupMemberSources memberSource, List<ValidationError> validationErrors)
+        private static void InternalValidateRules(IReadOnlyCollection<GrouperDocumentRule> documentRules, GroupMemberSource memberSource, List<ValidationError> validationErrors)
         {
             if (documentRules == null || documentRules.Count == 0)
             {
@@ -396,6 +395,11 @@ namespace GrouperLib.Core
             }
             InternalValidateDocument(document, validationErrors);
             return document;
+        }
+
+        internal static void Validate(GrouperDocument document, List<ValidationError> validationErrors)
+        {
+            InternalValidateDocument(document, validationErrors);
         }
     }
 }

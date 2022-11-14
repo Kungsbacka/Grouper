@@ -11,6 +11,6 @@ namespace GrouperLib.Core
         Task RemoveGroupMemberAsync(GroupMember member, Guid groupId);
         Task<GroupInfo> GetGroupInfoAsync(Guid groupId);
 
-        IEnumerable<GroupStores> GetSupportedGroupStores();
+        IEnumerable<GroupStore> GetSupportedGroupStores();
     }
 }

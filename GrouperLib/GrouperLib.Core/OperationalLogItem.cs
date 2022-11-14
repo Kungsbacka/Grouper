@@ -21,11 +21,11 @@ namespace GrouperLib.Core
 
         [JsonProperty(PropertyName = "groupStore", Order = 5)]
         [JsonConverter(typeof(StringEnumConverter))]
-        public GroupStores GroupStore { get; }
+        public GroupStore GroupStore { get; }
 
         [JsonProperty(PropertyName = "operation", Order = 6)]
         [JsonConverter(typeof(StringEnumConverter))]
-        public GroupMemberOperations Operation { get; }
+        public GroupMemberOperation Operation { get; }
 
         [JsonProperty(PropertyName = "targetId", Order = 7)]
         public Guid TargetId { get; }
@@ -33,7 +33,7 @@ namespace GrouperLib.Core
         [JsonProperty(PropertyName = "targetDisplayName", Order = 8)]
         public string TargetDisplayName { get; }
 
-        public OperationalLogItem(GrouperDocument document, GroupMemberOperations operation, GroupMember member)
+        public OperationalLogItem(GrouperDocument document, GroupMemberOperation operation, GroupMember member)
         {
             LogTime = DateTime.Now;
             DocumentId = document.Id;
@@ -51,8 +51,8 @@ namespace GrouperLib.Core
             DocumentId = documentId;
             GroupId = groupId;
             GroupDisplayName = groupDisplayName;
-            GroupStore = (GroupStores)Enum.Parse(typeof(GroupStores), groupStore, true);
-            Operation = (GroupMemberOperations)Enum.Parse(typeof(GroupMemberOperations), operation, true);
+            GroupStore = (GroupStore)Enum.Parse(typeof(GroupStore), groupStore, true);
+            Operation = (GroupMemberOperation)Enum.Parse(typeof(GroupMemberOperation), operation, true);
             TargetId = targetId;
             TargetDisplayName = targetDisplayName;
         }
@@ -62,7 +62,7 @@ namespace GrouperLib.Core
             StringBuilder sb = new StringBuilder();
             sb.Append(LogTime.ToString("yyyy-MM-dd HH:mm:ss"));
             sb.Append(": ");
-            if (Operation != GroupMemberOperations.None)
+            if (Operation != GroupMemberOperation.None)
             {
                 sb.Append(Operation.ToString());
                 sb.Append("ed ");
@@ -72,11 +72,11 @@ namespace GrouperLib.Core
                 sb.Append("Did nothing to ");
             }
             sb.Append(TargetDisplayName ?? TargetId.ToString());
-            if (Operation == GroupMemberOperations.Add)
+            if (Operation == GroupMemberOperation.Add)
             {
                 sb.Append(" to ");
             }
-            else if (Operation == GroupMemberOperations.Remove)
+            else if (Operation == GroupMemberOperation.Remove)
             {
                 sb.Append(" from ");
             }

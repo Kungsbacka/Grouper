@@ -132,7 +132,7 @@ namespace GrouperLib.Store
                         {
                             displayName = identity.ToString();
                         }
-                        memberCollection.Add(new GroupMember(identity, displayName, GroupMemberTypes.OnPremAd));
+                        memberCollection.Add(new GroupMember(identity, displayName, GroupMemberType.OnPremAd));
                     }
                 }
             }
@@ -140,7 +140,7 @@ namespace GrouperLib.Store
 
         public async Task AddGroupMemberAsync(GroupMember member, Guid groupId)
         {
-            if (member.MemberType != GroupMemberTypes.OnPremAd)
+            if (member.MemberType != GroupMemberType.OnPremAd)
             {
                 throw new ArgumentException(nameof(member), "Can only add members of type 'OnPremAd'");
             }
@@ -175,7 +175,7 @@ namespace GrouperLib.Store
 
         public async Task RemoveGroupMemberAsync(GroupMember member, Guid groupId)
         {
-            if (member.MemberType != GroupMemberTypes.OnPremAd)
+            if (member.MemberType != GroupMemberType.OnPremAd)
             {
                 throw new ArgumentException(nameof(member), "Can only remove members of type 'OnPremAd'");
             }
@@ -208,21 +208,21 @@ namespace GrouperLib.Store
             await Task.FromResult(0);
         }
 
-        public async Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember, GroupMemberTypes memberType)
+        public async Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember, GroupMemberType memberType)
         {
-            if (memberType != GroupMemberTypes.OnPremAd)
+            if (memberType != GroupMemberType.OnPremAd)
             {
                 throw new ArgumentException("Invalid member type", nameof(memberType));
             }
             switch (grouperMember.Source)
             {
-                case GroupMemberSources.OnPremAdGroup:
+                case GroupMemberSource.OnPremAdGroup:
                     await GetGroupMembersAsync(
                         memberCollection,
                         Guid.Parse(grouperMember.Rules.Where(r => r.Name.IEquals("Group")).First().Value)
                     );
                     break;
-                case GroupMemberSources.OnPremAdQuery:
+                case GroupMemberSource.OnPremAdQuery:
                     string filter = grouperMember.Rules.Where(r => r.Name.IEquals("LdapFilter")).FirstOrDefault()?.Value;
                     string searchBase = grouperMember.Rules.Where(r => r.Name.IEquals("SearchBase")).FirstOrDefault()?.Value;
                     QueryGroupMembers(memberCollection, filter, searchBase);
@@ -249,7 +249,7 @@ namespace GrouperLib.Store
                     {
                         displayName = (string)directoryEntry.Properties["cn"][0];
                     }
-                    groupInfo = new GroupInfo(groupId, displayName, GroupStores.OnPremAd);
+                    groupInfo = new GroupInfo(groupId, displayName, GroupStore.OnPremAd);
                 }
             }
             catch (DirectoryServicesCOMException ex)
@@ -263,17 +263,17 @@ namespace GrouperLib.Store
             return await Task.FromResult(groupInfo);
         }
 
-        public IEnumerable<GroupMemberSources> GetSupportedGrouperMemberSources()
+        public IEnumerable<GroupMemberSource> GetSupportedGrouperMemberSources()
         {
-            return new GroupMemberSources[] {
-                GroupMemberSources.OnPremAdGroup,
-                GroupMemberSources.OnPremAdQuery
+            return new GroupMemberSource[] {
+                GroupMemberSource.OnPremAdGroup,
+                GroupMemberSource.OnPremAdQuery
             };
         }
 
-        public IEnumerable<GroupStores> GetSupportedGroupStores()
+        public IEnumerable<GroupStore> GetSupportedGroupStores()
         {
-            return new GroupStores[] { GroupStores.OnPremAd };
+            return new GroupStore[] { GroupStore.OnPremAd };
         }
     }
 }
