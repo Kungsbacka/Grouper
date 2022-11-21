@@ -20,11 +20,11 @@ namespace GrouperApi.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetLogEntries(Guid? documentId, string actionContains, string actorContains, DateTime? startDate, DateTime? endDate, int? count)
+        public async Task<IActionResult> GetLogEntries(Guid? documentId, string? actionContains, string? actorContains, DateTime? startDate, DateTime? endDate, int? count)
         {
             IEnumerable<AuditLogItem> items = await GetLogDb().GetAuditLogItemsAsync(new AuditLogQuery()
             {
-                Count = count ?? int.MaxValue,
+                Count = count ?? 100,
                 DocumentId = documentId,
                 StartDate = startDate,
                 EndDate = endDate,

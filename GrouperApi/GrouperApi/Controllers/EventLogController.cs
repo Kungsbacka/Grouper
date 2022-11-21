@@ -20,11 +20,11 @@ namespace GrouperApi.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetLogEntries(Guid? documentId, Guid? groupId, string groupDisplayNameContains, string messageContains, LogLevels? logLevel, DateTime? startDate, DateTime? endDate, int? count)
+        public async Task<IActionResult> GetLogEntries(Guid? documentId, Guid? groupId, string? groupDisplayNameContains, string? messageContains, GrouperLib.Core.LogLevel? logLevel, DateTime? startDate, DateTime? endDate, int? count)
         {
             IEnumerable<EventLogItem> items = await GetLogDb().GetEventLogItemsAsync(new EventLogQuery()
             {
-                Count = count ?? int.MaxValue,
+                Count = count ?? 100,
                 DocumentId = documentId,
                 GroupId = groupId,
                 GroupDisplayNameContains = groupDisplayNameContains,

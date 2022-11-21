@@ -23,58 +23,58 @@ namespace GrouperApi.Controllers
         }
 
         [HttpGet("all")]
-        public async Task<IActionResult> GetAllDocumentsAsync(GroupStores? store, bool unpublished, bool deleted)
+        public async Task<IActionResult> GetAllDocumentsAsync(GroupStore? store, bool? unpublished, bool? deleted)
         {
-            IEnumerable<GrouperDocumentEntry> entries = await GetDocumentDb().GetAllEntriesAsync(store, unpublished, deleted);
+            IEnumerable<GrouperDocumentEntry> entries = await GetDocumentDb().GetAllEntriesAsync(store, unpublished ?? false, deleted ?? false);
             return Ok(entries);
         }
 
         [HttpGet("id/{id:guid}")]
-        public async Task<IActionResult> GetByDocumentIdAsync(Guid id, bool unpublished, bool deleted)
+        public async Task<IActionResult> GetByDocumentIdAsync(Guid id, bool? unpublished, bool? deleted)
         {
-            IEnumerable<GrouperDocumentEntry> entries = await GetDocumentDb().GetEntriesByDocumentIdAsync(id, unpublished, deleted);
+            IEnumerable<GrouperDocumentEntry> entries = await GetDocumentDb().GetEntriesByDocumentIdAsync(id, unpublished ?? false, deleted ?? false);
             return Ok(entries);
         }
 
         [HttpGet("unpublished")]
-        public async Task<IActionResult> GetUnpublishedAsync(GroupStores? store)
+        public async Task<IActionResult> GetUnpublishedAsync(GroupStore? store)
         {
             IEnumerable<GrouperDocumentEntry> entries = await GetDocumentDb().GetUnpublishedEntriesAsync(store);
             return Ok(entries);
         }
 
         [HttpGet("deleted")]
-        public async Task<IActionResult> GetDeletedAsync(GroupStores? store)
+        public async Task<IActionResult> GetDeletedAsync(GroupStore? store)
         {
             IEnumerable<GrouperDocumentEntry> entries = await GetDocumentDb().GetDeletedEntriesAsync(store);
             return Ok(entries);
         }
 
         [HttpGet("group/name/{name}")]
-        public async Task<IActionResult> GetByGroupNameAsync(string name, GroupStores? store, bool unpublished, bool deleted)
+        public async Task<IActionResult> GetByGroupNameAsync(string name, GroupStore? store, bool? unpublished, bool? deleted)
         {
-            IEnumerable<GrouperDocumentEntry> entries = await GetDocumentDb().GetEntriesByGroupNameAsync(name, store, unpublished, deleted);
+            IEnumerable<GrouperDocumentEntry> entries = await GetDocumentDb().GetEntriesByGroupNameAsync(name, store, unpublished ?? false, deleted ?? false);
             return Ok(entries);
         }
 
         [HttpGet("group/id/{id:guid}")]
-        public async Task<IActionResult> GetByGroupIdAsync(Guid id, GroupStores? store, bool unpublished, bool deleted)
+        public async Task<IActionResult> GetByGroupIdAsync(Guid id, GroupStore? store, bool? unpublished, bool? deleted)
         {
-            IEnumerable<GrouperDocumentEntry> entries = await GetDocumentDb().GetEntriesByGroupIdAsync(id, store, unpublished, deleted);
+            IEnumerable<GrouperDocumentEntry> entries = await GetDocumentDb().GetEntriesByGroupIdAsync(id, store, unpublished ?? false, deleted ?? false);
             return Ok(entries);
         }
 
         [HttpGet("source/{source}")]
-        public async Task<IActionResult> GetByMemberSourceAsync(GroupMemberSources source, GroupStores? store, bool unpublished, bool deleted)
+        public async Task<IActionResult> GetByMemberSourceAsync(GroupMemberSource source, GroupStore? store, bool? unpublished, bool? deleted)
         {
-            IEnumerable<GrouperDocumentEntry> entries = await GetDocumentDb().GetEntriesByMemberSourceAsync(source, store, unpublished, deleted);
+            IEnumerable<GrouperDocumentEntry> entries = await GetDocumentDb().GetEntriesByMemberSourceAsync(source, store, unpublished ?? false, deleted ?? false);
             return Ok(entries);
         }
 
         [HttpGet("rule/{rule}/{value?}")]
-        public async Task<IActionResult> GetByMemberRuleAsync(string rule, string value, GroupStores? store, bool unpublished, bool deleted)
+        public async Task<IActionResult> GetByMemberRuleAsync(string rule, string value, GroupStore? store, bool? unpublished, bool? deleted)
         {
-            IEnumerable<GrouperDocumentEntry> entries = await GetDocumentDb().GetEntriesByMemberRuleAsync(ruleName: rule, ruleValue: value, store, unpublished, deleted);
+            IEnumerable<GrouperDocumentEntry> entries = await GetDocumentDb().GetEntriesByMemberRuleAsync(ruleName: rule, ruleValue: value, store, unpublished ?? false, deleted ?? false);
             return Ok(entries);
         }
 
@@ -123,7 +123,7 @@ namespace GrouperApi.Controllers
         [HttpPost("tag/{id:guid}")]
         public async Task<IActionResult> AddDocumentTagAsync(Guid id, string tag, bool? useExisting)
         {
-            await GetDocumentDb().AddDocumentTagAsync(id, tag, useExisting.GetValueOrDefault());
+            await GetDocumentDb().AddDocumentTagAsync(id, tag, useExisting ?? false);
             return Ok();
         }
 
@@ -154,7 +154,8 @@ namespace GrouperApi.Controllers
 
         private DocumentDb GetDocumentDb()
         {
-            string currentUser = ControllerContext.HttpContext.User.Identity?.Name ?? throw new InvalidOperationException("Can not determine current user name");
+            string currentUser = ControllerContext.HttpContext.User.Identity?.Name ??
+                throw new InvalidOperationException("Can not determine current user name");
             return new DocumentDb(_config.DocumentDatabaseConnectionString, currentUser);
         }
     }
