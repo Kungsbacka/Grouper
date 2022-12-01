@@ -72,7 +72,7 @@ namespace GrouperApi.Controllers
         }
 
         [HttpGet("rule/{rule}/{value?}")]
-        public async Task<IActionResult> GetByMemberRuleAsync(string rule, string value, GroupStore? store, bool? unpublished, bool? deleted)
+        public async Task<IActionResult> GetByMemberRuleAsync(string rule, string? value, GroupStore? store, bool? unpublished, bool? deleted)
         {
             IEnumerable<GrouperDocumentEntry> entries = await GetDocumentDb().GetEntriesByMemberRuleAsync(ruleName: rule, ruleValue: value, store, unpublished ?? false, deleted ?? false);
             return Ok(entries);
