@@ -102,7 +102,7 @@ namespace GrouperService
             }
         }
 
-        private void WriteToLogDb(GrouperDocument document, string message, LogLevels logLevel)
+        private void WriteToLogDb(GrouperDocument document, string message, LogLevel logLevel)
         {
             EventLogItem logItem = new EventLogItem(document, message, logLevel);
 
@@ -201,7 +201,7 @@ namespace GrouperService
                     {
                         message = ex.InnerException.Message;
                     }
-                    WriteToLogDb(entry.Document, message, LogLevels.Error);
+                    WriteToLogDb(entry.Document, message, LogLevel.Error);
                     if (!(ex is GroupNotFoundException || ex is MemberNotFoundException || ex is ChangeRatioException))
                     {
                         WriteToEventLog(message, EventLogEntryType.Error);
