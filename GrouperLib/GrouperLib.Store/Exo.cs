@@ -98,7 +98,7 @@ namespace GrouperLib.Store
 
             string script = @"
                 param($Organization, $AppId, $Certificate)
-                    Set-ExecutionPolicy 'RemoteSigned'
+                    Set-ExecutionPolicy 'RemoteSigned' -Scope 'CurrentUser'
                     Import-Module ExchangeOnlineManagement -MinimumVersion '2.0.5'
                     $params = @{
                         Organization = $Organization
@@ -179,6 +179,7 @@ namespace GrouperLib.Store
             Hashtable parameters = new()
             {
                 { "Identity", groupId.ToString() },
+                { "ResultSize", "Unlimited" },
                 { "ErrorAction", "Stop"}
             };
 
@@ -359,10 +360,7 @@ namespace GrouperLib.Store
             {
                 if (disposing)
                 {
-                    if (_runspace != null)
-                    {
-                        _runspace.Dispose();
-                    }
+                    _runspace?.Dispose();
                 }
                 _disposed = true;
             }
