@@ -19,7 +19,7 @@ namespace GrouperLib.Test
         public void TestConstruction()
         {
             DateTime now = DateTime.Now;
-            OperationalLogItem logItem = new OperationalLogItem(
+            OperationalLogItem logItem = new(
                 logTime: now,
                 documentId: documentId,
                 groupId: groupId,
@@ -44,7 +44,7 @@ namespace GrouperLib.Test
         {
             DateTime now = DateTime.Now;
             GrouperDocument document = TestHelpers.MakeDocument();
-            OperationalLogItem logItem = new OperationalLogItem(document, operation,
+            OperationalLogItem logItem = new(document, operation,
                 new GroupMember(targetId, targetName, GroupMemberType.OnPremAd));
             Assert.True(logItem.LogTime >= now);
             Assert.Equal(TestHelpers.DefaultDocumentId, logItem.DocumentId);
@@ -70,7 +70,7 @@ namespace GrouperLib.Test
   ""targetDisplayName"": ""target@example.com""
 }";
             DateTime time = DateTime.Parse("2020-11-19T21:28:18.3926113+01:00");
-            OperationalLogItem logItem = new OperationalLogItem(
+            OperationalLogItem logItem = new(
                 logTime: time,
                 documentId: documentId,
                 groupId: groupId,

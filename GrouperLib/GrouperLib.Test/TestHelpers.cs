@@ -39,7 +39,7 @@ namespace GrouperLib.Test
             {
                 members.Add(MakeMember(new { }));
             }
-            return (GrouperDocument)Activator.CreateInstance(typeof(GrouperDocument), BindingFlags.Instance | BindingFlags.NonPublic, binder: null, culture: null, args: new object[] {
+            var doc = (GrouperDocument?)Activator.CreateInstance(typeof(GrouperDocument), BindingFlags.Instance | BindingFlags.NonPublic, binder: null, culture: null, args: new object[] {
                 null != defType.GetProperty("Id")        ? def.Id        : DefaultDocumentId,
                 null != defType.GetProperty("Interval")  ? def.Interval  : DefaultProcessingInterval,
                 null != defType.GetProperty("GroupId")   ? def.GroupId   : DefaultGroupId,
@@ -48,6 +48,7 @@ namespace GrouperLib.Test
                 null != defType.GetProperty("Owner")     ? def.Owner     : DefaultOwnerAction,
                 members
             });
+            return doc ?? throw new InvalidOperationException();
         }
 
         public static GrouperDocumentMember MakeMember(dynamic def)

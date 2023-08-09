@@ -25,7 +25,7 @@ namespace GrouperLib.Database
                 _operation = value;
             }
         }
-        public string TargetDisplayNameContains { get; set; }
-        public string GroupDisplayNameContains { get; set; }
+        public string? TargetDisplayNameContains { get; set; }
+        public string? GroupDisplayNameContains { get; set; }
     }
 }

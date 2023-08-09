@@ -1,5 +1,7 @@
-﻿using GrouperLib.Config;
+﻿using Azure.Core;
+using GrouperLib.Config;
 using GrouperLib.Core;
+using Microsoft.Graph.Models;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,6 +9,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
+using System.Runtime.Versioning;
 using System.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -15,16 +18,17 @@ using System.Threading.Tasks;
 
 namespace GrouperLib.Store
 {
+    [SupportedOSPlatform("windows")]
     public class Exo : IMemberSource, IGroupStore, IDisposable
     {
         private readonly X509Certificate2 _certificate;
         private readonly string _appId;
         private readonly string _organization;
-        private Runspace _runspace;
+        private Runspace? _runspace;
         private bool _initialized;
         private bool _disposed;
 
-        private static readonly Regex guidRegex = new Regex(
+        private static readonly Regex guidRegex = new(
             "\"(?<guid>[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12})\"",
             RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant
         );
@@ -38,49 +42,57 @@ namespace GrouperLib.Store
 
         public Exo(GrouperConfiguration config)
         {
-            _organization = config.ExchangeOrganization ?? throw new ArgumentNullException(nameof(config.ExchangeOrganization));
-            _appId = config.ExchangeAppId ?? throw new ArgumentNullException(nameof(config.ExchangeAppId));
+            _organization = config.ExchangeOrganization
+                ?? throw new InvalidOperationException($"{nameof(config.ExchangeOrganization)} is not set in the configuration");
+            _appId = config.ExchangeAppId
+                ?? throw new InvalidOperationException($"{nameof(config.ExchangeAppId)} is not set in the configuration");
             
-            string certificateFilePath = config.ExchangeCertificateFilePath;
-            string certificateThumbprint = config.ExchangeCertificateThumbprint;
-            string certificateAsBase64 = config.ExchangeCertificateAsBase64;
-            string certificatePassword = "";
-            int num = (certificateFilePath   is null ? 0 : 1)
-                    + (certificateThumbprint is null ? 0 : 1)
-                    + (certificateAsBase64   is null ? 0 : 1);
+            int num = (config.ExchangeCertificateFilePath is null ? 0 : 1)
+                    + (config.ExchangeCertificateThumbprint is null ? 0 : 1)
+                    + (config.ExchangeCertificateAsBase64 is null ? 0 : 1);
 
             if (num != 1)
             {
-                throw new ArgumentException(
+                throw new InvalidOperationException(
                     $"You must specify one of {nameof(config.ExchangeCertificateFilePath)}, {nameof(config.ExchangeCertificateThumbprint)} or {nameof(config.ExchangeCertificateAsBase64)} in the configuration"
                 );
             }
 
-            if (certificateFilePath is not null || certificateAsBase64 is not null)
+            if (config.ExchangeCertificateFilePath is not null || config.ExchangeCertificateAsBase64 is not null)
             {
-                certificatePassword = config.ExchangeCertificatePassword ?? throw new ArgumentNullException(nameof(config.ExchangeCertificatePassword));
+                if (config.ExchangeCertificatePassword is null)
+                {
+                    throw new InvalidOperationException($"{nameof(config.ExchangeCertificatePassword)} is not set in the configuration");
+                }
+
+                if (config.ExchangeCertificateFilePath is not null)
+                {
+                    _certificate = Helpers.GetCertificateFromFile(config.ExchangeCertificateFilePath, config.ExchangeCertificatePassword);
+                    return;
+                }
+
+                if (config.ExchangeCertificateAsBase64 is not null)
+                {
+                    _certificate = Helpers.GetCertificateFromBase64String(config.ExchangeCertificateAsBase64, config.ExchangeCertificatePassword);
+
+                }
+
             }
 
-            if (certificateFilePath is not null)
-            {
-                _certificate = Helpers.GetCertificateFromFile(certificateFilePath, certificatePassword);
-                return;
-            }
-
-            if (certificateThumbprint is not null)
+            if (config.ExchangeCertificateThumbprint is not null)
             {
                 if (config.ExchangeCertificateStoreLocation is null)
                 {
-                    throw new ArgumentNullException(
-                        $"If certificate is loaded from store {nameof(config.ExchangeCertificateStoreLocation)} must be specified in the configuration"
-                    );
+                    throw new InvalidOperationException($"If certificate is loaded from store {nameof(config.ExchangeCertificateStoreLocation)} must be specified in the configuration");
                 }
-
-                _certificate = Helpers.GetCertificateFromStore(certificateThumbprint, config.ExchangeCertificateStoreLocation.Value);
+                _certificate = Helpers.GetCertificateFromStore(config.ExchangeCertificateThumbprint, config.ExchangeCertificateStoreLocation.Value);
                 return;
             }
 
-            _certificate = Helpers.GetCertificateFromBase64String(certificateAsBase64, certificatePassword);
+            if (_certificate is null)
+            {
+                throw new InvalidOperationException("No certificate was loaded.");
+            }
         }
 
         private void Connect()
@@ -99,7 +111,7 @@ namespace GrouperLib.Store
             string script = @"
                 param($Organization, $AppId, $Certificate)
                     Set-ExecutionPolicy 'RemoteSigned' -Scope 'CurrentUser'
-                    Import-Module ExchangeOnlineManagement -MinimumVersion '2.0.5'
+                    Import-Module ExchangeOnlineManagement -MinimumVersion '3.0.0'
                     $params = @{
                         Organization = $Organization
                         AppId = $AppId
@@ -147,30 +159,29 @@ namespace GrouperLib.Store
             return result;
         }
 
-        private bool IsNotFoundError(RemoteException ex)
+        private static bool IsNotFoundError(RemoteException ex)
         {
             return ex.ErrorRecord.CategoryInfo.Reason.IEquals("ManagementObjectNotFoundException");
         }
 
-        private Exception CreateNotFoundException(Guid groupId, Guid? memberId, RemoteException ex)
+        private static Exception CreateNotFoundException(Guid groupId, Guid? memberId, RemoteException ex)
         {
-            Exception exception = null;
-            foreach (Match match in guidRegex.Matches(ex.Message))
+            if (ex.Message is not null)
             {
-                Guid? guid = Guid.Parse(match.Groups["guid"].Value);
-                if (guid == groupId)
+                foreach (Match match in guidRegex.Matches(ex.Message).Cast<Match>())
                 {
-                    exception = GroupNotFoundException.Create(groupId, ex);
-                    break;
-                }
-                if (guid == memberId)
-                {
-                    exception = MemberNotFoundException.Create(groupId, ex);
-                    break;
+                    Guid? guid = Guid.Parse(match.Groups["guid"].Value);
+                    if (guid == groupId)
+                    {
+                        return GroupNotFoundException.Create(groupId, ex);
+                    }
+                    if (guid == memberId)
+                    {
+                        return MemberNotFoundException.Create(groupId, ex);
+                    }
                 }
             }
-
-            return exception;
+            return ex;
         }
 
         public async Task GetGroupMembersAsync(GroupMemberCollection memberCollection, Guid groupId)
@@ -192,11 +203,7 @@ namespace GrouperLib.Store
             {
                 if (IsNotFoundError(ex))
                 {
-                    Exception notFoundException = CreateNotFoundException(groupId, null, ex);
-                    if (notFoundException != null)
-                    {
-                        throw notFoundException;
-                    }
+                    throw CreateNotFoundException(groupId, null, ex);
                 }
                 throw;
             }
@@ -225,7 +232,7 @@ namespace GrouperLib.Store
 
             if (member.MemberType != GroupMemberType.AzureAd)
             {
-                throw new ArgumentException(nameof(member), "Can only add members of type 'AzureAd'");
+                throw new InvalidOperationException($"Can only add members of type {nameof(GroupMemberType.AzureAd)}");
             }
 
             string command = "Add-DistributionGroupMember";
@@ -244,11 +251,7 @@ namespace GrouperLib.Store
             {
                 if (IsNotFoundError(ex))
                 {
-                    Exception notFoundException = CreateNotFoundException(groupId, member.Id, ex);
-                    if (notFoundException != null)
-                    {
-                        throw notFoundException;
-                    }
+                    throw CreateNotFoundException(groupId, member.Id, ex);
                 }
                 throw;
             }
@@ -265,7 +268,7 @@ namespace GrouperLib.Store
 
             if (member.MemberType != GroupMemberType.AzureAd)
             {
-                throw new ArgumentException(nameof(member), "Can only remove members of type 'AzureAd'");
+                throw new InvalidOperationException($"Can only remove members of type {nameof(GroupMemberType.AzureAd)}");
             }
 
             string command = "Remove-DistributionGroupMember";
@@ -285,11 +288,7 @@ namespace GrouperLib.Store
             {
                 if (IsNotFoundError(ex))
                 {
-                    Exception notFoundException = CreateNotFoundException(groupId, member.Id, ex);
-                    if (notFoundException != null)
-                    {
-                        throw notFoundException;
-                    }
+                    throw CreateNotFoundException(groupId, member.Id, ex);
                 }
                 throw;
             }
@@ -298,7 +297,6 @@ namespace GrouperLib.Store
 
         public async Task<GroupInfo> GetGroupInfoAsync(Guid groupId)
         {
-            GroupInfo groupInfo = null;
             string command = "Get-DistributionGroup";
             Hashtable parameters = new()
             {
@@ -315,32 +313,28 @@ namespace GrouperLib.Store
             {
                 if (IsNotFoundError(ex))
                 {
-                    Exception notFoundException = CreateNotFoundException(groupId, null, ex);
-                    if (notFoundException != null)
-                    {
-                        throw notFoundException;
-                    }
+                    throw CreateNotFoundException(groupId, null, ex);
                 }
                 throw;
             }
 
-            if (result != null && result.Count > 0)
+            if (result is null || result.Count == 0)
             {
-                groupInfo = new GroupInfo(
-                    id: groupId,
-                    displayName: (string)result[0].Properties["DisplayName"].Value,
-                    store: GroupStore.Exo
-                );
+                throw GroupNotFoundException.Create(groupId);
             }
 
-            return await Task.FromResult(groupInfo);
+            return await Task.FromResult(new GroupInfo(
+                id: groupId,
+                displayName: (string)result[0].Properties["DisplayName"].Value,
+                store: GroupStore.Exo
+            ));
         }
 
         public async Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember, GroupMemberType memberType)
         {
             if (memberType != GroupMemberType.AzureAd)
             {
-                throw new ArgumentException("Invalid member type", nameof(memberType));
+                throw new InvalidOperationException($"Can only get members of type {nameof(GroupMemberType.AzureAd)}");
             }
             await GetGroupMembersAsync(
                 memberCollection,

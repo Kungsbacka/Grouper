@@ -4,28 +4,25 @@ using Microsoft.Data.SqlClient;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Text.RegularExpressions;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
 
 namespace GrouperLib.Store
 {
+    [SupportedOSPlatform("windows")]
     public class OpenE : IGroupStore
     {
         readonly string _connectionString;
 
         public OpenE(string connectionString)
         {
-            if (connectionString is null)
-            {
-                throw new ArgumentNullException(nameof(connectionString));
-            }
-            _connectionString = connectionString;
+            _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
         }
 
-        public OpenE(GrouperConfiguration config) : this(config.OpenEDatabaseConnectionString)
+        public OpenE(GrouperConfiguration config)
         {
+            _connectionString = config.OpenEDatabaseConnectionString
+                ?? throw new InvalidOperationException($"{nameof(config.OpenEDatabaseConnectionString)} is not set in the configuration.");
         }
 
         public async Task<GroupInfo> GetGroupInfoAsync(Guid groupId)
@@ -33,36 +30,26 @@ namespace GrouperLib.Store
             using (var conn = new SqlConnection(_connectionString))
             {
                 await conn.OpenAsync();
-                using (var cmd = new SqlCommand())
+                using var cmd = new SqlCommand();
+                cmd.Connection = conn;
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.CommandText = "dbo.spOpenEGetGroupInfo";
+                cmd.Parameters.AddWithValue("groupId", groupId);
+                try
                 {
-                    cmd.Connection = conn;
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.CommandText = "dbo.spOpenEGetGroupInfo";
-                    cmd.Parameters.AddWithValue("groupId", groupId);
-                    SqlDataReader reader = null;
-                    try
+                    using SqlDataReader reader = await cmd.ExecuteReaderAsync();
+                    if (await reader.ReadAsync())
                     {
-                        reader = await cmd.ExecuteReaderAsync();
-                        if (await reader.ReadAsync())
-                        {
-                            return new GroupInfo(groupId, reader.GetString(1), GroupStore.OpenE);
-                        }
+                        return new GroupInfo(groupId, reader.GetString(1), GroupStore.OpenE);
                     }
-                    catch (SqlException e)
+                }
+                catch (SqlException e)
+                {
+                    if (e.Number == 50001)
                     {
-                        if (e.Number == 50001)
-                        {
-                            throw GroupNotFoundException.Create(groupId, e);
-                        }
-                        throw;
+                        throw GroupNotFoundException.Create(groupId, e);
                     }
-                    finally
-                    {
-                        if (reader != null)
-                        {
-                            reader.Dispose();
-                        }
-                    }
+                    throw;
                 }
             }
             throw GroupNotFoundException.Create(groupId);
@@ -70,44 +57,32 @@ namespace GrouperLib.Store
 
         public async Task GetGroupMembersAsync(GroupMemberCollection memberCollection, Guid groupId)
         {
-            using (var conn = new SqlConnection(_connectionString))
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+            using var cmd = new SqlCommand();
+            cmd.Connection = conn;
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = "dbo.spOpenEGetGroupMember";
+            cmd.Parameters.AddWithValue("groupId", groupId);
+            try
             {
-                await conn.OpenAsync();
-                using (var cmd = new SqlCommand())
+                using SqlDataReader reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
                 {
-                    cmd.Connection = conn;
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.CommandText = "dbo.spOpenEGetGroupMember";
-                    cmd.Parameters.AddWithValue("groupId", groupId);
-                    SqlDataReader reader = null;
-                    try
-                    {
-                        reader = await cmd.ExecuteReaderAsync();
-                        while (await reader.ReadAsync())
-                        {
-                            memberCollection.Add(new GroupMember(
-                                reader.GetGuid(1),
-                                reader.GetString(2),
-                                GroupMemberType.OnPremAd
-                            ));
-                        }
-                    }
-                    catch (SqlException e)
-                    {
-                        if (e.Number == 50001)
-                        {
-                            throw GroupNotFoundException.Create(groupId, e);
-                        }
-                        throw;
-                    }
-                    finally
-                    {
-                        if (reader != null)
-                        {
-                            reader.Dispose();
-                        }
-                    }
+                    memberCollection.Add(new GroupMember(
+                        reader.GetGuid(1),
+                        reader.GetString(2),
+                        GroupMemberType.OnPremAd
+                    ));
                 }
+            }
+            catch (SqlException e)
+            {
+                if (e.Number == 50001)
+                {
+                    throw GroupNotFoundException.Create(groupId, e);
+                }
+                throw;
             }
         }
 
@@ -123,32 +98,30 @@ namespace GrouperLib.Store
 
         private async Task ExecuteStoreProcedure(string storedProcedure, GroupMember member, Guid groupId)
         {
-            using (var conn = new SqlConnection(_connectionString))
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+            using var cmd = new SqlCommand()
             {
-                await conn.OpenAsync();
-                using (var cmd = new SqlCommand())
+                Connection = conn,
+                CommandType = CommandType.StoredProcedure,
+                CommandText = storedProcedure
+            };
+            cmd.Parameters.AddWithValue("groupId", groupId);
+            cmd.Parameters.AddWithValue("memberId", member.Id);
+            try
+            {
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch (SqlException e)
+            {
+                switch (e.Number)
                 {
-                    cmd.Connection = conn;
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.CommandText = storedProcedure;
-                    cmd.Parameters.AddWithValue("groupId", groupId);
-                    cmd.Parameters.AddWithValue("memberId", member.Id);
-                    try
-                    {
-                        await cmd.ExecuteNonQueryAsync();
-                    }
-                    catch (SqlException e)
-                    {
-                        switch (e.Number)
-                        {
-                            case 50001:
-                                throw GroupNotFoundException.Create(groupId, e);
-                            case 50002:
-                                throw MemberNotFoundException.Create(member.Id, e);
-                        }
-                        throw;
-                    }
+                    case 50001:
+                        throw GroupNotFoundException.Create(groupId, e);
+                    case 50002:
+                        throw MemberNotFoundException.Create(member.Id, e);
                 }
+                throw;
             }
         }
 

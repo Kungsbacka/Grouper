@@ -123,7 +123,7 @@ namespace GrouperLib.Test
         [Fact]
         public void TestCreateDocument()
         {
-            List<ValidationError> validationErrors = new List<ValidationError>();
+            List<ValidationError> validationErrors = new();
             Guid id = Guid.Parse("efe73af2-db9d-4b82-a21e-c93c5a067d80");
             int interval = 1;
             Guid groupId = Guid.Parse("6d00d587-cd31-4ac7-9a54-ffe4543dfd43");
@@ -131,14 +131,14 @@ namespace GrouperLib.Test
             GroupOwnerAction owner = GroupOwnerAction.KeepExisting;
             GroupStore store = GroupStore.OnPremAd;
 
-            List<GrouperDocumentMember> members = new List<GrouperDocumentMember>()
+            List<GrouperDocumentMember> members = new()
             {
                 new GrouperDocumentMember(GroupMemberSource.Static, GroupMemberAction.Include, new List<GrouperDocumentRule>()
                 {
                     new GrouperDocumentRule("Upn", "user@example.com")
                 })
             };
-            GrouperDocument document = GrouperDocument.Create(id, interval, groupId, groupName, store, owner, members, validationErrors);
+            GrouperDocument? document = GrouperDocument.Create(id, interval, groupId, groupName, store, owner, members, validationErrors);
             Assert.NotNull(document);
             Assert.Empty(validationErrors);
             Assert.Equal(id, document.Id);

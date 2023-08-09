@@ -20,7 +20,7 @@ namespace GrouperLib.Test
         [Fact]
         public void TestConstruction()
         {
-            EventLogItem logItem = new EventLogItem(
+            EventLogItem logItem = new(
                 logTime: time,
                 documentId: documentId,
                 groupId: groupId,
@@ -42,7 +42,7 @@ namespace GrouperLib.Test
         public void TestConstructionWithDocument()
         {
             GrouperDocument document = TestHelpers.MakeDocument();
-            EventLogItem logItem = new EventLogItem(document, message, logLevel);
+            EventLogItem logItem = new(document, message, logLevel);
             Assert.Equal(TestHelpers.DefaultDocumentId, logItem.DocumentId);
             Assert.Equal(TestHelpers.DefaultGroupName, logItem.GroupDisplayName);
             Assert.Equal(TestHelpers.DefaultGroupId, logItem.GroupId);
@@ -54,7 +54,7 @@ namespace GrouperLib.Test
         [Fact]
         public void TestConstructionWithEmptyGroupDisplayName()
         {
-            EventLogItem logItem = new EventLogItem(
+            EventLogItem logItem = new(
                 logTime: time,
                 documentId: documentId,
                 groupId: groupId,
@@ -69,7 +69,7 @@ namespace GrouperLib.Test
         [Fact]
         public void TestConstructionWithoutGroupStore()
         {
-            EventLogItem logItem = new EventLogItem(
+            EventLogItem logItem = new(
                 logTime: time,
                 documentId: documentId,
                 groupId: groupId,
@@ -84,7 +84,7 @@ namespace GrouperLib.Test
         [Fact]
         public void TestSerializedNames()
         {
-            EventLogItem logItem = new EventLogItem(
+            EventLogItem logItem = new(
                 logTime: time,
                 documentId: documentId,
                 groupId: groupId,

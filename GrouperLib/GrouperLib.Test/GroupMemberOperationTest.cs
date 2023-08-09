@@ -11,9 +11,9 @@ namespace GrouperLib.Test
         [Fact]
         public void TestConstruction()
         {
-            GroupMember member = new GroupMember(Guid.Empty, "Member", GroupMemberType.OnPremAd);
+            GroupMember member = new(Guid.Empty, "Member", GroupMemberType.OnPremAd);
             GroupMemberOperation operation = GroupMemberOperation.Add;
-            GroupMemberTask memberOperation = new GroupMemberTask(TestHelpers.DefaultDocumentId, TestHelpers.DefaultGroupName, member, operation);
+            GroupMemberTask memberOperation = new(TestHelpers.DefaultDocumentId, TestHelpers.DefaultGroupName, member, operation);
             Assert.Equal(TestHelpers.DefaultDocumentId, memberOperation.GroupId);
             Assert.Equal(TestHelpers.DefaultGroupName, memberOperation.GroupName);
             Assert.Equal(member, memberOperation.Member);
@@ -24,9 +24,9 @@ namespace GrouperLib.Test
         public void TestConstructionWithDocument()
         {
             GrouperDocument document = TestHelpers.MakeDocument();
-            GroupMember member = new GroupMember(Guid.Empty, "Member", GroupMemberType.OnPremAd);
+            GroupMember member = new(Guid.Empty, "Member", GroupMemberType.OnPremAd);
             GroupMemberOperation operation = GroupMemberOperation.Add;
-            GroupMemberTask memberOperation = new GroupMemberTask(document, member, operation);
+            GroupMemberTask memberOperation = new(document, member, operation);
             Assert.Equal(document.GroupId, memberOperation.GroupId);
             Assert.Equal(document.GroupName, memberOperation.GroupName);
             Assert.Equal(member, memberOperation.Member);
@@ -36,9 +36,9 @@ namespace GrouperLib.Test
         [Fact]
         public void TestSerialzedNames()
         {
-            GroupMember member = new GroupMember(Guid.Empty, "Member", GroupMemberType.OnPremAd);
+            GroupMember member = new(Guid.Empty, "Member", GroupMemberType.OnPremAd);
             GroupMemberOperation operation = GroupMemberOperation.Add;
-            GroupMemberTask memberOperation = new GroupMemberTask(TestHelpers.DefaultDocumentId, TestHelpers.DefaultGroupName, member, operation);
+            GroupMemberTask memberOperation = new(TestHelpers.DefaultDocumentId, TestHelpers.DefaultGroupName, member, operation);
             string json = JsonConvert.SerializeObject(memberOperation);
             JObject obj = JObject.Parse(json);
             Assert.True(obj.ContainsKey("groupId"));

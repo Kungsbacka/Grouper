@@ -11,7 +11,7 @@ namespace GrouperLib.Database
         public DateTime? EndDate { get; set; }
         public Guid? DocumentId { get; set; }
         public Guid? GroupId { get; set; }
-        public string MessageContains { get; set; }
-        public string GroupDisplayNameContains { get; set; }
+        public string? MessageContains { get; set; }
+        public string? GroupDisplayNameContains { get; set; }
     }
 }

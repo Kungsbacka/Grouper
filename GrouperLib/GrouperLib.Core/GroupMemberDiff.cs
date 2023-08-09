@@ -26,9 +26,9 @@ namespace GrouperLib.Core
             double changeRatio)
         {
             Document = document ?? throw new ArgumentNullException(nameof(document));
-            Add = addMemberCollection?.AsEnumerable() ?? throw new ArgumentNullException(nameof(addMemberCollection));
-            Remove = removeMemberCollection?.AsEnumerable() ?? throw new ArgumentNullException(nameof(removeMemberCollection));
-            Unchanged = unchangedMemberCollection?.AsEnumerable() ?? throw new ArgumentNullException(nameof(unchangedMemberCollection));
+            Add = addMemberCollection ?? throw new ArgumentNullException(nameof(addMemberCollection));
+            Remove = removeMemberCollection ?? throw new ArgumentNullException(nameof(removeMemberCollection));
+            Unchanged = unchangedMemberCollection ?? throw new ArgumentNullException(nameof(unchangedMemberCollection));
             ChangeRatio = changeRatio;
             if (addMemberCollection == removeMemberCollection || addMemberCollection == unchangedMemberCollection || removeMemberCollection == unchangedMemberCollection)
             {

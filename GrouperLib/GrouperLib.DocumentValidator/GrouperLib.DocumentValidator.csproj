@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -7,10 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GrouperLib.Config\GrouperLib.Config.csproj" />
-    <ProjectReference Include="..\GrouperLib.Database\GrouperLib.Database.csproj" />
     <ProjectReference Include="..\GrouperLib.Core\GrouperLib.Core.csproj" />
-    <ProjectReference Include="..\GrouperLib.Store\GrouperLib.Store.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Validators\" />
   </ItemGroup>
 
 </Project>

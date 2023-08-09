@@ -1,23 +1,27 @@
 ﻿using GrouperLib.Config;
 using GrouperLib.Core;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Identity.Client;
+using Microsoft.IdentityModel.Logging;
 using System;
 using System.Collections.Generic;
 using System.DirectoryServices;
 using System.Linq;
-using System.Runtime.Caching;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
 
 namespace GrouperLib.Store
 {
+    [SupportedOSPlatform("windows")]
     public class OnPremAd : IMemberSource, IGroupStore
     {
-        private readonly ObjectCache _dnCache;
-        private readonly string _userName;
-        private readonly string _password;
-        private readonly CacheItemPolicy _cachePolicy;
+        private readonly IMemoryCache _dnCache;
+        private readonly string? _userName;
+        private readonly string? _password;
+        private const int CacheExpirationMinutes = 30;
         private const uint LDAP_NO_SUCH_OBJECT = 0x80072030;
 
-        public OnPremAd(string userName, string password)
+        public OnPremAd(string? userName, string? password)
         {
             // userName and password are optional
             if (!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(password))
@@ -25,11 +29,7 @@ namespace GrouperLib.Store
                 _userName = userName;
                 _password = password;
             }
-            _dnCache = MemoryCache.Default;
-            _cachePolicy = new CacheItemPolicy()
-            {
-                SlidingExpiration = TimeSpan.FromMinutes(30),
-            };
+            _dnCache = new MemoryCache(new MemoryCacheOptions());
         }
 
         public OnPremAd(GrouperConfiguration config) : this(
@@ -42,7 +42,7 @@ namespace GrouperLib.Store
         {
         }
 
-        private DirectoryEntry GetDirectoryEntry(string path)
+        private DirectoryEntry GetDirectoryEntry(string? path)
         {
             DirectoryEntry directoryEntry;
             if (string.IsNullOrEmpty(path))
@@ -59,7 +59,6 @@ namespace GrouperLib.Store
             }
             if (_userName != null && _password != null)
             {
-
                 directoryEntry.Username = _userName;
                 directoryEntry.Password = _password;
                 directoryEntry.AuthenticationType = AuthenticationTypes.Secure;
@@ -67,30 +66,27 @@ namespace GrouperLib.Store
             return directoryEntry;
         }
 
-        private string GetDistinguishedName(Guid objectId)
+        private string? GetDistinguishedName(Guid objectId)
         {
-            string cacheKey = objectId.ToString();
-            string distinguishedName = null;
-            if (_dnCache.Contains(cacheKey))
+            if (_dnCache.TryGetValue(objectId, out object? value))
             {
-                distinguishedName = (string)_dnCache.Get(cacheKey);
+                return (string?)value!;
             }
-            else
+            string? distinguishedName = null;
+            using DirectoryEntry directoryEntry = GetDirectoryEntry($"LDAP://<GUID={objectId}>");
+            try
             {
-                using (DirectoryEntry directoryEntry = GetDirectoryEntry($"LDAP://<GUID={objectId}>"))
+                distinguishedName = (string?)directoryEntry.Properties["distinguishedName"].Value;
+                if (distinguishedName is not null)
                 {
-                    try
-                    {
-                        distinguishedName = (string)directoryEntry.Properties["distinguishedName"].Value;
-                        _dnCache.Add(cacheKey, distinguishedName, _cachePolicy);
-                    }
-                    catch (DirectoryServicesCOMException ex)
-                    {
-                        if ((uint)ex.HResult != LDAP_NO_SUCH_OBJECT)
-                        {
-                            throw;
-                        }
-                    }
+                    _dnCache.Set(objectId, distinguishedName, TimeSpan.FromMinutes(CacheExpirationMinutes));
+                }
+            }
+            catch (DirectoryServicesCOMException ex)
+            {
+                if ((uint)ex.HResult != LDAP_NO_SUCH_OBJECT)
+                {
+                    throw;
                 }
             }
             return distinguishedName;
@@ -98,43 +94,35 @@ namespace GrouperLib.Store
 
         public async Task GetGroupMembersAsync(GroupMemberCollection memberCollection, Guid groupId)
         {
-            string groupDn = GetDistinguishedName(groupId);
-            if (groupDn == null)
-            {
-                throw GroupNotFoundException.Create(groupId);
-            }
+            string groupDn = GetDistinguishedName(groupId) ?? throw GroupNotFoundException.Create(groupId);
             string filter = $"(memberOf={groupDn})";
             QueryGroupMembers(memberCollection, filter, null);
             await Task.FromResult(0);
         }
 
-        private void QueryGroupMembers(GroupMemberCollection memberCollection, string ldapFilter, string searchBase)
+        private void QueryGroupMembers(GroupMemberCollection memberCollection, string ldapFilter, string? searchBase)
         {
             if (ldapFilter == null)
             {
                 throw new ArgumentNullException(nameof(ldapFilter));
             }
-            using (DirectoryEntry searchRoot = GetDirectoryEntry(searchBase))
-            using (DirectorySearcher directorySearcher = new DirectorySearcher(searchRoot, ldapFilter, new string[] { "objectGUID", "userPrincipalName" }))
+            using DirectoryEntry searchRoot = GetDirectoryEntry(searchBase);
+            using DirectorySearcher directorySearcher = new(searchRoot, ldapFilter, new string[] { "objectGUID", "userPrincipalName" });
+            directorySearcher.PageSize = 1000;
+            using SearchResultCollection result = directorySearcher.FindAll();
+            foreach (SearchResult item in result)
             {
-                directorySearcher.PageSize = 1000;
-                using (SearchResultCollection result = directorySearcher.FindAll())
+                Guid identity = new((byte[])item.Properties["objectGuid"][0]);
+                string displayName;
+                if (item.Properties["userPrincipalName"].Count == 1)
                 {
-                    foreach (SearchResult item in result)
-                    {
-                        Guid identity = new Guid((byte[])item.Properties["objectGuid"][0]);
-                        string displayName;
-                        if (item.Properties["userPrincipalName"].Count == 1)
-                        {
-                            displayName = (string)item.Properties["userPrincipalName"][0];
-                        }
-                        else
-                        {
-                            displayName = identity.ToString();
-                        }
-                        memberCollection.Add(new GroupMember(identity, displayName, GroupMemberType.OnPremAd));
-                    }
+                    displayName = (string)item.Properties["userPrincipalName"][0];
                 }
+                else
+                {
+                    displayName = identity.ToString();
+                }
+                memberCollection.Add(new GroupMember(identity, displayName, GroupMemberType.OnPremAd));
             }
         }
 
@@ -142,18 +130,10 @@ namespace GrouperLib.Store
         {
             if (member.MemberType != GroupMemberType.OnPremAd)
             {
-                throw new ArgumentException(nameof(member), "Can only add members of type 'OnPremAd'");
+                throw new InvalidOperationException($"Can only add members of type {nameof(GroupMemberType.OnPremAd)}.");
             }
-            string groupDn = GetDistinguishedName(groupId);
-            if (groupDn == null)
-            {
-                throw GroupNotFoundException.Create(groupId);
-            }
-            string memberDn = GetDistinguishedName(member.Id);
-            if (memberDn == null)
-            {
-                throw MemberNotFoundException.Create(member.Id);
-            }
+            string groupDn = GetDistinguishedName(groupId) ?? throw GroupNotFoundException.Create(groupId);
+            string memberDn = GetDistinguishedName(member.Id) ?? throw MemberNotFoundException.Create(member.Id);
             using (DirectoryEntry directoryEntry = GetDirectoryEntry(groupDn))
             {
                 try
@@ -177,18 +157,10 @@ namespace GrouperLib.Store
         {
             if (member.MemberType != GroupMemberType.OnPremAd)
             {
-                throw new ArgumentException(nameof(member), "Can only remove members of type 'OnPremAd'");
+                throw new InvalidOperationException($"Can only remove members of type {nameof(GroupMemberType.OnPremAd)}.");
             }
-            string groupDn = GetDistinguishedName(groupId);
-            if (groupDn == null)
-            {
-                throw GroupNotFoundException.Create(groupId);
-            }
-            string memberDn = GetDistinguishedName(member.Id);
-            if (memberDn == null)
-            {
-                throw MemberNotFoundException.Create(member.Id);
-            }
+            string groupDn = GetDistinguishedName(groupId) ?? throw GroupNotFoundException.Create(groupId);
+            string memberDn = GetDistinguishedName(member.Id) ?? throw MemberNotFoundException.Create(member.Id);
             using (DirectoryEntry directoryEntry = GetDirectoryEntry(groupDn))
             {
                 try
@@ -212,7 +184,7 @@ namespace GrouperLib.Store
         {
             if (memberType != GroupMemberType.OnPremAd)
             {
-                throw new ArgumentException("Invalid member type", nameof(memberType));
+                throw new InvalidOperationException($"Can only get members of type {nameof(GroupMemberType.OnPremAd)}.");
             }
             switch (grouperMember.Source)
             {
@@ -223,34 +195,29 @@ namespace GrouperLib.Store
                     );
                     break;
                 case GroupMemberSource.OnPremAdQuery:
-                    string filter = grouperMember.Rules.Where(r => r.Name.IEquals("LdapFilter")).FirstOrDefault()?.Value;
-                    string searchBase = grouperMember.Rules.Where(r => r.Name.IEquals("SearchBase")).FirstOrDefault()?.Value;
+                    string filter = grouperMember.Rules.Where(r => r.Name.IEquals("LdapFilter")).First().Value;
+                    string? searchBase = grouperMember.Rules.Where(r => r.Name.IEquals("SearchBase")).FirstOrDefault()?.Value;
                     QueryGroupMembers(memberCollection, filter, searchBase);
                     break;
                 default:
-                    throw new ArgumentException(nameof(grouperMember));
+                    throw new ArgumentException("Unknown group member source.", nameof(grouperMember));
             }
         }
 
         public async Task<GroupInfo> GetGroupInfoAsync(Guid groupId)
         {
-            GroupInfo groupInfo = null;
             try
             {
-                using (DirectoryEntry directoryEntry = new DirectoryEntry($"LDAP://<GUID={groupId}>"))
+                using DirectoryEntry directoryEntry = new($"LDAP://<GUID={groupId}>");
+                directoryEntry.RefreshCache(new string[] { "displayName", "cn" });
+                string? displayName = null;
+                if (directoryEntry.Properties["displayName"].Count == 1)
                 {
-                    directoryEntry.RefreshCache(new string[] { "displayName", "cn" });
-                    string displayName = null;
-                    if (directoryEntry.Properties["displayName"].Count == 1)
-                    {
-                        displayName = (string)directoryEntry.Properties["displayName"][0];
-                    }
-                    if (displayName == null)
-                    {
-                        displayName = (string)directoryEntry.Properties["cn"][0];
-                    }
-                    groupInfo = new GroupInfo(groupId, displayName, GroupStore.OnPremAd);
+                    displayName = (string?)directoryEntry.Properties["displayName"][0];
                 }
+                displayName ??= (string?)directoryEntry.Properties["cn"][0];
+                displayName ??= groupId.ToString();
+                return await Task.FromResult(new GroupInfo(groupId, displayName, GroupStore.OnPremAd));
             }
             catch (DirectoryServicesCOMException ex)
             {
@@ -260,7 +227,6 @@ namespace GrouperLib.Store
                 }
                 throw;
             }
-            return await Task.FromResult(groupInfo);
         }
 
         public IEnumerable<GroupMemberSource> GetSupportedGrouperMemberSources()

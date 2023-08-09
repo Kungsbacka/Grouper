@@ -12,7 +12,7 @@ namespace GrouperLib.Test
         [Fact]
         public void TestIEqualsWithNullLeftParameter()
         {
-            Assert.False(((string)null).IEquals("string"));
+            Assert.False(((string?)null).IEquals("string"));
         }
 
         [Fact]
@@ -24,7 +24,7 @@ namespace GrouperLib.Test
         [Fact]
         public void TestIEqualsWithBothParametersNull()
         {
-            Assert.False(((string)null).IEquals(null));
+            Assert.False(((string?)null).IEquals(null));
         }
 
         [Fact]

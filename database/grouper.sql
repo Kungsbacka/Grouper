@@ -74,7 +74,9 @@ BEGIN
     OR
         CHARINDEX(@search, group_display_name) > 0
     OR
-        CHARINDEX(@search, target_display_name) > 0;
+        CHARINDEX(@search, target_display_name) > 0
+    ORDER BY
+        log_time DESC;
 
     RETURN;
 END
@@ -159,6 +161,7 @@ CREATE TABLE [dbo].[document](
 	[published] [bit] NOT NULL,
 	[deleted] [bit] NOT NULL,
 	[document_json] [nvarchar](max) NOT NULL,
+	[processing_interval]  AS (json_value([document_json],'$.interval')),
 	[group_id]  AS (json_value([document_json],'$.groupId')),
 	[group_store]  AS (json_value([document_json],'$.store')),
 	[group_name]  AS (json_value([document_json],'$.groupName')),
@@ -180,6 +183,7 @@ GO
 
 
 
+
 CREATE VIEW [dbo].[latest_revision]
 AS
 SELECT
@@ -189,6 +193,7 @@ SELECT
     a.published,
     a.deleted,
     a.document_json,
+    a.processing_interval,
     a.group_id,
     a.group_store,
     a.group_name,
@@ -287,6 +292,45 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
+CREATE FUNCTION [dbo].[fn_get_document_by_processing_interval] (
+    @min int,
+    @max int = 2147483647,
+    @store nvarchar(50) = NULL,
+    @include_unpublished bit = 0,
+    @include_deleted bit = 0
+)
+RETURNS TABLE
+AS
+RETURN
+    SELECT
+        revision,
+        created,
+        published,
+        deleted,
+        (SELECT STRING_AGG(tag, ',') FROM dbo.document_tag WHERE document_id = r.document_id) AS tags,
+        document_json
+    FROM
+        dbo.latest_revision r
+    WHERE
+        processing_interval > 0
+    AND
+        processing_interval BETWEEN @min and @max
+    AND
+        (@store IS NULL OR group_store = @store)
+    AND
+    (
+            (deleted = 0 AND (published = 1 OR @include_unpublished = 1))
+        OR
+            (deleted = 1 AND @include_deleted = 1)
+    );
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
 
 
 
@@ -303,7 +347,7 @@ SELECT
     JSON_VALUE(document_json, '$.groupName') AS group_name,
     JSON_VALUE(document_json, '$.store') AS group_store,
     JSON_VALUE(document_json, '$.owner') AS owner_action,
-    CASE WHEN JSON_VALUE(document_json, '$.interval') IS NULL THEN 0 ELSE CAST(JSON_VALUE(document_json, '$.interval') AS int) END AS processing_interval,
+    CASE WHEN processing_interval IS NULL THEN 0 ELSE CAST(processing_interval AS int) END AS processing_interval,
     [member].[source] AS member_source,
     [member].[action] AS member_action,
     [rule].[name] AS rule_name,
@@ -359,44 +403,6 @@ FROM
 WHERE
     a.revision = (SELECT MAX(revision) FROM dbo.document WHERE document_id = a.document_id)
 
-GO
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
-
-CREATE FUNCTION [dbo].[fn_get_document_by_processing_interval] (
-    @min int,
-    @max int = 2147483647,
-    @store nvarchar(50) = NULL,
-    @include_unpublished bit = 0,
-    @include_deleted bit = 0
-)
-RETURNS TABLE
-AS
-RETURN
-    SELECT
-        revision,
-        created,
-        published,
-        deleted,
-        (SELECT STRING_AGG(tag, ',') FROM dbo.document_tag WHERE document_id = r.document_id) AS tags,
-        document_json
-    FROM
-        dbo.latest_revision_flattened r
-    WHERE
-        processing_interval > 0
-    AND
-        processing_interval BETWEEN @min and @max
-    AND
-        (@store IS NULL OR group_store = @store)
-    AND
-    (
-            (deleted = 0 AND (published = 1 OR @include_unpublished = 1))
-        OR
-            (deleted = 1 AND @include_deleted = 1)
-    );
 GO
 SET ANSI_NULLS ON
 GO
@@ -645,7 +651,7 @@ CREATE FUNCTION [dbo].[fn_get_document_by_group_name] (
 RETURNS TABLE
 AS
 RETURN
-    SELECT TOP 1
+    SELECT
         revision,
         created,
         published,
@@ -663,8 +669,7 @@ RETURN
             (deleted = 0 AND (published = 1 OR @include_unpublished = 1))
         OR
             (deleted = 1 AND @include_deleted = 1)
-    )
-    ORDER BY revision DESC;
+    );
 GO
 SET ANSI_NULLS ON
 GO
@@ -1194,7 +1199,10 @@ BEGIN
     IF @delete_status = 0
         THROW 50000, 'A document with the same ID already exists. Update existing document or assign a new ID.', 1;
 
-    BEGIN TRANSACTION;       
+    IF EXISTS (SELECT 1 FROM dbo.latest_revision WHERE deleted = 0 AND group_id = @group_id AND group_store = @group_store)
+        THROW 50000, 'A document already exists for the same group. Update existing document instead.', 1;
+
+    BEGIN TRANSACTION;
 
         INSERT INTO dbo.document
            (document_id , revision, created  , published, deleted, document_json)

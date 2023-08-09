@@ -1,181 +1,175 @@
-﻿using GrouperLib.Config;
+﻿using Azure.Core;
+using Azure.Identity;
+using GrouperLib.Config;
 using GrouperLib.Core;
 using Microsoft.Graph;
-using Microsoft.Identity.Client;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http.Headers;
+using Microsoft.Graph.Models;
+using Microsoft.Graph.Models.ODataErrors;
+using System.Runtime.Versioning;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace GrouperLib.Store
 {
+    [SupportedOSPlatform("windows")]
     public class AzureAd : IMemberSource, IGroupStore, IGroupOwnerSource
     {
-        readonly string _clientId;
-        readonly string _clientSecret;
-        X509Certificate2 _certificate;
-        readonly Uri _authorityUri;
-        DateTimeOffset _tokenExpiresOn;
-        GraphServiceClient _graphClient;
+        readonly TokenCredential _tokenCredential;
+        GraphServiceClient? _graphClient;
 
-        private static readonly Regex guidRegex = new Regex(
+        private static readonly Regex guidRegex = new(
             "'(?<guid>[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12})'",
             RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant
         );
 
-        // public AzureAd(string tenantId, string clientId, string clientSecret)
-        // public AzureAd(string tenantId, string clientId, string clientSecret)
-
+        private static void ValidateCommonParameters(string? tenantId, string? clientId)
+        {
+            if (!Guid.TryParse(tenantId, out _))
+            {
+                throw new ArgumentException("Argument is not a valid GUID.", nameof(tenantId));
+            }
+            if (!Guid.TryParse(clientId, out _))
+            {
+                throw new ArgumentException("Argument is not a valid GUID.", nameof(clientId));
+            }
+        }
 
         public AzureAd(string tenantId, string clientId, string clientSecret)
         {
             ValidateCommonParameters(tenantId, clientId);
-            _clientSecret = clientSecret ?? throw new ArgumentNullException(nameof(clientSecret));
-            _clientId = clientId;
-            _authorityUri = new Uri($"https://login.microsoftonline.com/{tenantId}");
+            _tokenCredential = new ClientSecretCredential(tenantId, clientId, clientSecret);
         }
 
         public AzureAd(string tenantId, string clientId, X509Certificate2 certificate)
         {
             ValidateCommonParameters(tenantId, clientId);
-            _certificate = certificate ?? throw new ArgumentNullException(nameof(certificate));
-            _clientId = clientId;
-            _authorityUri = new Uri($"https://login.microsoftonline.com/{tenantId}");
-        }
-
-        private void ValidateCommonParameters(string tenantId, string clientId)
-        {
-            if (!Guid.TryParse(tenantId, out _))
-            {
-                throw new ArgumentException(nameof(tenantId), "Argument is not a valid GUID.");
-            }
-            if (!Guid.TryParse(clientId, out _))
-            {
-                throw new ArgumentException(nameof(clientId), "Argument is not a valid GUID.");
-            }
+            _tokenCredential = new ClientCertificateCredential(tenantId, clientId, certificate);
         }
 
         public AzureAd(GrouperConfiguration config)
         {
-            string tenantId = config.AzureAdTenantId;
-            string clientId = config.AzureAdClientId;
+            string? tenantId = config.AzureAdTenantId;
+            string? clientId = config.AzureAdClientId;
             ValidateCommonParameters(tenantId, clientId);
-            _clientId = clientId;
-            _authorityUri = new Uri($"https://login.microsoftonline.com/{tenantId}");
 
-            string clientSecret = config.AzureAdClientSecret;
-            string certificateFilePath = config.AzureAdCertificateFilePath;
-            string certificateThumbprint = config.AzureAdCertificateThumbprint;
-            string certificateAsBase64 = config.AzureAdCertificateAsBase64;
-            string certificatePassword = "";
-
-            int num = (clientSecret is null ? 0 : 1)
-                    + (certificateFilePath is null ? 0 : 1)
-                    + (certificateThumbprint is null ? 0 : 1)
-                    + (certificateAsBase64 is null ? 0 : 1);
-
+            int num = (config.AzureAdClientSecret is null ? 0 : 1)
+                    + (config.AzureAdCertificateFilePath is null ? 0 : 1)
+                    + (config.AzureAdCertificateThumbprint is null ? 0 : 1)
+                    + (config.AzureAdCertificateAsBase64 is null ? 0 : 1);
             if (num != 1)
             {
-                throw new ArgumentException(
-                    $"You must specify one of {nameof(config.AzureAdClientSecret)}, {nameof(config.AzureAdCertificateFilePath)}, {nameof(config.AzureAdCertificateThumbprint)} or {nameof(config.AzureAdCertificateAsBase64)} in the configuration"
+                throw new InvalidOperationException(
+                    $"You must specify exactly one of {nameof(config.AzureAdClientSecret)}, {nameof(config.AzureAdCertificateFilePath)}, {nameof(config.AzureAdCertificateThumbprint)} or {nameof(config.AzureAdCertificateAsBase64)} in the configuration."
                 );
             }
 
-            if (clientSecret is not null)
+            if (config.AzureAdClientSecret is not null)
             {
-                _clientSecret = clientSecret;
+                _tokenCredential = new ClientSecretCredential(tenantId, clientId, config.AzureAdClientSecret);
                 return;
             }
 
-            if (certificateFilePath is not null || certificateAsBase64 is not null)
+            if (config.AzureAdCertificateFilePath is not null || config.AzureAdCertificateAsBase64 is not null)
             {
-                certificatePassword = config.AzureAdCertificatePassword;
-                if (certificatePassword == null)
+                if (config.AzureAdCertificatePassword is null)
                 {
-                    throw new ArgumentNullException(nameof(config.AzureAdCertificatePassword));
+                    throw new InvalidOperationException($"{nameof(config.AzureAdCertificatePassword)} is not set in the configuration.");
+                }
+                if (config.AzureAdCertificateFilePath is not null)
+                {
+                    _tokenCredential = new ClientCertificateCredential(
+                        tenantId,
+                        clientId,
+                        Helpers.GetCertificateFromFile(config.AzureAdCertificateFilePath, config.AzureAdCertificatePassword)
+                    );
+                    return;
+                }
+                if (config.AzureAdCertificateAsBase64 is not null)
+                {
+                    _tokenCredential = new ClientCertificateCredential(
+                        tenantId,
+                        clientId,
+                        Helpers.GetCertificateFromBase64String(config.AzureAdCertificateAsBase64, config.AzureAdCertificatePassword)
+                    );
+                    return;
                 }
             }
 
-            if (certificateFilePath is not null)
-            {
-                _certificate = Helpers.GetCertificateFromFile(certificateFilePath, certificatePassword);
-                return;
-            }
-
-            if (certificateThumbprint is not null)
+            if (config.AzureAdCertificateThumbprint is not null)
             {
                 if (config.AzureAdCertificateStoreLocation is null)
                 {
-                    throw new ArgumentNullException(
-                        $"If certificate is loaded from store {nameof(config.AzureAdCertificateStoreLocation)} must be specified in the configuration"
+                    throw new InvalidOperationException(
+                        $"If certificate is loaded from store {nameof(config.AzureAdCertificateStoreLocation)} must be specified in the configuration."
                     );
                 }
-                _certificate = Helpers.GetCertificateFromStore(certificateThumbprint, config.AzureAdCertificateStoreLocation.Value);
-                return;
+                _tokenCredential = new ClientCertificateCredential(
+                    tenantId,
+                    clientId,
+                    Helpers.GetCertificateFromStore(config.AzureAdCertificateThumbprint, config.AzureAdCertificateStoreLocation.Value)
+                );
             }
-            _certificate = Helpers.GetCertificateFromBase64String(certificateAsBase64, certificatePassword);
+
+            if (_tokenCredential is null)
+            {
+                throw new InvalidOperationException("No TokenCredential was created.");
+            }
         }
 
-        private async Task CreateGraphClient()
+        private GraphServiceClient GraphClient
         {
-            var confidentialClientAppBuilder = ConfidentialClientApplicationBuilder
-                .Create(_clientId)
-                .WithAuthority(_authorityUri);
-            if (_clientSecret is not null)
+            get
             {
-                confidentialClientAppBuilder = confidentialClientAppBuilder.WithClientSecret(_clientSecret);
-            }
-            else
-            {
-                confidentialClientAppBuilder = confidentialClientAppBuilder.WithCertificate(_certificate);
-            }
-            var confidentialClientApp = confidentialClientAppBuilder.Build();
-            string[] scopes = new[] { "https://graph.microsoft.com/.default" };
-            var authenticationResult = await confidentialClientApp.AcquireTokenForClient(scopes).ExecuteAsync();
-            _tokenExpiresOn = authenticationResult.ExpiresOn;
-            _graphClient = new GraphServiceClient(
-                new DelegateAuthenticationProvider(requestMessage =>
-                {
-                    requestMessage.Headers.Authorization = new AuthenticationHeaderValue("bearer", authenticationResult.AccessToken);
-                    return Task.FromResult(0);
-                })
-            );
-        }
-
-        private async Task AssureGraphClient()
-        {
-            if (_graphClient == null || _tokenExpiresOn <= DateTimeOffset.Now)
-            {
-                await CreateGraphClient();
+                _graphClient ??= new GraphServiceClient(_tokenCredential);
+                return _graphClient;
             }
         }
 
         public async Task GetGroupMembersAsync(GroupMemberCollection memberCollection, Guid groupId)
         {
-            await AssureGraphClient();
             try
             {
-                var members = await _graphClient.Groups[groupId.ToString()].Members.Request().GetAsync();
-                do
+                var members = await GraphClient.Groups[groupId.ToString()].Members.GetAsync(config =>
                 {
-                    foreach (var member in members)
+                    config.QueryParameters.Count = true;
+                });
+                if (members is null)
+                {
+                    return;
+                }
+                var pageIterator = PageIterator<DirectoryObject, DirectoryObjectCollectionResponse>.CreatePageIterator(
+                    GraphClient,
+                    members,
+                    (member) =>
                     {
                         if (member is User u)
                         {
+                            if (u.Id is null)
+                            {
+                                throw new InvalidOperationException("User id is null.");
+                            }
+                            if (u.UserPrincipalName is null)
+                            {
+                                throw new InvalidOperationException("UserPrincipalName is null.");
+                            }
                             memberCollection.Add(new GroupMember(Guid.Parse(u.Id), u.UserPrincipalName, GroupMemberType.AzureAd));
                         }
                         else
                         {
+                            if (member.Id is null)
+                            {
+                                throw new InvalidOperationException("Member id is null.");
+                            }
                             memberCollection.Add(new GroupMember(Guid.Parse(member.Id), member.Id, GroupMemberType.AzureAd));
                         }
-                    } 
-                }
-                while (members.NextPageRequest != null && (members = await members.NextPageRequest.GetAsync()).Count > 0);
+
+                        return true;
+                    },
+                    (req) => req
+                );
+                await pageIterator.IterateAsync();
             }
-            catch (ServiceException ex)
+            catch (ODataError ex)
             {
                 if (IsNotFoundError(ex))
                 {
@@ -189,16 +183,17 @@ namespace GrouperLib.Store
         {
             if (member.MemberType != GroupMemberType.AzureAd)
             {
-                throw new ArgumentException(nameof(member), "Can only add members of type 'AzureAd'");
+                throw new InvalidOperationException($"Can only add members of type {nameof(GroupMemberType.AzureAd)}");
             }
-            await AssureGraphClient();
+            var referenceCreate = new ReferenceCreate()
+            {
+                OdataId = $"https://graph.microsoft.com/v1.0/directoryObjects/{member.Id}"
+            };
             try
             {
-                await _graphClient.Groups[groupId.ToString()].Members.References.Request().AddAsync(
-                    new DirectoryObject() { Id = member.Id.ToString() }
-                );
+                await GraphClient.Groups[groupId.ToString()].Members.Ref.PostAsync(referenceCreate);
             }
-            catch (ServiceException ex)
+            catch (ODataError ex)
             {
                 if (IsNotFoundError(ex))
                 {
@@ -216,14 +211,13 @@ namespace GrouperLib.Store
         {
             if (member.MemberType != GroupMemberType.AzureAd)
             {
-                throw new ArgumentException(nameof(member), "Can only remove members of type 'AzureAd'");
+                throw new InvalidOperationException($"Can only remove members of type {nameof(GroupMemberType.AzureAd)}.");
             }
-            await AssureGraphClient();
             try
             {
-                await _graphClient.Groups[groupId.ToString()].Members[member.Id.ToString()].Reference.Request().DeleteAsync();
+                await GraphClient.Groups[groupId.ToString()].Members[member.Id.ToString()].Ref.DeleteAsync();
             }
-            catch (ServiceException ex)
+            catch (ODataError ex)
             {
                 if (IsNotFoundError(ex))
                 {
@@ -239,27 +233,46 @@ namespace GrouperLib.Store
 
         public async Task GetGroupOwnersAsync(GroupMemberCollection memberCollection, Guid groupId)
         {
-            await AssureGraphClient();
             try
             {
-                var owners = await _graphClient.Groups[groupId.ToString()].Owners.Request().GetAsync();
-                do
+                var owners = await GraphClient.Groups[groupId.ToString()].Owners.GetAsync();
+                if (owners is null)
                 {
-                    foreach (var owner in owners)
+                    return;
+                }
+                var pageIterator = PageIterator<DirectoryObject, DirectoryObjectCollectionResponse>.CreatePageIterator(
+                    _graphClient,
+                    owners,
+                    (owner) =>
                     {
                         if (owner is User u)
                         {
+                            if (u.Id is null)
+                            {
+                                throw new InvalidOperationException("Owner id is null.");
+                            }
+                            if (u.UserPrincipalName is null)
+                            {
+                                throw new InvalidOperationException("UserPrincipalName is null.");
+                            }
                             memberCollection.Add(new GroupMember(Guid.Parse(u.Id), u.UserPrincipalName, GroupMemberType.AzureAd));
                         }
                         else
                         {
+                            if (owner.Id is null)
+                            {
+                                throw new InvalidOperationException("Owner id is null.");
+                            }
                             memberCollection.Add(new GroupMember(Guid.Parse(owner.Id), owner.Id, GroupMemberType.AzureAd));
                         }
-                    }
-                }
-                while (owners.NextPageRequest != null && (owners = await owners.NextPageRequest.GetAsync()).Count > 0);
+
+                        return true;
+                    },
+                    (req) => req
+                );
+                await pageIterator.IterateAsync();
             }
-            catch (ServiceException ex)
+            catch (ODataError ex)
             {
                 if (IsNotFoundError(ex))
                 {
@@ -269,44 +282,46 @@ namespace GrouperLib.Store
             }
         }
 
-        private bool IsNotFoundError(ServiceException ex)
+        private static bool IsNotFoundError(ODataError ex)
         {
-            switch (ex.Error.Code)
+            switch (ex.Error?.Code)
             {
                 case "Request_ResourceNotFound":
                 case "ResourceNotFound":
                 case "ErrorItemNotFound":
                 case "itemNotFound":
                     return true;
+                default:
+                    break;
             }
             return false;
         }
 
-        private Exception CreateNotFoundException(Guid groupId, Guid? memberId, ServiceException ex)
+        private static Exception CreateNotFoundException(Guid groupId, Guid? memberId, ODataError ex)
         {
-            Exception exception = null;
-            foreach (Match match in guidRegex.Matches(ex.Error.Message))
+            if (ex.Error?.Message is not null)
             {
-                Guid? guid = Guid.Parse(match.Groups["guid"].Value);
-                if (guid == groupId)
+                foreach (Match match in guidRegex.Matches(ex.Error.Message).Cast<Match>())
                 {
-                    exception = GroupNotFoundException.Create(groupId, ex);
-                    break;
-                }
-                if (guid == memberId)
-                {
-                    exception = MemberNotFoundException.Create(groupId, ex);
-                    break;
+                    Guid? guid = Guid.Parse(match.Groups["guid"].Value);
+                    if (guid == groupId)
+                    {
+                        return GroupNotFoundException.Create(groupId, ex);
+                    }
+                    if (guid == memberId)
+                    {
+                        return MemberNotFoundException.Create(groupId, ex);
+                    }
                 }
             }
-            return exception;
+            return ex;
         }
 
         public async Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember, GroupMemberType memberType)
         {
             if (memberType != GroupMemberType.AzureAd)
             {
-                throw new ArgumentException("Invalid member type", nameof(memberType));
+                throw new InvalidOperationException($"Can only get members of type {nameof(GroupMemberType.AzureAd)}");
             }
             await GetGroupMembersAsync(
                 memberCollection,
@@ -316,13 +331,12 @@ namespace GrouperLib.Store
 
         public async Task<GroupInfo> GetGroupInfoAsync(Guid groupId)
         {
-            await AssureGraphClient();
             try
             {
-                var group = await _graphClient.Groups[groupId.ToString()].Request().GetAsync();
-                return new GroupInfo(groupId, group.DisplayName, GroupStore.AzureAd);
+                var group = await GraphClient.Groups[groupId.ToString()].GetAsync();
+                return new GroupInfo(groupId, group?.DisplayName ?? groupId.ToString(), GroupStore.AzureAd);
             }
-            catch (ServiceException ex)
+            catch (ODataError ex)
             {
                 if (IsNotFoundError(ex))
                 {

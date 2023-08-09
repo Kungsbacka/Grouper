@@ -10,7 +10,7 @@ namespace GrouperLib.Core
         public Guid GroupId { get; }
 
         [JsonProperty(PropertyName = "groupName")]
-        public string GroupName { get; }
+        public string? GroupName { get; }
 
         [JsonProperty(PropertyName = "member")]
         public GroupMember Member { get; }
@@ -19,7 +19,7 @@ namespace GrouperLib.Core
         [JsonConverter(typeof(StringEnumConverter))]
         public GroupMemberOperation Operation { get; }
 
-        public GroupMemberTask(Guid groupId, string groupName, GroupMember member, GroupMemberOperation operation)
+        public GroupMemberTask(Guid groupId, string? groupName, GroupMember member, GroupMemberOperation operation)
         {
             GroupId = groupId;
             GroupName = groupName;

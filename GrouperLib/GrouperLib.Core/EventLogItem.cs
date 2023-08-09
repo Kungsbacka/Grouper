@@ -17,7 +17,7 @@ namespace GrouperLib.Core
         public Guid? GroupId { get; }
 
         [JsonProperty(PropertyName = "groupDisplayName", Order = 4)]
-        public string GroupDisplayName { get; }
+        public string? GroupDisplayName { get; }
 
         [JsonProperty(PropertyName = "groupStore", Order = 5)]
         [JsonConverter(typeof(StringEnumConverter))]
@@ -36,27 +36,24 @@ namespace GrouperLib.Core
             LogTime = DateTime.Now;
             DocumentId = document.Id;
             GroupId = document.GroupId;
-            GroupDisplayName = document.GroupName;
+            GroupDisplayName = document.GroupName == "" ? null : document.GroupName;
             GroupStore = document.Store;
             Message = message;
             LogLevel = logLevel;
         }
 
-        public EventLogItem(DateTime logTime, Guid? documentId, Guid? groupId, string groupDisplayName, string groupStore, string message, LogLevel logLevel)
+        public EventLogItem(DateTime logTime, Guid? documentId, Guid? groupId, string? groupDisplayName, string? groupStore, string message, LogLevel logLevel)
         {
             LogTime = logTime;
             DocumentId = documentId;
             GroupId = groupId;
-            if (!string.IsNullOrEmpty(groupDisplayName))
-            {
-                GroupDisplayName = groupDisplayName;
-            }
+            GroupDisplayName = groupDisplayName == "" ? null : groupDisplayName;
+            Message = message ?? throw new ArgumentNullException(nameof(message));
+            LogLevel = logLevel;
             if (!string.IsNullOrEmpty(groupStore))
             {
                 GroupStore = (GroupStore)Enum.Parse(typeof(GroupStore), groupStore, true);
             }
-            Message = message;
-            LogLevel = logLevel;
         }
 
         public override string ToString()

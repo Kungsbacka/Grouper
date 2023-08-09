@@ -18,7 +18,7 @@ namespace GrouperLib.Test
             stringResourceHelperMock
                 .Setup(m => m.GetString(It.IsAny<string>(), It.IsAny<object[]>()))
                 .Returns(message);
-            ValidationError validationError = new ValidationError(stringResourceHelperMock.Object, property, errorId);
+            ValidationError validationError = new(stringResourceHelperMock.Object, property, errorId);
             Assert.Equal(validationError.PropertyName, property);
             Assert.Equal(validationError.ErrorId, errorId);
             Assert.Equal(validationError.ErrorMessage, message);

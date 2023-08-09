@@ -1,13 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace GrouperLib.Core
 {
-    // This collection does not implement the typical interfaces (i.g. IEnumerable<T>),
-    // because it is going to be used i PowerShell and it is easy to accidentaly enumerate
-    // the contents instead of passing the object. To enumerate call AsEnumerable() to get
-    // an IEnumerable<GroupMember>.
-    public sealed class GroupMemberCollection
+    public sealed class GroupMemberCollection : IEnumerable<GroupMember>
     {
         private readonly HashSet<GroupMember> _members;
 
@@ -27,20 +24,17 @@ namespace GrouperLib.Core
             _members.Add(member);
         }
 
-        public void Add(GroupMemberCollection collection) => _members.UnionWith(collection.AsEnumerable());
+        public void Add(GroupMemberCollection collection) => _members.UnionWith(collection);
 
-        public IEnumerable<GroupMember> AsEnumerable() => _members;
+        public void ExceptWith(GroupMemberCollection collection) => _members.ExceptWith(collection);
 
-        public void ExceptWith(GroupMemberCollection collection) => _members.ExceptWith(collection.AsEnumerable());
+        public void SymmetricExceptWith(GroupMemberCollection collection) => _members.SymmetricExceptWith(collection);
 
-        public void SymmetricExceptWith(GroupMemberCollection collection) => _members.SymmetricExceptWith(collection.AsEnumerable());
-
-        public void IntersectWith(GroupMemberCollection collection) => _members.IntersectWith(collection.AsEnumerable());
+        public void IntersectWith(GroupMemberCollection collection) => _members.IntersectWith(collection);
 
         public GroupMemberCollection Clone()
         {
-            GroupMemberCollection newCollection = new GroupMemberCollection();
-            newCollection.Add(this);
+            GroupMemberCollection newCollection = new() { this };
             return newCollection;
         }
 
@@ -55,8 +49,8 @@ namespace GrouperLib.Core
             //    removing all members that exists in both sets. Now set B will contain
             //    all *unique* members from both sets.
             collection.SymmetricExceptWith(this);
-            // 2. Remove all members from set A is not in set B. Now set A will only contain
-            //    members that was unique to that set from the beginning.
+            // 2. Remove all members from set A that is not in set B. Now set A will only
+            //    contain members that was unique to that set from the beginning.
             IntersectWith(collection);
             // 3. Remove all members from set B that is in set A. This does the same with
             //    set B, leaving only truly unique members in set B.
@@ -81,7 +75,7 @@ namespace GrouperLib.Core
         private static int MemberTypesAsFlags(GroupMemberCollection collection)
         {
             int flags = 0;
-            foreach (GroupMember member in collection.AsEnumerable())
+            foreach (GroupMember member in collection)
             {
                 if (member.MemberType == GroupMemberType.OnPremAd)
                 {
@@ -93,6 +87,16 @@ namespace GrouperLib.Core
                 }
             }
             return flags;
+        }
+
+        public IEnumerator<GroupMember> GetEnumerator()
+        {
+            return ((IEnumerable<GroupMember>)_members).GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return ((IEnumerable)_members).GetEnumerator();
         }
     }
 }

@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "GrouperLib.Store": {
-      "commandName": "Project",
-      "remoteDebugEnabled": false
-    }
-  }
-}

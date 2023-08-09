@@ -26,7 +26,7 @@ namespace GrouperLib.Core
         }
         private readonly List<GrouperDocumentRule> _rules;
 
-        public bool ShouldSerializeMemberType() => false;
+        public static bool ShouldSerializeMemberType() => false;
 
         [JsonConstructor]
         public GrouperDocumentMember(GroupMemberSource source, GroupMemberAction action, List<GrouperDocumentRule> rules)
@@ -43,7 +43,7 @@ namespace GrouperLib.Core
             _rules = documentMember.Rules.Select(r => new GrouperDocumentRule(r)).ToList();
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is not GrouperDocumentMember member)
             {

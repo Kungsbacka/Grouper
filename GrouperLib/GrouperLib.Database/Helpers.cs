@@ -15,7 +15,7 @@ namespace GrouperLib.Database
             return value.Equals(other, StringComparison.OrdinalIgnoreCase);
         }
 
-        public static string NullIfEmpty(this string str)
+        public static string? NullIfEmpty(this string str)
         {
             if (string.IsNullOrEmpty(str))
             {
@@ -24,13 +24,13 @@ namespace GrouperLib.Database
             return str;
         }
 
-        public static string TranslateWildcard(string inputString)
+        public static string? TranslateWildcard(string inputString)
         {
             if (string.IsNullOrEmpty(inputString))
             {
                 return null;
             }
-            StringBuilder sb = new StringBuilder(inputString.Length * 2);
+            StringBuilder sb = new(inputString.Length * 2);
             bool escapeMode = false;
             char escapeChar = '\\';
             foreach (char c in inputString)

@@ -17,7 +17,7 @@ namespace GrouperLib.Test
         [Fact]
         public void TestConstruction()
         {
-            AuditLogItem logItem = new AuditLogItem(time, documentId, actor, action, info);
+            AuditLogItem logItem = new(time, documentId, actor, action, info);
             Assert.Equal(time, logItem.LogTime);
             Assert.Equal(documentId, logItem.DocumentId);
             Assert.Equal(actor, logItem.Actor);
@@ -26,29 +26,17 @@ namespace GrouperLib.Test
         }
 
         [Fact]
-        public void TestConstructionWithoutActor()
-        {
-            Assert.Throws<ArgumentNullException>(() => new AuditLogItem(time, documentId, actor: null, action, null));
-        }
-
-        [Fact]
-        public void TestConstructionWithoutAction()
-        {
-            Assert.Throws<ArgumentNullException>(() => new AuditLogItem(time, documentId, actor, action: null, null));
-        }
-
-        [Fact]
         public void TestConstructionWithoutTime()
         {
             DateTime now = DateTime.Now;
-            AuditLogItem logItem = new AuditLogItem(documentId, actor, action, info);
+            AuditLogItem logItem = new(documentId, actor, action, info);
             Assert.True(logItem.LogTime >= now);
         }
 
         [Fact]
         public void TestSerializedNames()
         {
-            AuditLogItem logItem = new AuditLogItem(time, documentId, actor, action, info);
+            AuditLogItem logItem = new(time, documentId, actor, action, info);
             string json = JsonConvert.SerializeObject(logItem);
             JObject obj = JObject.Parse(json);
             Assert.True(obj.ContainsKey("logTime"));

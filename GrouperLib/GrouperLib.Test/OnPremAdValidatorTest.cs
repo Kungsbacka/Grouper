@@ -35,7 +35,7 @@ namespace GrouperLib.Test
                 }
             });
             ICustomValidator validator = new OnPremAdValidator();
-            List<ValidationError> errors = new List<ValidationError>();
+            List<ValidationError> errors = new();
             validator.Validate(document, document.Members.First(), errors);
             Assert.True(errors.Count == 0);
         }
@@ -63,7 +63,7 @@ namespace GrouperLib.Test
                 }
             });
             ICustomValidator validator = new OnPremAdValidator();
-            List<ValidationError> errors = new List<ValidationError>();
+            List<ValidationError> errors = new();
             validator.Validate(document, document.Members.First(), errors);
             Assert.True(errors.Count > 0);
         }

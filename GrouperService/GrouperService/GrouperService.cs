@@ -1,8 +1,10 @@
 ﻿using System.Diagnostics;
+using System.Runtime.Versioning;
 using System.ServiceProcess;
 
 namespace GrouperService
 {
+    [SupportedOSPlatform("windows")]
     public partial class GrouperService : ServiceBase
     {
         private readonly Worker _worker;
@@ -11,7 +13,7 @@ namespace GrouperService
         public GrouperService()
         {
             InitializeComponent();
-            _worker = new Worker(EventLog);
+            _worker = new(EventLog);
         }
 
         protected override void OnStart(string[] args)

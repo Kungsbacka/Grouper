@@ -43,8 +43,7 @@ namespace GrouperLib.Test
         [Fact]
         public void TestShouldSerializeMemberType()
         {
-            GrouperDocumentMember member = TestHelpers.MakeMember();
-            Assert.False(member.ShouldSerializeMemberType());
+            Assert.False(GrouperDocumentMember.ShouldSerializeMemberType());
         }
 
         [Fact]

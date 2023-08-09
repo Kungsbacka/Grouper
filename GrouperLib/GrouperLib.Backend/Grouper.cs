@@ -5,13 +5,15 @@ using GrouperLib.Store;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
 
 namespace GrouperLib.Backend
 {
+    [SupportedOSPlatform("windows")]
     public class Grouper : IDisposable
     {
-        private ILogger _logger;
+        private ILogger? _logger;
         private bool _disposed;
         private readonly double _changeRatioLowerLimit;
         private readonly Dictionary<GroupMemberSource, IMemberSource> _memberSources;
@@ -28,10 +30,10 @@ namespace GrouperLib.Backend
 
         public static Grouper CreateFromConfig(GrouperConfiguration config)
         {
-            Grouper grouper = new Grouper(config.ChangeRatioLowerLimit);
+            Grouper grouper = new(config.ChangeRatioLowerLimit);
             if (config.AzureAdRole != null && config.AzureAdRole.Length > 0)
             {
-                AzureAd az = new AzureAd(config);
+                AzureAd az = new(config);
                 if (config.AzureAdHasRole(GrouperConfiguration.Role.GroupStore))
                 {
                     grouper.AddGroupStore(az);
@@ -47,7 +49,7 @@ namespace GrouperLib.Backend
             }
             if (config.ExchangeRole != null && config.ExchangeRole.Length > 0)
             {
-                Exo exo = new Exo(config);
+                Exo exo = new(config);
                 if (config.ExchangeHasRole(GrouperConfiguration.Role.GroupStore))
                 {
                     grouper.AddGroupStore(exo);
@@ -59,7 +61,7 @@ namespace GrouperLib.Backend
             }
             if (config.OnPremAdHasRole(GrouperConfiguration.Role.GroupStore))
             {
-                OnPremAd onPremAd = new OnPremAd(config);
+                OnPremAd onPremAd = new(config);
                 if (config.OnPremAdHasRole(GrouperConfiguration.Role.GroupStore))
                 {
                     grouper.AddGroupStore(onPremAd);
@@ -137,7 +139,7 @@ namespace GrouperLib.Backend
             }
             var currentMembers = await GetCurrentMembersAsync(document);
             var targetMembers = await GetTargetMembersAsync(document, currentMembers);
-            IGroupOwnerSource ownerSource = GetOwnerSource(document);
+            IGroupOwnerSource? ownerSource = GetOwnerSource(document);
             if (ownerSource != null)
             {
                 if (document.Owner != GroupOwnerAction.MatchSource)
@@ -155,7 +157,7 @@ namespace GrouperLib.Backend
             {
                 throw new InvalidOperationException("Member types does not match");
             }
-            GroupMemberCollection unchangedMembers = new GroupMemberCollection();
+            GroupMemberCollection unchangedMembers = new();
             if (includeUnchanged)
             {
                 unchangedMembers = currentMembers.Clone();
@@ -189,12 +191,18 @@ namespace GrouperLib.Backend
             foreach (GroupMember member in memberDiff.Remove)
             {
                 await store.RemoveGroupMemberAsync(member, memberDiff.Document.GroupId);
-                await _logger?.StoreOperationalLogItemAsync(new OperationalLogItem(memberDiff.Document, GroupMemberOperation.Remove, member));
+                if (_logger != null)
+                {
+                    await _logger.StoreOperationalLogItemAsync(new OperationalLogItem(memberDiff.Document, GroupMemberOperation.Remove, member));
+                }
             }
             foreach (GroupMember member in memberDiff.Add)
             {
                 await store.AddGroupMemberAsync(member, memberDiff.Document.GroupId);
-                await _logger?.StoreOperationalLogItemAsync(new OperationalLogItem(memberDiff.Document, GroupMemberOperation.Add, member));
+                if (_logger != null)
+                {
+                    await _logger.StoreOperationalLogItemAsync(new OperationalLogItem(memberDiff.Document, GroupMemberOperation.Add, member));
+                }
             }
         }
 
@@ -232,16 +240,16 @@ namespace GrouperLib.Backend
 
         private IMemberSource GetMemberSource(GrouperDocumentMember member)
         {
-            if (_memberSources.TryGetValue(member.Source, out IMemberSource source))
+            if (_memberSources.TryGetValue(member.Source, out IMemberSource? source))
             {
                 return source;
             }
             throw new InvalidOperationException($"There is no member source added for {member.Source}");
         }
 
-        private IGroupOwnerSource GetOwnerSource(GrouperDocument document)
+        private IGroupOwnerSource? GetOwnerSource(GrouperDocument document)
         {
-            if (_ownerSources.TryGetValue(document.Store, out IGroupOwnerSource source))
+            if (_ownerSources.TryGetValue(document.Store, out IGroupOwnerSource? source))
             {
                 return source;
             }
@@ -250,7 +258,7 @@ namespace GrouperLib.Backend
 
         private IGroupStore GetGroupStore(GrouperDocument document)
         {
-            if (_groupStores.TryGetValue(document.Store, out IGroupStore store))
+            if (_groupStores.TryGetValue(document.Store, out IGroupStore? store))
             {
                 return store;
             }
@@ -263,11 +271,11 @@ namespace GrouperLib.Backend
             {
                 if (disposing)
                 {
-                    if (_memberSources.TryGetValue(GroupMemberSource.ExoGroup, out IMemberSource source))
+                    if (_memberSources.TryGetValue(GroupMemberSource.ExoGroup, out IMemberSource? source))
                     {
                         ((Exo)source).Dispose();
                     }
-                    if (_groupStores.TryGetValue(GroupStore.Exo, out IGroupStore store))
+                    if (_groupStores.TryGetValue(GroupStore.Exo, out IGroupStore? store))
                     {
                         ((Exo)store).Dispose();
                     }

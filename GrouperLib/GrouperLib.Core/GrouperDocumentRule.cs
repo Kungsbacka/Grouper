@@ -24,7 +24,7 @@ namespace GrouperLib.Core
             Value = documentRule.Value;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is not GrouperDocumentRule rule)
             {

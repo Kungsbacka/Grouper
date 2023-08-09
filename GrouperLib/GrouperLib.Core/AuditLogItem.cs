@@ -19,13 +19,13 @@ namespace GrouperLib.Core
         public string Action { get; }
 
         [JsonProperty(PropertyName = "additionalInformation", Order = 5)]
-        public string AdditionalInformation { get; }
+        public string? AdditionalInformation { get; }
 
         public AuditLogItem(Guid documentId, string actor, string action, string additionaInformation) :
             this(DateTime.Now, documentId, actor, action, additionaInformation)
         { }
 
-        public AuditLogItem(DateTime logTime, Guid documentId, string actor, string action, string additionalInformation)
+        public AuditLogItem(DateTime logTime, Guid documentId, string actor, string action, string? additionalInformation)
         {
             LogTime = logTime;
             DocumentId = documentId;
@@ -36,7 +36,7 @@ namespace GrouperLib.Core
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             sb.Append(LogTime.ToString("yyyy-MM-dd HH:mm:ss"));
             sb.Append(": ");
             sb.Append("Document: ");

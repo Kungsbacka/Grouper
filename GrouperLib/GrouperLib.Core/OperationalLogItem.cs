@@ -17,7 +17,7 @@ namespace GrouperLib.Core
         public Guid GroupId { get; }
 
         [JsonProperty(PropertyName = "groupDisplayName", Order = 4)]
-        public string GroupDisplayName { get; }
+        public string? GroupDisplayName { get; }
 
         [JsonProperty(PropertyName = "groupStore", Order = 5)]
         [JsonConverter(typeof(StringEnumConverter))]
@@ -31,7 +31,7 @@ namespace GrouperLib.Core
         public Guid TargetId { get; }
 
         [JsonProperty(PropertyName = "targetDisplayName", Order = 8)]
-        public string TargetDisplayName { get; }
+        public string? TargetDisplayName { get; }
 
         public OperationalLogItem(GrouperDocument document, GroupMemberOperation operation, GroupMember member)
         {
@@ -45,7 +45,7 @@ namespace GrouperLib.Core
             TargetDisplayName = member.DisplayName;
         }
 
-        public OperationalLogItem(DateTime logTime, Guid documentId, Guid groupId, string groupDisplayName, string groupStore, string operation, Guid targetId, string targetDisplayName)
+        public OperationalLogItem(DateTime logTime, Guid documentId, Guid groupId, string? groupDisplayName, string groupStore, string operation, Guid targetId, string? targetDisplayName)
         {
             LogTime = logTime;
             DocumentId = documentId;
@@ -59,7 +59,7 @@ namespace GrouperLib.Core
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             sb.Append(LogTime.ToString("yyyy-MM-dd HH:mm:ss"));
             sb.Append(": ");
             if (Operation != GroupMemberOperation.None)

@@ -15,7 +15,7 @@ namespace GrouperLib.Test
         [Fact]
         public void TestConstruction1()
         {
-            GroupInfo info = new GroupInfo(validGuid, "Name", GroupStore.OnPremAd);
+            GroupInfo info = new(validGuid, "Name", GroupStore.OnPremAd);
             Assert.Equal(validGuid, info.Id);
             Assert.Equal("Name", info.DisplayName);
             Assert.Equal(GroupStore.OnPremAd, info.Store);
@@ -24,7 +24,7 @@ namespace GrouperLib.Test
         [Fact]
         public void TestConstruction2()
         {
-            GroupInfo info = new GroupInfo(validGuidString, "Name", GroupStore.OnPremAd);
+            GroupInfo info = new(validGuidString, "Name", GroupStore.OnPremAd);
             Assert.Equal(validGuid, info.Id);
             Assert.Equal("Name", info.DisplayName);
             Assert.Equal(GroupStore.OnPremAd, info.Store);
@@ -39,7 +39,7 @@ namespace GrouperLib.Test
         [Fact]
         public void TestSerializedNames()
         {
-            GroupInfo groupInfo = new GroupInfo(Guid.Empty, "Name", GroupStore.AzureAd);
+            GroupInfo groupInfo = new(Guid.Empty, "Name", GroupStore.AzureAd);
             string json = JsonConvert.SerializeObject(groupInfo);
             JObject obj = JObject.Parse(json);
             Assert.True(obj.ContainsKey("id"));

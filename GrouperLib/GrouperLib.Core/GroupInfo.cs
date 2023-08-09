@@ -17,7 +17,7 @@ namespace GrouperLib.Core
         public GroupInfo(Guid id, string displayName, GroupStore store)
         {
             Id = id;
-            DisplayName = displayName;
+            DisplayName = displayName ?? throw new ArgumentNullException(nameof(displayName));
             Store = store;
         }
 
@@ -29,9 +29,9 @@ namespace GrouperLib.Core
             }
             else
             {
-                throw new ArgumentException(nameof(id), "Argument is not a valid GUID");
+                throw new ArgumentException("Argument is not a valid GUID", nameof(id));
             }
-            DisplayName = displayName;
+            DisplayName = displayName ?? throw new ArgumentNullException(nameof(displayName));
             Store = store;
         }
     }

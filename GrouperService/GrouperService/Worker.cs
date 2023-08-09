@@ -8,10 +8,12 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Timers;
 
 namespace GrouperService
 {
+    [SupportedOSPlatform("windows")]
     internal partial class Worker
     {
         private const int _workInterval = 10000; // run every 10 seconds
@@ -104,7 +106,7 @@ namespace GrouperService
 
         private void WriteToLogDb(GrouperDocument document, string message, LogLevel logLevel)
         {
-            EventLogItem logItem = new EventLogItem(document, message, logLevel);
+            EventLogItem logItem = new(document, message, logLevel);
 
             if (Environment.UserInteractive)
             {
@@ -137,7 +139,7 @@ namespace GrouperService
         private void InvokeGrouper(object source, ElapsedEventArgs e)
         {
             Timer timer = (Timer)source;
-            List<GrouperDocumentEntry> entries = new List<GrouperDocumentEntry>();
+            List<GrouperDocumentEntry> entries = new();
             bool processAllDocuments = ShouldProcessAllDocuments();
             if (processAllDocuments)
             {

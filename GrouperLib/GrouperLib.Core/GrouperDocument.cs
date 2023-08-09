@@ -41,14 +41,11 @@ namespace GrouperLib.Core
         {
             get
             {
-                switch (Store)
+                return Store switch
                 {
-                    case GroupStore.OnPremAd:
-                    case GroupStore.OpenE:
-                        return GroupMemberType.OnPremAd;
-                    default:
-                        return GroupMemberType.AzureAd;
-                }
+                    GroupStore.OnPremAd or GroupStore.OpenE => GroupMemberType.OnPremAd,
+                    _ => GroupMemberType.AzureAd,
+                };
             }
         }
 
@@ -76,10 +73,10 @@ namespace GrouperLib.Core
 
         public bool ShouldSerializeProcessingInterval() => ProcessingInterval > 0;
 
-        public bool ShouldSerializeMemberType() => false;
+        public static bool ShouldSerializeMemberType() => false;
 
 
-        public static GrouperDocument Create(Guid id, int interval, Guid groupId, string groupName, GroupStore store, GroupOwnerAction owner, IReadOnlyCollection<GrouperDocumentMember> members, List<ValidationError> validationErrors)
+        public static GrouperDocument? Create(Guid id, int interval, Guid groupId, string groupName, GroupStore store, GroupOwnerAction owner, IReadOnlyCollection<GrouperDocumentMember> members, List<ValidationError> validationErrors)
         {
             if (validationErrors == null)
             {
@@ -94,15 +91,11 @@ namespace GrouperLib.Core
             return document;
         }
 
-        public static GrouperDocument Create(Guid id, int interval, Guid groupId, string groupName, GroupStore store, GroupOwnerAction owner, IReadOnlyCollection<GrouperDocumentMember> members)
+        public static GrouperDocument? Create(Guid id, int interval, Guid groupId, string groupName, GroupStore store, GroupOwnerAction owner, IReadOnlyCollection<GrouperDocumentMember> members)
         {
-            List<ValidationError> validationErrors = new List<ValidationError>();
-            GrouperDocument document = Create(id, interval, groupId, groupName, store, owner, members, validationErrors);
-            if (document == null)
-            {
-                throw new InvalidGrouperDocumentException();
-            }
-            return document;
+            List<ValidationError> validationErrors = new();
+            GrouperDocument? document = Create(id, interval, groupId, groupName, store, owner, members, validationErrors);
+            return document ?? throw new InvalidGrouperDocumentException();
         }
 
 
@@ -116,13 +109,13 @@ namespace GrouperLib.Core
             return JsonConvert.SerializeObject(this, formatting);
         }
 
-        public static GrouperDocument FromJson(string json, List<ValidationError> validationErrors)
+        public static GrouperDocument? FromJson(string json, List<ValidationError> validationErrors)
         {
             if (validationErrors == null)
             {
                 throw new ArgumentNullException(nameof(validationErrors));
             }
-            GrouperDocument document = DocumentValidator.DeserializeAndValidate(json, validationErrors);
+            GrouperDocument? document = DocumentValidator.DeserializeAndValidate(json, validationErrors);
             if (validationErrors.Count > 0)
             {
                 return null;
@@ -132,20 +125,16 @@ namespace GrouperLib.Core
 
         public static GrouperDocument FromJson(string json)
         {
-            List<ValidationError> validationErrors = new List<ValidationError>();
-            GrouperDocument document = FromJson(json, validationErrors);
-            if (document == null)
-            {
-                throw new InvalidGrouperDocumentException();
-            }
-            return document;
+            List<ValidationError> validationErrors = new();
+            GrouperDocument? document = FromJson(json, validationErrors);
+            return document ?? throw new InvalidGrouperDocumentException();
         }
 
         public string ToString(bool logFormat)
         {
             if (logFormat)
             {
-                StringBuilder sb = new StringBuilder();
+                StringBuilder sb = new();
                 sb.Append("         Group Name: ");
                 sb.AppendLine(GroupName);
                 sb.Append("        Group Store: ");
@@ -164,22 +153,22 @@ namespace GrouperLib.Core
                 sb.Append("       Member Rules: ");
                 sb.AppendLine(Members.Count.ToString());
                 int maxIndent = (int)Math.Floor(Math.Log10(Members.Count));
-                int i = 0;
+                int level = 0;
                 foreach (var member in Members)
                 {
                     int indent = maxIndent + 4;
-                    if (i >= 9)
+                    if (level >= 9)
                     {
-                        indent -= (int)Math.Floor(Math.Log10(i + 1));
+                        indent -= (int)Math.Floor(Math.Log10(level + 1));
                     }
                     sb.Append(new string(' ', indent));
                     sb.Append('(');
-                    sb.Append(i + 1);
+                    sb.Append(level + 1);
                     sb.Append(") ");
                     sb.Append(member.Action);
                     sb.Append(": ");
                     sb.AppendLine(member.Source.ToString());
-                    i++;
+                    level++;
                 }
                 return sb.ToString();
             }
@@ -191,7 +180,7 @@ namespace GrouperLib.Core
             return ToString(false);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is not GrouperDocument document)
             {

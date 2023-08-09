@@ -15,7 +15,7 @@ namespace GrouperLib.Database
 
         static DataTable InitializeEmptyDataTable()
         {
-            DataTable dt = new DataTable();
+            DataTable dt = new();
             dt.Columns.Add("value", typeof(string));
             return dt;
         }
@@ -40,8 +40,8 @@ namespace GrouperLib.Database
             {
                 sqlParam.Value = _list.Select(t =>
                 {
-                    SqlMetaData meta = new SqlMetaData("value", SqlDbType.NVarChar, 1000);
-                    SqlDataRecord record = new SqlDataRecord(meta);
+                    SqlMetaData meta = new("value", SqlDbType.NVarChar, 1000);
+                    SqlDataRecord record = new(meta);
                     record.SetValue(0, t);
                     return record;
                 });

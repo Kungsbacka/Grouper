@@ -8,11 +8,11 @@ namespace GrouperLib.Store
         {
         }
 
-        public GroupNotFoundException(string message, Exception innerException) : base(message, innerException)
+        public GroupNotFoundException(string message, Exception? innerException) : base(message, innerException)
         {
         }
 
-        public static GroupNotFoundException Create(Guid GroupId, Exception innerException)
+        public static GroupNotFoundException Create(Guid GroupId, Exception? innerException)
         {
             return new GroupNotFoundException($"Group with id {GroupId} not found in store.", innerException);
         }
@@ -27,11 +27,11 @@ namespace GrouperLib.Store
         {
         }
 
-        public MemberNotFoundException(string message, Exception innerException) : base(message, innerException)
+        public MemberNotFoundException(string message, Exception? innerException) : base(message, innerException)
         {
         }
 
-        public static MemberNotFoundException Create(Guid memberId, Exception innerException)
+        public static MemberNotFoundException Create(Guid memberId, Exception? innerException)
         {
             return new MemberNotFoundException($"Member with id {memberId} not found in store.", innerException);
         }

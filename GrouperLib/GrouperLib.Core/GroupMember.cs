@@ -31,13 +31,13 @@ namespace GrouperLib.Core
             }
             else
             {
-                throw new ArgumentException(nameof(id), "Argument is not a valid GUID");
+                throw new ArgumentException("Argument is not a valid GUID", nameof(id));
             }
             DisplayName = displayName ?? throw new ArgumentNullException(nameof(displayName));
             MemberType = memberType;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is not GroupMember member)
             {

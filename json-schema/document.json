@@ -17,7 +17,6 @@
       "$id": "#/properties/id",
       "type": "string",
       "title": "Document ID",
-      "default": "",
       "readOnly": true,
       "pattern": "^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"
     },
@@ -25,26 +24,24 @@
       "id": "#properties/interval",
       "type": "integer",
       "title": "Processing interval",
-      "description": "Suggested processing interval in minutes. A processing interval of zero (0) is the same as no processing interval.",
+      "description": "Processing interval hint in minutes. A processing interval less than one (1) will be ignored.",
       "minimum": 0,
       "default": 0
     },
     "groupId": {
       "$id": "#/properties/groupId",
+      "format": "GUID",
       "type": "string",
       "title": "Group ID",
-      "default": "",
       "pattern": "^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"
     },
     "groupName": {
       "$id": "#/properties/groupName",
       "type": "string",
       "title": "Group display name",
-      "default": "",
       "examples": [
         "My Group"
-      ],
-      "pattern": "^(.*)$"
+      ]
     },
     "store": {
       "$id": "#/properties/store",

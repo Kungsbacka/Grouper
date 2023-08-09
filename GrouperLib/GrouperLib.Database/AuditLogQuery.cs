@@ -8,7 +8,7 @@ namespace GrouperLib.Database
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public Guid? DocumentId { get; set; }
-        public string ActorContains { get; set; }
-        public string ActionContains { get; set; }
+        public string? ActorContains { get; set; }
+        public string? ActionContains { get; set; }
     }
 }

@@ -9,14 +9,14 @@ namespace GrouperLib.Test
     public class UpnValidatorTest
     {
 
-        private readonly Dictionary<string, string> _validUpns = new Dictionary<string, string>()
+        private readonly Dictionary<string, string> _validUpns = new()
         {
             { "Valid UPN", "jdoe@example.com" },
             { "Multiple sub domains", "jdoe@one.two.three" },
             { "Dots in name", "j.c.doe@example.com" }
         };
 
-        private readonly Dictionary<string, string> _invalidUpns = new Dictionary<string, string>()
+        private readonly Dictionary<string, string> _invalidUpns = new()
         {
             { "Empty string", "" },
             { "Missing at (@)", "jdoeexample.com" },
@@ -74,16 +74,6 @@ namespace GrouperLib.Test
             }
         }
 
-        [Fact]
-        public void TestWithNullUpn()
-        {
-            foreach (string key in _invalidUpns.Keys)
-            {
-                Assert.Throws<ArgumentNullException>(() => { IsUpnValid(null); });
-            }
-        }
-
-
         private static bool IsUpnValid(string upn)
         {
             GrouperDocument document = TestHelpers.MakeDocument(new
@@ -104,8 +94,8 @@ namespace GrouperLib.Test
                     }
                 }
             });
-            UpnValidator upnValidator = new UpnValidator();
-            List<ValidationError> validationErrors = new List<ValidationError>();
+            UpnValidator upnValidator = new();
+            List<ValidationError> validationErrors = new();
             upnValidator.Validate(document, document.Members.First(), validationErrors);
             return validationErrors.Count == 0;
         }
