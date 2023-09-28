@@ -222,15 +222,32 @@ namespace GrouperLib.Backend
 
         private async Task<GroupMemberCollection> GetTargetMembersAsync(GrouperDocument document, GroupMemberCollection currentMembers)
         {
-            var include = new GroupMemberCollection();
-            var exclude = new GroupMemberCollection();
-            if (!(document.Members.Any(m => m.Action == GroupMemberAction.Include)))
+            GroupMemberCollection include = new();
+            GroupMemberCollection exclude = new();
+            // This is a special case where a document only specifies what users to exclude
+            // and does not have any include rules. In this case the exclude rules are not
+            // run against the include rules, but against the current members in the group.
+            // This allows you to create pairs of groups that work in tandem but with inverse
+            // membership rules, where one is automatically controlled and the other is controlled
+            // manually, but with members removed if the membership overlaps.
+            //
+            // Example:
+            // * Document A has only one rule that says that all users from department A should
+            //   be a member (include) of group A
+            // * Document B has only one rule that says that all users from deparmtnet A should
+            //   *not* be a member (exclude) of group B.
+            //
+            // Now you have one group (group A) that is automatically controlled and contains only
+            // users from department A, and another group (group B) that can be manually controlled,
+            // but that is guaranteed not to contain members that is also in group A.
+            bool excludeRulesOnly = !(document.Members.Any(m => m.Action == GroupMemberAction.Include));
+            if (excludeRulesOnly)
             {
                 include.Add(currentMembers);
             }
             foreach (GrouperDocumentMember member in document.Members)
             {
-                var memberCollection = member.Action == GroupMemberAction.Exclude ? exclude : include;
+                GroupMemberCollection memberCollection = member.Action == GroupMemberAction.Exclude ? exclude : include;
                 IMemberSource source = GetMemberSource(member);
                 await source.GetMembersFromSourceAsync(memberCollection, member, document.MemberType);
             }
