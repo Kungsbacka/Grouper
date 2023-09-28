@@ -222,8 +222,17 @@ namespace GrouperLib.Backend
 
         private async Task<GroupMemberCollection> GetTargetMembersAsync(GrouperDocument document, GroupMemberCollection currentMembers)
         {
+            // The membership selection works like this:
+            //
+            // 1. Add all users that match one or more non explicit (non static) include rule
+            // 2. Remove all users that match one or more non explicit (non static) exclude rule
+            // 3. Add all users that match one or more explicit (static) include rule
+            // 4. Remove all users that match one or more explicit (static) exclude rule
+            GroupMemberCollection includeExplicit = new();
+            GroupMemberCollection excludeExplicit = new();
             GroupMemberCollection include = new();
             GroupMemberCollection exclude = new();
+
             // This is a special case where a document only specifies what users to exclude
             // and does not have any include rules. In this case the exclude rules are not
             // run against the include rules, but against the current members in the group.
@@ -247,11 +256,24 @@ namespace GrouperLib.Backend
             }
             foreach (GrouperDocumentMember member in document.Members)
             {
-                GroupMemberCollection memberCollection = member.Action == GroupMemberAction.Exclude ? exclude : include;
+                GroupMemberCollection memberCollection = (member.Source, member.Action) switch
+                {
+                    (GroupMemberSource.Static, GroupMemberAction.Include) => includeExplicit,
+                    (GroupMemberSource.Static, GroupMemberAction.Exclude) => excludeExplicit,
+                    (_, GroupMemberAction.Include) => include,
+                    (_, GroupMemberAction.Exclude) => exclude,
+                    _ => throw new InvalidOperationException("Cannot choose collection")
+                };                
                 IMemberSource source = GetMemberSource(member);
                 await source.GetMembersFromSourceAsync(memberCollection, member, document.MemberType);
             }
+            // 1. Include now contains all members from non explicit include rules
+            // 2. Remove members from non explicit exclude rules
             include.ExceptWith(exclude);
+            // 3. Add members from explicit incude rules
+            include.Add(includeExplicit);
+            // 4. Remove members from explicit exclude rules
+            include.ExceptWith(excludeExplicit);
             return include;
         }
 
