@@ -40,5 +40,12 @@ namespace GrouperLib.Store
             }
             throw new ArgumentException($"No certificate found with thumbprint {thumbprint}");
         }
+
+        public static char HexChar(int value)
+        {
+            value &= 0xF;
+            value += 48;
+            return (char)(value > 57 ? value + 7 : value);
+        }
     }
 }
