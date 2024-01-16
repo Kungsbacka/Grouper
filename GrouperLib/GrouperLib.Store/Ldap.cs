@@ -33,19 +33,21 @@ namespace GrouperLib.Store
             SearchRequest searchRequest = new(searchBase, ldapFilter, searchScope, attributeList);
             PageResultRequestControl pageResultRequestControl = new(pageSize: 1000);
             searchRequest.Controls.Add(pageResultRequestControl);
-            do
+            while(true)
             {
                 SearchResponse searchResponse = await SendSearchRequestAsync(searchRequest);
                 foreach (SearchResultEntry entry in searchResponse.Entries)
                 {
                     yield return entry;
                 }
-                PageResultResponseControl pageResultResponseControl = searchResponse.Controls.OfType<PageResultResponseControl>().First();
-                if (pageResultRequestControl.Cookie.Length > 0)
+                PageResultResponseControl? pageResultResponseControl = 
+                    searchResponse.Controls.OfType<PageResultResponseControl>().FirstOrDefault();
+                if (pageResultResponseControl == null || pageResultResponseControl.Cookie.Length == 0)
                 {
-                    pageResultRequestControl.Cookie = pageResultResponseControl.Cookie;
+                    break;
                 }
-            } while (pageResultRequestControl.Cookie.Length > 0);
+                pageResultRequestControl.Cookie = pageResultResponseControl.Cookie;
+            }
         }
 
         public async IAsyncEnumerable<SearchResultEntry> SearchObjectsAsync(string ldapFilter, params string[] attributeList)
