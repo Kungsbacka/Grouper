@@ -173,13 +173,13 @@ namespace GrouperLib.Database
             });
         }
 
-        public async Task<IList<GrouperDocumentEntry>> GetEntriesByMemberRuleAsync(string ruleName, string ruleValue, GroupStore? store = null, bool includeUnpublished = false, bool includeDeleted = false)
+        public async Task<IList<GrouperDocumentEntry>> GetEntriesByMemberRuleAsync(string ruleName, string? ruleValue, GroupStore? store = null, bool includeUnpublished = false, bool includeDeleted = false)
         {
-            string? translatedRuleValue = Helpers.TranslateWildcard(ruleValue);
+            ruleValue = Helpers.TranslateWildcard(ruleValue);
             return await InternalGetDocumentEntriesAsync("dbo.get_document_by_member_rule",
                 new Dictionary<string, object?>() {
                 { "rule_name", ruleName },
-                { "rule_value", translatedRuleValue },
+                { "rule_value", ruleValue },
                 { "store", store?.ToString() },
                 { "include_unpublished", includeUnpublished },
                 { "include_deleted", includeDeleted }

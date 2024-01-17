@@ -7,7 +7,7 @@ namespace GrouperLib.Database
     {
         public static bool IEquals(this string value, string other)
         {
-            // This deviates from standard string.Equals which will throw if value is null
+            // This deviates from standard string.Equals which will throw if the input string is null
             if (value == null)
             {
                 return false;
@@ -24,7 +24,7 @@ namespace GrouperLib.Database
             return str;
         }
 
-        public static string? TranslateWildcard(string inputString)
+        public static string? TranslateWildcard(string? inputString)
         {
             if (string.IsNullOrEmpty(inputString))
             {

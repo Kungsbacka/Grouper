@@ -4,9 +4,11 @@ using GrouperLib.Database;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using System.Runtime.Versioning;
 
 namespace GrouperApi.Controllers
 {
+    [SupportedOSPlatform("windows")]
     [Authorize]
     [ApiController]
     [Route("[controller]")]
@@ -39,7 +41,9 @@ namespace GrouperApi.Controllers
 
         private LogDb GetLogDb()
         {
-            return new LogDb(_config.DocumentDatabaseConnectionString);
+            string connectionString = _config.LogDatabaseConnectionString ??
+                throw new InvalidOperationException("Connection string missing in configuration");
+            return new LogDb(connectionString);
         }
     }
 }

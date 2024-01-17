@@ -3,10 +3,12 @@ using GrouperLib.Config;
 using GrouperLib.Language;
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Newtonsoft.Json.Converters;
+using System.Runtime.Versioning;
 
-[assembly: CLSCompliant(false)]
+// [assembly: CLSCompliant(false)]
 namespace GrouperApi
 {
+    [SupportedOSPlatform("windows")]
     public static class Program
     {
         public static void Main(string[] args)

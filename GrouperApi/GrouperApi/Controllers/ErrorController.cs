@@ -25,7 +25,11 @@ namespace GrouperApi.Controllers
             {
                 if (values.Count > 0)
                 {
-                    _stringResourceHelper.SetLanguage(values[0]);
+                    var lang = values[0];
+                    if (lang != null)
+                    {
+                        _stringResourceHelper.SetLanguage(lang);
+                    }
                 }
             }
             var feature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();

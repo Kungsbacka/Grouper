@@ -2,9 +2,11 @@
 using GrouperLib.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Runtime.Versioning;
 
 namespace GrouperApi.Controllers
 {
+    [SupportedOSPlatform("windows")]
     [Authorize]
     [Route("[controller]")]
     [ApiController]

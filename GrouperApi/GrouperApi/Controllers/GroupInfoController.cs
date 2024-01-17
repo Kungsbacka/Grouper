@@ -2,9 +2,11 @@
 using GrouperLib.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Runtime.Versioning;
 
 namespace GrouperApi.Controllers
 {
+    [SupportedOSPlatform("windows")]
     [Authorize]
     [ApiController]
     [Route("[controller]")]
@@ -20,8 +22,8 @@ namespace GrouperApi.Controllers
         [HttpPost]
         public async Task<IActionResult> GetGroupInfo()
         {
-                GroupInfo info = await _grouperBackend.GetGroupInfoAsync(await DocumentHelper.MakeDocumentAsync(Request));
-                return Ok(info);
+            GroupInfo info = await _grouperBackend.GetGroupInfoAsync(await DocumentHelper.MakeDocumentAsync(Request));
+            return Ok(info);
         }
     }
 }

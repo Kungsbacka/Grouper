@@ -5,9 +5,11 @@ using GrouperLib.Language;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using System.Runtime.Versioning;
 
 namespace GrouperApi.Controllers
 {
+    [SupportedOSPlatform("windows")]
     [Authorize]
     [ApiController]
     [Route("[controller]")]
@@ -156,7 +158,9 @@ namespace GrouperApi.Controllers
         {
             string currentUser = ControllerContext.HttpContext.User.Identity?.Name ??
                 throw new InvalidOperationException("Can not determine current user name");
-            return new DocumentDb(_config.DocumentDatabaseConnectionString, currentUser);
+            string connectionString = _config.DocumentDatabaseConnectionString ??
+                throw new InvalidOperationException("Connection string missing in configuration");
+            return new DocumentDb(connectionString, currentUser);
         }
     }
 }
