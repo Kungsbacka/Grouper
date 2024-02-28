@@ -45,7 +45,7 @@ sc.exe create GrouperService binPath= "C:\Program Files\Grouper\GrouperService.e
 * Copy appsetting.Example.json to appsettings.Development.json and appsettings.Production.json
 * Update configuration files to match your environment. You are strongly advised to encrtypt all
 secrets (see [Encrypting secrets](#encrypting-secrets) below)
-* Build
+* Build. There have been issues with using `win-x64` as runtime identifier. To avoid issues, use `win10-x64` when deploying to Windows Server.
 * Deploy to a web site that is configured with Windows Authentication. If you want to use Exchange Online
 as a group store och member source, you have to also install PowerShell 7 or later and the Exchange Online
 PowerShell module (ExchangeOnlineManagement).
