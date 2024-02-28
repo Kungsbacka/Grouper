@@ -11,10 +11,10 @@ published documents from the Grouper database and updates group members.
 
 ## Dependencies
 
-Dependencies can vary depending on what kind of groups Grouper should manage (Azure AD, on-premise AD, or EXO) and which sources
+Dependencies can vary depending on what kind of groups Grouper should manage (Entra ID, on-premise AD, or EXO) and which sources
 are used for members. Below is a list of all external dependencies:
 
-* Access to Azure AD and an Azure AD app registration with permission to read and write group members.
+* Access to Entra ID and an Entra ID app registration with permission to read and write group members.
 * Access to on-premise AD and a user account (or gMSA) with permission to read and write group members.
 * Access to Exchange Online and a user account with permission to read and write distribution group members.
 * Access to a database for Grouper documents (more information below).
