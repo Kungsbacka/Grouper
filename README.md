@@ -2,7 +2,7 @@
 
 ## Description
 
-Grouper manages group membership for on-premise AD groups, Azure AD groups, Exchange Online (EXO) distribution groups, and OpenE Platform.
+Grouper manages group membership for Active Directory, Entra ID, Exchange Online (distribution groups), and OpenE Platform.
 
 Grouper is comprised of four parts. Core functionality, database access, logging, and group management are found in GrouperLib.
 GrouperApi exposes Grouper functionality as a web API. [PSGrouper](https://github.com/Kungsbacka/PSGrouper) uses the web API to
