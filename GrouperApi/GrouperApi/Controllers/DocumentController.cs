@@ -24,6 +24,7 @@ namespace GrouperApi.Controllers
             _stringResourceHelper = stringResourceHelper;
         }
 
+        [Authorize(Policy = "All")]
         [HttpGet("all")]
         public async Task<IActionResult> GetAllDocumentsAsync(GroupStore? store, bool? unpublished, bool? deleted)
         {
@@ -31,6 +32,7 @@ namespace GrouperApi.Controllers
             return Ok(entries);
         }
 
+        [Authorize(Policy = "All")]
         [HttpGet("id/{id:guid}")]
         public async Task<IActionResult> GetByDocumentIdAsync(Guid id, bool? unpublished, bool? deleted)
         {
@@ -38,6 +40,7 @@ namespace GrouperApi.Controllers
             return Ok(entries);
         }
 
+        [Authorize(Policy = "All")]
         [HttpGet("unpublished")]
         public async Task<IActionResult> GetUnpublishedAsync(GroupStore? store)
         {
@@ -45,6 +48,7 @@ namespace GrouperApi.Controllers
             return Ok(entries);
         }
 
+        [Authorize(Policy = "All")]
         [HttpGet("deleted")]
         public async Task<IActionResult> GetDeletedAsync(GroupStore? store)
         {
@@ -52,6 +56,7 @@ namespace GrouperApi.Controllers
             return Ok(entries);
         }
 
+        [Authorize(Policy = "All")]
         [HttpGet("group/name/{name}")]
         public async Task<IActionResult> GetByGroupNameAsync(string name, GroupStore? store, bool? unpublished, bool? deleted)
         {
@@ -59,6 +64,7 @@ namespace GrouperApi.Controllers
             return Ok(entries);
         }
 
+        [Authorize(Policy = "All")]
         [HttpGet("group/id/{id:guid}")]
         public async Task<IActionResult> GetByGroupIdAsync(Guid id, GroupStore? store, bool? unpublished, bool? deleted)
         {
@@ -66,6 +72,7 @@ namespace GrouperApi.Controllers
             return Ok(entries);
         }
 
+        [Authorize(Policy = "All")]
         [HttpGet("source/{source}")]
         public async Task<IActionResult> GetByMemberSourceAsync(GroupMemberSource source, GroupStore? store, bool? unpublished, bool? deleted)
         {
@@ -73,6 +80,7 @@ namespace GrouperApi.Controllers
             return Ok(entries);
         }
 
+        [Authorize(Policy = "All")]
         [HttpGet("rule/{rule}/{value?}")]
         public async Task<IActionResult> GetByMemberRuleAsync(string rule, string? value, GroupStore? store, bool? unpublished, bool? deleted)
         {
@@ -80,6 +88,7 @@ namespace GrouperApi.Controllers
             return Ok(entries);
         }
 
+        [Authorize(Policy = "Admin")]
         [HttpPost("publish/{id:guid}")]
         public async Task<IActionResult> PublishDocumentAsync(Guid id)
         {
@@ -87,6 +96,7 @@ namespace GrouperApi.Controllers
             return Ok();
         }
 
+        [Authorize(Policy = "Admin")]
         [HttpPost("unpublish/{id:guid}")]
         public async Task<IActionResult> UnpublishDocumentAsync(Guid id)
         {
@@ -94,6 +104,7 @@ namespace GrouperApi.Controllers
             return Ok();
         }
 
+        [Authorize(Policy = "Admin")]
         [HttpDelete("id/{id:guid}")]
         public async Task<IActionResult> DeleteDocumentAsync(Guid id)
         {
@@ -101,6 +112,7 @@ namespace GrouperApi.Controllers
             return Ok();
         }
 
+        [Authorize(Policy = "Admin")]
         [HttpPost("restore/{id:guid}")]
         public async Task<IActionResult> RestoreDocumentAsync(Guid id, int? revision)
         {
@@ -115,6 +127,7 @@ namespace GrouperApi.Controllers
             return Ok();
         }
 
+        [Authorize(Policy = "Admin")]
         [HttpPost]
         public async Task<IActionResult> StoreDocumentAsync()
         {
@@ -122,6 +135,7 @@ namespace GrouperApi.Controllers
             return Ok();
         }
 
+        [Authorize(Policy = "Admin")]
         [HttpPost("tag/{id:guid}")]
         public async Task<IActionResult> AddDocumentTagAsync(Guid id, string tag, bool? useExisting)
         {
@@ -129,6 +143,7 @@ namespace GrouperApi.Controllers
             return Ok();
         }
 
+        [Authorize(Policy = "Admin")]
         [HttpDelete("tag/{id:guid}")]
         public async Task<IActionResult> RemoveDocumentTagAsync(Guid id, string tag)
         {
@@ -136,6 +151,7 @@ namespace GrouperApi.Controllers
             return Ok();
         }
 
+        [Authorize(Policy = "All")]
         [HttpPost("validate")]
         public async Task<IActionResult> ValidateDocument(string? lang)
         {

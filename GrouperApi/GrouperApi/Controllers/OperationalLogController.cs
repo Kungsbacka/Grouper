@@ -21,6 +21,7 @@ namespace GrouperApi.Controllers
             _config = config?.Value ?? throw new ArgumentNullException(nameof(config));
         }
 
+        [Authorize(Policy = "All")]
         [HttpGet]
         public async Task<IActionResult> GetLogEntries(Guid? documentId, Guid? groupId, string? groupDisplayNameContains, Guid? targetId, string? targetDisplayNameContains, GroupMemberOperation? operation, DateTime? startDate, DateTime? endDate, int? count)
         {

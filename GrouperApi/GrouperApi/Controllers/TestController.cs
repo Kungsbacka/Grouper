@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Reflection;
+using System.Runtime.Versioning;
 
 namespace GrouperApi.Controllers
 {
+    [SupportedOSPlatform("windows")]
     [Authorize]
     [ApiController]
     [Route("[controller]")]
@@ -13,14 +15,15 @@ namespace GrouperApi.Controllers
         {
         }
 
+        [Authorize(Policy = "All")]
         [HttpGet("echo")]
         public IActionResult Echo(string input)
         {
             return Ok(input);
         }
 
+        [Authorize(Policy = "All")]
         [HttpGet("version")]
-
         public IActionResult Version()
         {
             var ver = Assembly.GetExecutingAssembly().GetName().Version;

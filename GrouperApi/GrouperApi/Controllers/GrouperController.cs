@@ -19,6 +19,7 @@ namespace GrouperApi.Controllers
             _grouperBackend = grouper ?? throw new ArgumentNullException(nameof(grouper));
         }
 
+        [Authorize(Policy = "Reader,Admin")]
         [HttpPost("diff")]
         public async Task<IActionResult> GetDiffAsync(bool? unchanged)
         {
@@ -26,6 +27,7 @@ namespace GrouperApi.Controllers
             return Ok(diff);
         }
 
+        [Authorize(Policy = "Admin")]
         [HttpPost("invoke")]
         public async Task<IActionResult> InvokeGrouper(bool? ignoreChangelimit)
         {

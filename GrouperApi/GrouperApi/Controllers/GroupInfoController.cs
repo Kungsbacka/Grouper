@@ -19,6 +19,7 @@ namespace GrouperApi.Controllers
             _grouperBackend = grouper ?? throw new ArgumentNullException(nameof(grouper));
         }
 
+        [Authorize(Policy = "All")]
         [HttpPost]
         public async Task<IActionResult> GetGroupInfo()
         {

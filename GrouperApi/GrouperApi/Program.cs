@@ -1,6 +1,7 @@
 ﻿using GrouperLib.Backend;
 using GrouperLib.Config;
 using GrouperLib.Language;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Newtonsoft.Json.Converters;
 using System.Runtime.Versioning;
@@ -30,17 +31,32 @@ namespace GrouperApi
                 .AddNegotiate();
             builder.Services.AddAuthorization(options =>
             {
+
+                var roleMappings = builder.Configuration.GetSection("RoleMapping")
+                    .Get<Dictionary<string, string>>();
+
+                foreach (var roleMapping in roleMappings)
+                {
+                    options.AddPolicy(roleMapping.Key, policy => policy.RequireRole(roleMapping.Value));
+                }
+                options.AddPolicy("All", policy => 
+                    policy.RequireAssertion(context =>
+                        roleMappings.Values.Any(group =>
+                            context.User.IsInRole(group)
+                        )
+                    )
+                );
                 options.FallbackPolicy = options.DefaultPolicy;
             });
 
             builder.Services.AddSingleton<IStringResourceHelper, StringResourceHelper>();
 
             builder.Services.AddSingleton((_) =>
-                {
+            {
                 GrouperConfiguration config = new();
                 ConfigurationBinder.Bind(builder.Configuration.GetSection("Grouper"), config);
                 return Grouper.CreateFromConfig(config);
-                });
+            });
 
             var app = builder.Build();
             if (app.Environment.IsDevelopment())
