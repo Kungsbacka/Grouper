@@ -19,7 +19,7 @@ namespace GrouperApi.Controllers
             _grouperBackend = grouper ?? throw new ArgumentNullException(nameof(grouper));
         }
 
-        [Authorize(Policy = "Reader,Admin")]
+        [Authorize(Policy = "All")]
         [HttpPost("diff")]
         public async Task<IActionResult> GetDiffAsync(bool? unchanged)
         {

@@ -1,7 +1,6 @@
 ﻿using GrouperLib.Backend;
 using GrouperLib.Config;
 using GrouperLib.Language;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Newtonsoft.Json.Converters;
 using System.Runtime.Versioning;
