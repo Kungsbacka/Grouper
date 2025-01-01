@@ -1,83 +1,71 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Text.Json.Serialization;
 
-namespace GrouperLib.Core
+namespace GrouperLib.Core;
+
+public sealed class GrouperDocumentMember
 {
-    public sealed class GrouperDocumentMember
+    [JsonPropertyName("source")]
+    [JsonPropertyOrder(1)]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public GroupMemberSource Source { get; }
+
+    [JsonPropertyName("action")]
+    [JsonPropertyOrder(2)]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public GroupMemberAction Action { get; }
+
+    [JsonPropertyName("rules")]
+    [JsonPropertyOrder(3)]
+    public IReadOnlyCollection<GrouperDocumentRule> Rules => _rules.AsReadOnly();
+
+    private readonly List<GrouperDocumentRule> _rules;
+        
+    [JsonConstructor]
+    public GrouperDocumentMember(GroupMemberSource source, GroupMemberAction action, List<GrouperDocumentRule> rules)
     {
-        [JsonProperty(PropertyName = "source", Order = 1)]
-        [JsonConverter(typeof(StringEnumConverter))]
-        public GroupMemberSource Source { get; }
+        Source = source;
+        Action = action;
+        _rules = rules ?? throw new ArgumentNullException(nameof(rules));
+    }
 
-        [JsonProperty(PropertyName = "action", Order = 2)]
-        [JsonConverter(typeof(StringEnumConverter))]
-        public GroupMemberAction Action { get; }
+    internal GrouperDocumentMember(GrouperDocumentMember documentMember)
+    {
+        Source = documentMember.Source;
+        Action = documentMember.Action;
+        _rules = documentMember.Rules.Select(r => new GrouperDocumentRule(r)).ToList();
+    }
 
-        [JsonProperty(PropertyName = "rules", Order = 3)]
-        public IReadOnlyCollection<GrouperDocumentRule> Rules
+    public override bool Equals(object? obj)
+    {
+        if (obj is not GrouperDocumentMember member)
         {
-            get
-            {
-                return _rules.AsReadOnly();
-            }
+            return false;
         }
-        private readonly List<GrouperDocumentRule> _rules;
-
-        public static bool ShouldSerializeMemberType() => false;
-
-        [JsonConstructor]
-        public GrouperDocumentMember(GroupMemberSource source, GroupMemberAction action, List<GrouperDocumentRule> rules)
+        if (Source != member.Source || Action != member.Action)
         {
-            Source = source;
-            Action = action;
-            _rules = rules ?? throw new ArgumentNullException(nameof(rules));
+            return false;
         }
-
-        internal GrouperDocumentMember(GrouperDocumentMember documentMember)
+        if (Rules.Count != member.Rules.Count)
         {
-            Source = documentMember.Source;
-            Action = documentMember.Action;
-            _rules = documentMember.Rules.Select(r => new GrouperDocumentRule(r)).ToList();
+            return false;
         }
+        return Rules.Intersect(member.Rules).Count() == Rules.Count;
+    }
 
-        public override bool Equals(object? obj)
+    public override int GetHashCode()
+    {
+        // https://stackoverflow.com/questions/1646807/quick-and-simple-hash-code-combinations
+        // unchecked to allow integer overflow
+        unchecked
         {
-            if (obj is not GrouperDocumentMember member)
+            int hash = 17;
+            hash = hash * 31 + StringComparer.OrdinalIgnoreCase.GetHashCode(Source);
+            hash = hash * 31 + Action.GetHashCode();
+            foreach (GrouperDocumentRule rule in Rules)
             {
-                return false;
+                hash = hash * 31 + rule.GetHashCode();
             }
-            if (Source != member.Source || Action != member.Action)
-            {
-                return false;
-            }
-            if (Rules.Count != member.Rules.Count)
-            {
-                return false;
-            }
-            return Rules.Intersect(member.Rules).Count() == Rules.Count;
-        }
-
-        public override int GetHashCode()
-        {
-            // https://stackoverflow.com/questions/1646807/quick-and-simple-hash-code-combinations
-            // unchecked to allow integer overflow
-            unchecked
-            {
-                int hash = 17;
-                hash = hash * 31 + StringComparer.OrdinalIgnoreCase.GetHashCode(Source);
-                hash = hash * 31 + Action.GetHashCode();
-                if (Rules != null)
-                {
-                    foreach (GrouperDocumentRule rule in Rules)
-                    {
-                        hash = hash * 31 + rule.GetHashCode();
-                    }
-                }
-                return hash;
-            }
+            return hash;
         }
     }
 }

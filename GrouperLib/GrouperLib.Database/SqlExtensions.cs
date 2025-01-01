@@ -1,71 +1,68 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.Data.SqlClient.Server;
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 
-namespace GrouperLib.Database
+namespace GrouperLib.Database;
+
+public static class SqlExtensions
 {
-    public static class SqlExtensions
+    private static readonly DataTable emptyNvarcharTableParam = InitializeEmptyDataTable();
+
+    private static DataTable InitializeEmptyDataTable()
     {
-        private static readonly DataTable _emptyNvarcharTableParam = InitializeEmptyDataTable();
+        DataTable dt = new();
+        dt.Columns.Add("value", typeof(string));
+        return dt;
+    }
 
-        private static DataTable InitializeEmptyDataTable()
+    public static void AddParameters(this SqlCommand command, IDictionary<string, object?>? parameterDictionary)
+    {
+        if (parameterDictionary == null)
         {
-            DataTable dt = new();
-            dt.Columns.Add("value", typeof(string));
-            return dt;
+            return;
         }
-
-        public static void AddParameters(this SqlCommand command, IDictionary<string, object?> parameterDictionary)
+        foreach (KeyValuePair<string, object?> param in parameterDictionary)
         {
-            if (parameterDictionary == null)
+            if (param.Value == null)
             {
-                return;
-            }
-            foreach (KeyValuePair<string, object?> param in parameterDictionary)
+                continue;
+            } 
+            
+            if (param.Value is string[] stringArray)
             {
-                if (param.Value == null)
+                SqlParameter sqlParam = command.CreateParameter();
+                sqlParam.ParameterName = param.Key;
+                sqlParam.SqlDbType = SqlDbType.Structured;
+                sqlParam.TypeName = "dbo.NvarcharTable";
+                if (stringArray.Length == 0)
                 {
-                    continue;
-                } 
-                if (param.Value is string[] stringArray)
-                {
-                    SqlParameter sqlParam = command.CreateParameter();
-                    sqlParam.ParameterName = param.Key;
-                    sqlParam.SqlDbType = SqlDbType.Structured;
-                    sqlParam.TypeName = "dbo.NvarcharTable";
-                    if (stringArray.Length == 0)
-                    {
-                        sqlParam.Value = _emptyNvarcharTableParam;
-                    }
-                    else
-                    {
-                        sqlParam.Value = stringArray.Select(str =>
-                        {
-                            SqlMetaData meta = new("value", SqlDbType.NVarChar, 1000);
-                            SqlDataRecord record = new(meta);
-                            record.SetValue(0, str);
-                            return record;
-                        });
-                    }
-                    command.Parameters.Add(sqlParam);
+                    sqlParam.Value = emptyNvarcharTableParam;
                 }
                 else
                 {
-                    command.Parameters.AddWithValue(param.Key, param.Value);
+                    sqlParam.Value = stringArray.Select(str =>
+                    {
+                        SqlMetaData meta = new("value", SqlDbType.NVarChar, 1000);
+                        SqlDataRecord record = new(meta);
+                        record.SetValue(0, str);
+                        return record;
+                    });
                 }
+                command.Parameters.Add(sqlParam);
             }
-        }
-
-        public static T? GetNullable<T>(this SqlDataReader dataReader, int i)
-        {
-            if (dataReader.IsDBNull(i))
+            else
             {
-                return default;
+                command.Parameters.AddWithValue(param.Key, param.Value);
             }
-            return (T)dataReader.GetValue(i);
         }
+    }
+
+    public static T? GetNullable<T>(this SqlDataReader dataReader, int i)
+    {
+        if (dataReader.IsDBNull(i))
+        {
+            return default;
+        }
+        return (T)dataReader.GetValue(i);
     }
 }

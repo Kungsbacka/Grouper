@@ -1,91 +1,97 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using System;
-using System.Text;
+﻿using System.Text;
+using System.Text.Json.Serialization;
 
-namespace GrouperLib.Core
+namespace GrouperLib.Core;
+
+public sealed class OperationalLogItem
 {
-    public sealed class OperationalLogItem
+    [JsonPropertyName("logTime")]
+    [JsonPropertyOrder(1)]
+    public DateTime LogTime { get; }
+
+    [JsonPropertyName("documentId")]
+    [JsonPropertyOrder(2)]
+    public Guid DocumentId { get; }
+
+    [JsonPropertyName("groupId")]
+    [JsonPropertyOrder(3)]
+    public Guid GroupId { get; }
+
+    [JsonPropertyName("groupDisplayName")]
+    [JsonPropertyOrder(4)]
+    public string? GroupDisplayName { get; }
+
+    [JsonPropertyName("groupStore")]
+    [JsonPropertyOrder(5)]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public GroupStore GroupStore { get; }
+
+    [JsonPropertyName("operation")]
+    [JsonPropertyOrder(6)]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public GroupMemberOperation Operation { get; }
+
+    [JsonPropertyName("targetId")]
+    [JsonPropertyOrder(7)]
+    public Guid TargetId { get; }
+
+    [JsonPropertyName("targetDisplayName")]
+    [JsonPropertyOrder(8)]
+    public string? TargetDisplayName { get; }
+
+    public OperationalLogItem(GrouperDocument document, GroupMemberOperation operation, GroupMember member)
     {
-        [JsonProperty(PropertyName = "logTime", Order = 1)]
-        public DateTime LogTime { get; }
+        LogTime = DateTime.Now;
+        DocumentId = document.Id;
+        GroupId = document.GroupId;
+        GroupDisplayName = document.GroupName;
+        GroupStore = document.Store;
+        Operation = operation;
+        TargetId = member.Id;
+        TargetDisplayName = member.DisplayName;
+    }
 
-        [JsonProperty(PropertyName = "documentId", Order = 2)]
-        public Guid DocumentId { get; }
+    public OperationalLogItem(DateTime logTime, Guid documentId, Guid groupId, string? groupDisplayName, string groupStore, string operation, Guid targetId, string? targetDisplayName)
+    {
+        LogTime = logTime;
+        DocumentId = documentId;
+        GroupId = groupId;
+        GroupDisplayName = groupDisplayName;
+        GroupStore = Enum.Parse<GroupStore>(groupStore, true);
+        Operation = Enum.Parse<GroupMemberOperation>(operation, true);
+        TargetId = targetId;
+        TargetDisplayName = targetDisplayName;
+    }
 
-        [JsonProperty(PropertyName = "groupId", Order = 3)]
-        public Guid GroupId { get; }
-
-        [JsonProperty(PropertyName = "groupDisplayName", Order = 4)]
-        public string? GroupDisplayName { get; }
-
-        [JsonProperty(PropertyName = "groupStore", Order = 5)]
-        [JsonConverter(typeof(StringEnumConverter))]
-        public GroupStore GroupStore { get; }
-
-        [JsonProperty(PropertyName = "operation", Order = 6)]
-        [JsonConverter(typeof(StringEnumConverter))]
-        public GroupMemberOperation Operation { get; }
-
-        [JsonProperty(PropertyName = "targetId", Order = 7)]
-        public Guid TargetId { get; }
-
-        [JsonProperty(PropertyName = "targetDisplayName", Order = 8)]
-        public string? TargetDisplayName { get; }
-
-        public OperationalLogItem(GrouperDocument document, GroupMemberOperation operation, GroupMember member)
+    public override string ToString()
+    {
+        StringBuilder sb = new();
+        sb.Append(LogTime.ToString("yyyy-MM-dd HH:mm:ss"));
+        sb.Append(": ");
+        if (Operation != GroupMemberOperation.None)
         {
-            LogTime = DateTime.Now;
-            DocumentId = document.Id;
-            GroupId = document.GroupId;
-            GroupDisplayName = document.GroupName;
-            GroupStore = document.Store;
-            Operation = operation;
-            TargetId = member.Id;
-            TargetDisplayName = member.DisplayName;
+            sb.Append(Operation.ToString());
+            sb.Append("ed ");
         }
-
-        public OperationalLogItem(DateTime logTime, Guid documentId, Guid groupId, string? groupDisplayName, string groupStore, string operation, Guid targetId, string? targetDisplayName)
+        else
         {
-            LogTime = logTime;
-            DocumentId = documentId;
-            GroupId = groupId;
-            GroupDisplayName = groupDisplayName;
-            GroupStore = (GroupStore)Enum.Parse(typeof(GroupStore), groupStore, true);
-            Operation = (GroupMemberOperation)Enum.Parse(typeof(GroupMemberOperation), operation, true);
-            TargetId = targetId;
-            TargetDisplayName = targetDisplayName;
+            sb.Append("Did nothing to ");
         }
-
-        public override string ToString()
+        sb.Append(TargetDisplayName ?? TargetId.ToString());
+        switch (Operation)
         {
-            StringBuilder sb = new();
-            sb.Append(LogTime.ToString("yyyy-MM-dd HH:mm:ss"));
-            sb.Append(": ");
-            if (Operation != GroupMemberOperation.None)
-            {
-                sb.Append(Operation.ToString());
-                sb.Append("ed ");
-            }
-            else
-            {
-                sb.Append("Did nothing to ");
-            }
-            sb.Append(TargetDisplayName ?? TargetId.ToString());
-            if (Operation == GroupMemberOperation.Add)
-            {
+            case GroupMemberOperation.Add:
                 sb.Append(" to ");
-            }
-            else if (Operation == GroupMemberOperation.Remove)
-            {
+                break;
+            case GroupMemberOperation.Remove:
                 sb.Append(" from ");
-            }
-            else
-            {
+                break;
+            case GroupMemberOperation.None:
+            default:
                 sb.Append(" for ");
-            }
-            sb.Append(GroupDisplayName ?? GroupId.ToString());
-            return sb.ToString();
+                break;
         }
+        sb.Append(GroupDisplayName ?? GroupId.ToString());
+        return sb.ToString();
     }
 }

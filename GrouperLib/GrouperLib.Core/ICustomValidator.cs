@@ -1,9 +1,6 @@
-﻿using System.Collections.Generic;
+﻿namespace GrouperLib.Core;
 
-namespace GrouperLib.Core
+public interface ICustomValidator
 {
-    interface ICustomValidator
-    {
-        void Validate(GrouperDocument document, GrouperDocumentMember documentMember, List<ValidationError> validationErrors);
-    }
+    void Validate(GrouperDocument document, GrouperDocumentMember documentMember, List<ValidationError> validationErrors);
 }

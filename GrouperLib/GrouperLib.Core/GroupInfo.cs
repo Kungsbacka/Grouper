@@ -1,38 +1,39 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System.Text.Json.Serialization;
 
-namespace GrouperLib.Core
+namespace GrouperLib.Core;
+
+public sealed class GroupInfo
 {
-    public sealed class GroupInfo
+    [JsonPropertyName("id")]
+    [JsonPropertyOrder(1)]
+    public Guid Id { get; }
+
+    [JsonPropertyName("displayName")]
+    [JsonPropertyOrder(2)]
+    public string DisplayName { get; }
+
+    [JsonPropertyName("store")]
+    [JsonPropertyOrder(3)]
+    public GroupStore Store { get; }
+
+    public GroupInfo(Guid id, string displayName, GroupStore store)
     {
-        [JsonProperty(PropertyName = "id", Order = 1)]
-        public Guid Id { get; }
+        Id = id;
+        DisplayName = displayName ?? throw new ArgumentNullException(nameof(displayName));
+        Store = store;
+    }
 
-        [JsonProperty(PropertyName = "displayName", Order = 2)]
-        public string DisplayName { get; }
-
-        [JsonProperty(PropertyName = "store", Order = 3)]
-        public GroupStore Store { get; }
-
-        public GroupInfo(Guid id, string displayName, GroupStore store)
+    public GroupInfo(string id, string displayName, GroupStore store)
+    {
+        if (Guid.TryParse(id, out Guid guid))
         {
-            Id = id;
-            DisplayName = displayName ?? throw new ArgumentNullException(nameof(displayName));
-            Store = store;
+            Id = guid;
         }
-
-        public GroupInfo(string id, string displayName, GroupStore store)
+        else
         {
-            if (Guid.TryParse(id, out Guid guid))
-            {
-                Id = guid;
-            }
-            else
-            {
-                throw new ArgumentException("Argument is not a valid GUID", nameof(id));
-            }
-            DisplayName = displayName ?? throw new ArgumentNullException(nameof(displayName));
-            Store = store;
+            throw new ArgumentException("Argument is not a valid GUID", nameof(id));
         }
+        DisplayName = displayName ?? throw new ArgumentNullException(nameof(displayName));
+        Store = store;
     }
 }

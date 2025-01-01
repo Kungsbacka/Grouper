@@ -1,82 +1,69 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 
-namespace GrouperLib.Database
+namespace GrouperLib.Database;
+
+static class Helpers
 {
-    static class Helpers
+    public static bool IEquals(this string? value, string other)
     {
-        public static bool IEquals(this string value, string other)
-        {
-            // This deviates from standard string.Equals which will throw if the input string is null
-            if (value == null)
-            {
-                return false;
-            }
-            return value.Equals(other, StringComparison.OrdinalIgnoreCase);
-        }
+        // This deviates from standard string.Equals which will throw if the input string is null
+        return value != null && value.Equals(other, StringComparison.OrdinalIgnoreCase);
+    }
 
-        public static string? NullIfEmpty(this string str)
-        {
-            if (string.IsNullOrEmpty(str))
-            {
-                return null;
-            }
-            return str;
-        }
+    public static string? NullIfEmpty(this string? str)
+    {
+        return string.IsNullOrEmpty(str) ? null : str;
+    }
 
-        public static string? TranslateWildcard(string? inputString)
+    public static string? TranslateWildcard(string? inputString)
+    {
+        if (string.IsNullOrEmpty(inputString))
         {
-            if (string.IsNullOrEmpty(inputString))
+            return null;
+        }
+        StringBuilder sb = new(inputString.Length * 2);
+        bool escapeMode = false;
+        const char escapeChar = '\\';
+        foreach (char c in inputString)
+        {
+            switch (c)
             {
-                return null;
-            }
-            StringBuilder sb = new(inputString.Length * 2);
-            bool escapeMode = false;
-            char escapeChar = '\\';
-            foreach (char c in inputString)
-            {
-                if (c == escapeChar)
+                case escapeChar:
                 {
                     if (escapeMode)
                     {
                         sb.Append(c);
                     }
+
+                    break;
                 }
-                else if (c == '*')
-                {
-                    if (escapeMode)
-                    {
-                        sb.Append(c);
-                    }
-                    else
-                    {
-                        sb.Append('%');
-                    }
-                }
-                else if (c == '?')
-                {
-                    if (escapeMode)
-                    {
-                        sb.Append(c);
-                    }
-                    else
-                    {
-                        sb.Append('_');
-                    }
-                }
-                else if (c == '%' || c == '_' || c == '[' || c == ']')
-                {
+                case '*' when escapeMode:
+                    sb.Append(c);
+                    break;
+                case '*':
+                    sb.Append('%');
+                    break;
+                case '?' when escapeMode:
+                    sb.Append(c);
+                    break;
+                case '?':
+                    sb.Append('_');
+                    break;
+                case '%':
+                case '_':
+                case '[':
+                case ']':
                     sb.Append('[');
                     sb.Append(c);
                     sb.Append(']');
-                }
-                else
-                {
+                    break;
+                default:
                     sb.Append(c);
-                }
-                escapeMode = !escapeMode && c == escapeChar;
+                    break;
             }
-            return sb.ToString();
+
+            escapeMode = !escapeMode && c == escapeChar;
         }
+        return sb.ToString();
     }
 }

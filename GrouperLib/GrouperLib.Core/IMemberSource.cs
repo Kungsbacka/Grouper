@@ -1,12 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿namespace GrouperLib.Core;
 
-namespace GrouperLib.Core
+public interface IMemberSource
 {
-    public interface IMemberSource
-    {
-        Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember, GroupMemberType memberType);
+    Task GetMembersFromSourceAsync(GroupMemberCollection memberCollection, GrouperDocumentMember grouperMember, GroupMemberType memberType);
 
-        IEnumerable<GroupMemberSource> GetSupportedGrouperMemberSources();
-    }
+    IEnumerable<GroupMemberSource> GetSupportedGrouperMemberSources();
 }

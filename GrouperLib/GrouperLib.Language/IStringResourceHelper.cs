@@ -1,11 +1,10 @@
-﻿namespace GrouperLib.Language
+﻿namespace GrouperLib.Language;
+
+public interface IStringResourceHelper
 {
-    public interface IStringResourceHelper
-    {
-        string GetString(string resourceId, params object[]? args);
+    string GetString(string resourceId, params object?[]? args);
 
-        string GetString(string resourceId);
+    string GetString(string resourceId);
 
-        void SetLanguage(string lang);
-    }
+    void SetLanguage(string lang);
 }

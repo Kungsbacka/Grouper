@@ -1,59 +1,56 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using System;
+﻿using System.Text.Json.Serialization;
 
-namespace GrouperLib.Core
+namespace GrouperLib.Core;
+
+public sealed class GroupMember
 {
-    public sealed class GroupMember
+    [JsonPropertyName("id")]
+    public Guid Id { get; }
+
+    [JsonPropertyName("displayName")]
+    public string DisplayName { get; }
+
+    [JsonPropertyName("memberType")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public GroupMemberType MemberType { get; }
+
+    public GroupMember(Guid id, string displayName, GroupMemberType memberType)
     {
-        [JsonProperty(PropertyName = "id")]
-        public Guid Id { get; }
+        Id = id;
+        DisplayName = displayName ?? throw new ArgumentNullException(nameof(displayName));
+        MemberType = memberType;
+    }
 
-        [JsonProperty(PropertyName = "displayName")]
-        public string DisplayName { get; }
-
-        [JsonProperty(PropertyName = "memberType")]
-        [JsonConverter(typeof(StringEnumConverter))]
-        public GroupMemberType MemberType { get; }
-
-        public GroupMember(Guid id, string displayName, GroupMemberType memberType)
+    public GroupMember(string id, string displayName, GroupMemberType memberType)
+    {
+        if (Guid.TryParse(id, out Guid guid))
         {
-            Id = id;
-            DisplayName = displayName ?? throw new ArgumentNullException(nameof(displayName));
-            MemberType = memberType;
+            Id = guid;
         }
-
-        public GroupMember(string id, string displayName, GroupMemberType memberType)
+        else
         {
-            if (Guid.TryParse(id, out Guid guid))
-            {
-                Id = guid;
-            }
-            else
-            {
-                throw new ArgumentException("Argument is not a valid GUID", nameof(id));
-            }
-            DisplayName = displayName ?? throw new ArgumentNullException(nameof(displayName));
-            MemberType = memberType;
+            throw new ArgumentException("Argument is not a valid GUID", nameof(id));
         }
+        DisplayName = displayName ?? throw new ArgumentNullException(nameof(displayName));
+        MemberType = memberType;
+    }
 
-        public override bool Equals(object? obj)
+    public override bool Equals(object? obj)
+    {
+        if (obj is not GroupMember member)
         {
-            if (obj is not GroupMember member)
-            {
-                return false;
-            }
-            return MemberType.Equals(member.MemberType) && Id.Equals(member.Id);
+            return false;
         }
+        return MemberType.Equals(member.MemberType) && Id.Equals(member.Id);
+    }
 
-        public override int GetHashCode()
-        {
-            return Id.GetHashCode();
-        }
+    public override int GetHashCode()
+    {
+        return Id.GetHashCode();
+    }
 
-        public override string ToString()
-        {
-            return DisplayName;
-        }
+    public override string ToString()
+    {
+        return DisplayName;
     }
 }
