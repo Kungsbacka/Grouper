@@ -16,7 +16,7 @@ internal static class SearchResultEntryExtensions
 
     public static Guid? GetAsGuid(this SearchResultEntry entry, string attributeName)
     {
-        DirectoryAttribute? attribute = entry?.Attributes[attributeName];
+        DirectoryAttribute? attribute = entry.Attributes[attributeName];
         if (attribute is not { Count: 1 })
         {
             return null;

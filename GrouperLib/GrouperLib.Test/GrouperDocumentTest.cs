@@ -136,7 +136,7 @@ public class GrouperDocumentTest
         Assert.NotNull(document);
         Assert.Empty(validationErrors);
         Assert.Equal(id, document.Id);
-        Assert.Equal(interval, document.ProcessingInterval);
+        Assert.Equal(interval, document.Interval);
         Assert.Equal(groupName, document.GroupName);
         Assert.Equal(store, document.Store);
         Assert.Equal(owner, document.Owner);

@@ -23,7 +23,7 @@ internal class Ldap
         string[] parts = userName.Split('\\');
         if (parts.Length != 2)
         {
-            throw new ArgumentException(nameof(userName));
+            throw new ArgumentException(@"User name must include domain (DOMAIN\Username).", nameof(userName));
         }
         _credential = new NetworkCredential(parts[1], password, parts[0]);
     }

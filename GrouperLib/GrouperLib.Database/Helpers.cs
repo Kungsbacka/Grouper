@@ -2,7 +2,7 @@
 
 namespace GrouperLib.Database;
 
-static class Helpers
+internal static class Helpers
 {
     public static bool IEquals(this string? value, string other)
     {

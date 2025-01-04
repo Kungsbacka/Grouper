@@ -4,7 +4,7 @@ using System.Data;
 
 namespace GrouperLib.Database;
 
-public static class SqlExtensions
+internal static class SqlExtensions
 {
     private static readonly DataTable emptyNvarcharTableParam = InitializeEmptyDataTable();
 

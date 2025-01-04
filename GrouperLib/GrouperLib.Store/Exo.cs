@@ -1,7 +1,6 @@
 ﻿using GrouperLib.Config;
 using GrouperLib.Core;
 using System.Collections;
-using System.Collections.ObjectModel;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Runtime.Versioning;
@@ -84,7 +83,7 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
         }
     }
 
-    private async Task  Connect()
+    private async Task Connect()
     {
         if (_initialized)
         {
@@ -112,7 +111,8 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
                 Connect-ExchangeOnline @params
             """;
         _runspace = RunspaceFactory.CreateRunspace();
-        _runspace.OpenAsync();
+        // _runspace.Open();
+        await OpenRunspaceAsync(_runspace);
         using PowerShell ps = PowerShell.Create();
         ps.Runspace = _runspace;
         ps.AddScript(script)
@@ -128,7 +128,30 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
 
         _initialized = true;
     }     
+    
+    private static async Task OpenRunspaceAsync(Runspace runspace)
+    {
+        TaskCompletionSource<bool> tcs = new();
 
+        runspace.StateChanged += (_, args) =>
+        {
+            if (args.RunspaceStateInfo.State == RunspaceState.Opened)
+            {
+                tcs.TrySetResult(true);
+                return;
+            }
+            
+            if (args.RunspaceStateInfo.State is RunspaceState.Broken or RunspaceState.Closed)
+            {
+                tcs.TrySetException(new InvalidOperationException($"Runspace failed to open: {args.RunspaceStateInfo.Reason}"));
+            }
+        };
+
+        runspace.OpenAsync();
+
+        await tcs.Task;
+    }
+    
     private async Task<PSDataCollection<PSObject>> InvokeCommand(string command, IDictionary parameters)
     {
         await Connect();
@@ -312,17 +335,20 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
             throw new InvalidOperationException($"Can only get members of type {nameof(GroupMemberType.AzureAd)}");
         }
 
-        var rule = grouperMember.Rules.FirstOrDefault(r => r.Name.IEquals("Group"));
-        if (rule == null)
+        var groupId = grouperMember.Rules.FirstOrDefault(r => r.Name.IEquals("Group"))?.Value;
+        if (groupId == null)
         {
             throw new InvalidOperationException("Cannot find a 'Group' rule with a group ID.");
         }
+       
         await GetGroupMembersAsync(
             memberCollection,
-            Guid.Parse(rule.Value)
+            Guid.Parse(groupId)
         );
     }
 
+    
+    
     public IEnumerable<GroupMemberSource> GetSupportedGrouperMemberSources() => [GroupMemberSource.ExoGroup];
 
     public IEnumerable<GroupStore> GetSupportedGroupStores() => [GroupStore.Exo];

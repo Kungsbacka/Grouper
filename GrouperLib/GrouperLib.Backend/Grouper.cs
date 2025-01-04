@@ -82,6 +82,8 @@ public class Grouper : IDisposable
         return grouper;
     }
 
+    // ReSharper disable once MemberCanBePrivate.Global
+    // This is used by GrouperApi and GrouperService
     public Grouper AddMemberSource(IMemberSource memberSource)
     {
         foreach (GroupMemberSource source in memberSource.GetSupportedGrouperMemberSources())
@@ -94,6 +96,8 @@ public class Grouper : IDisposable
         return this;
     }
 
+    // ReSharper disable once MemberCanBePrivate.Global
+    // This is used by GrouperApi and GrouperService
     public Grouper AddGroupStore(IGroupStore groupStore)
     {
         foreach (GroupStore store in groupStore.GetSupportedGroupStores())
@@ -106,6 +110,8 @@ public class Grouper : IDisposable
         return this;
     }
 
+    // ReSharper disable once MemberCanBePrivate.Global
+    // This is used by GrouperApi and GrouperService
     public Grouper AddGroupOwnerSource(IGroupOwnerSource ownerSource)
     {
         foreach (GroupStore store in ownerSource.GetSupportedGroupStores())
@@ -118,6 +124,8 @@ public class Grouper : IDisposable
         return this;
     }
 
+    // ReSharper disable once MemberCanBePrivate.Global
+    // This is used by GrouperApi and GrouperService
     public Grouper AddLogger(ILogger logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -230,7 +238,7 @@ public class Grouper : IDisposable
         // Example:
         // * Document A has only one rule that says that all users from department A should
         //   be a member (include) of group A
-        // * Document B has only one rule that says that all users from deparmtnet A should
+        // * Document B has only one rule that says that all users from department A should
         //   *not* be a member (exclude) of group B.
         //
         // Now you have one group (group A) that is automatically controlled and contains only
@@ -254,10 +262,10 @@ public class Grouper : IDisposable
             IMemberSource source = GetMemberSource(member);
             await source.GetMembersFromSourceAsync(memberCollection, member, document.MemberType);
         }
-        // 1. Include now contains all members from non explicit include rules
-        // 2. Remove members from non explicit exclude rules
+        // 1. Include now contains all members from non-explicit include rules
+        // 2. Remove members from non-explicit exclude rules
         include.ExceptWith(exclude);
-        // 3. Add members from explicit incude rules
+        // 3. Add members from explicit include rules
         include.Add(includeExplicit);
         // 4. Remove members from explicit exclude rules
         include.ExceptWith(excludeExplicit);

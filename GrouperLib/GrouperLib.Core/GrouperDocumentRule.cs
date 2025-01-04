@@ -13,10 +13,10 @@ public sealed class GrouperDocumentRule
     public string Value { get; }
 
     [JsonConstructor]
-    public GrouperDocumentRule(string? name, string? value)
+    public GrouperDocumentRule(string name, string value)
     {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
-        Value = value ?? throw new ArgumentNullException(nameof(value));
+        Name = name;
+        Value = value;
     }
 
     internal GrouperDocumentRule(GrouperDocumentRule documentRule)

@@ -9,7 +9,7 @@ namespace GrouperLib.Database;
 [SupportedOSPlatform("windows")]
 public class LogDb : ILogger
 {
-    readonly string _connectionString;
+    private readonly string _connectionString;
 
     public LogDb(string connectionString)
     {

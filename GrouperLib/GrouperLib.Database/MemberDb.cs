@@ -9,7 +9,7 @@ namespace GrouperLib.Database;
 [SupportedOSPlatform("windows")]
 public class MemberDb : IMemberSource
 {
-    readonly string _connectionString;
+    private readonly string _connectionString;
 
     public MemberDb(string connectionString)
     {

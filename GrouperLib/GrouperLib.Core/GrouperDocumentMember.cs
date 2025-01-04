@@ -16,23 +16,21 @@ public sealed class GrouperDocumentMember
 
     [JsonPropertyName("rules")]
     [JsonPropertyOrder(3)]
-    public IReadOnlyCollection<GrouperDocumentRule> Rules => _rules.AsReadOnly();
-
-    private readonly List<GrouperDocumentRule> _rules;
+    public IReadOnlyCollection<GrouperDocumentRule> Rules { get; }
         
     [JsonConstructor]
-    public GrouperDocumentMember(GroupMemberSource source, GroupMemberAction action, List<GrouperDocumentRule> rules)
+    public GrouperDocumentMember(GroupMemberSource source, GroupMemberAction action, IReadOnlyCollection<GrouperDocumentRule> rules)
     {
         Source = source;
         Action = action;
-        _rules = rules ?? throw new ArgumentNullException(nameof(rules));
+        Rules = rules;
     }
 
     internal GrouperDocumentMember(GrouperDocumentMember documentMember)
     {
         Source = documentMember.Source;
         Action = documentMember.Action;
-        _rules = documentMember.Rules.Select(r => new GrouperDocumentRule(r)).ToList();
+        Rules = documentMember.Rules;
     }
 
     public override bool Equals(object? obj)

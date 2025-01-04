@@ -63,27 +63,25 @@ public class OnPremAd : IMemberSource, IGroupStore
         switch (grouperMember.Source)
         {
             case GroupMemberSource.OnPremAdGroup:
-                var value = grouperMember.Rules.First(r => r.Name.IEquals("Group")).Value;
-                if (value != null)
+                var groupId = grouperMember.Rules.FirstOrDefault(r => r.Name.IEquals("Group"))?.Value;
+                if (groupId == null)
                 {
-                    await GetGroupMembersAsync(
-                        memberCollection,
-                        Guid.Parse(value)
-                    );
+                    throw new InvalidOperationException("Cannot find a 'Group' rule with a group ID.");
                 }
-
+                await GetGroupMembersAsync(
+                    memberCollection,
+                    Guid.Parse(groupId)
+                );
                 break;
             case GroupMemberSource.OnPremAdQuery:
-                string? filter = grouperMember.Rules.First(r => r.Name.IEquals("LdapFilter")).Value;
+                string? filter = grouperMember.Rules.FirstOrDefault(r => r.Name.IEquals("LdapFilter"))?.Value;
                 string? searchBase = grouperMember.Rules.FirstOrDefault(r => r.Name.IEquals("SearchBase"))?.Value;
+                if (filter == null)
+                {
+                    throw new InvalidOperationException("Cannot find an 'LdapFilter' rule.");
+                }
                 await QueryGroupMembersAsync(memberCollection, filter, searchBase);
                 break;
-            case GroupMemberSource.Personalsystem:
-            case GroupMemberSource.Elevregister:
-            case GroupMemberSource.AzureAdGroup:
-            case GroupMemberSource.ExoGroup:
-            case GroupMemberSource.CustomView:
-            case GroupMemberSource.Static:
             default:
                 throw new ArgumentException("Unknown group member source.", nameof(grouperMember));
         }

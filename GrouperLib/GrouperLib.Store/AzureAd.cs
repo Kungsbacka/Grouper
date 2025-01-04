@@ -12,15 +12,12 @@ using System.Text.RegularExpressions;
 namespace GrouperLib.Store;
 
 [SupportedOSPlatform("windows")]
-public sealed class AzureAd : IMemberSource, IGroupStore, IGroupOwnerSource
+public sealed partial class AzureAd : IMemberSource, IGroupStore, IGroupOwnerSource
 {
-    readonly TokenCredential _tokenCredential;
-    GraphServiceClient? _graphClient;
+    private readonly TokenCredential _tokenCredential;
+    private GraphServiceClient? _graphClient;
 
-    private static readonly Regex guidRegex = new(
-        "'(?<guid>[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12})'",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant
-    );
+    private static readonly Regex guidRegex = GuidRegex();
 
     private static void ValidateCommonParameters(string? tenantId, string? clientId)
     {
@@ -318,14 +315,16 @@ public sealed class AzureAd : IMemberSource, IGroupStore, IGroupOwnerSource
             throw new InvalidOperationException($"Can only get members of type {nameof(GroupMemberType.AzureAd)}");
         }
 
-        var value = grouperMember.Rules.First(r => r.Name.IEquals("Group")).Value;
-        if (value != null)
+        var groupId = grouperMember.Rules.FirstOrDefault(r => r.Name.IEquals("Group"))?.Value;
+        if (groupId == null)
         {
-            await GetGroupMembersAsync(
-                memberCollection,
-                Guid.Parse(value)
-            );
+            throw new InvalidOperationException("Cannot find a 'Group' rule with a group ID.");
         }
+
+        await GetGroupMembersAsync(
+            memberCollection,
+            Guid.Parse(groupId)
+        );
     }
 
     public async Task<GroupInfo> GetGroupInfoAsync(Guid groupId)
@@ -354,4 +353,7 @@ public sealed class AzureAd : IMemberSource, IGroupStore, IGroupOwnerSource
     {
         return [GroupStore.AzureAd];
     }
+
+    [GeneratedRegex("'(?<guid>[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12})'", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+    private static partial Regex GuidRegex();
 }

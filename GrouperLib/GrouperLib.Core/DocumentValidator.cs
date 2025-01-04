@@ -225,9 +225,9 @@ internal static class DocumentValidator
         {
             validationErrors.Add(new ValidationError(nameof(document.Id), ResourceString.ValidationErrorDocumentIdNotValid, document.Id));
         }
-        if (document.ProcessingInterval < 0)
+        if (document.Interval < 0)
         {
-            validationErrors.Add(new ValidationError(nameof(document.ProcessingInterval), ResourceString.ValidationErrorIllegalInterval));
+            validationErrors.Add(new ValidationError(nameof(document.Interval), ResourceString.ValidationErrorIllegalInterval));
         }
         if (string.IsNullOrEmpty(document.GroupName))
         {
