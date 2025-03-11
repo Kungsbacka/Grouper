@@ -5,12 +5,6 @@
     <TargetFramework>net9.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
-		<!--
-			BinaryFormatter serialization must be enabled for PowerShell remoting to work 
-			https://aka.ms/binaryformatter
-			https://github.com/PowerShell/PowerShell/issues/14032
-		-->
-		<EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
 		<EnableNETAnalyzers>true</EnableNETAnalyzers>
 		<AnalysisMode>AllEnabledByDefault</AnalysisMode>
 		<AnalysisLevel>latest</AnalysisLevel>
