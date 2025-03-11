@@ -19,9 +19,9 @@ public class Grouper : IDisposable
     public Grouper(double changeRatioLowerLimit)
     {
         _changeRatioLowerLimit = changeRatioLowerLimit;
-        _memberSources = new Dictionary<GroupMemberSource, IMemberSource>();
-        _ownerSources = new Dictionary<GroupStore, IGroupOwnerSource>();
-        _groupStores = new Dictionary<GroupStore, IGroupStore>();
+        _memberSources = [];
+        _ownerSources = [];
+        _groupStores = [];
     }
 
     public static Grouper CreateFromConfig(GrouperConfiguration config)
@@ -155,7 +155,7 @@ public class Grouper : IDisposable
         {
             throw new InvalidOperationException("Member types does not match");
         }
-        GroupMemberCollection unchangedMembers = new();
+        GroupMemberCollection unchangedMembers = [];
         if (includeUnchanged)
         {
             unchangedMembers = currentMembers.Clone();
@@ -223,10 +223,10 @@ public class Grouper : IDisposable
         // 2. Remove all users that match one or more non-explicit (non-static) exclude rule
         // 3. Add all users that match one or more explicit (static) include rule
         // 4. Remove all users that match one or more explicit (static) exclude rule
-        GroupMemberCollection includeExplicit = new();
-        GroupMemberCollection excludeExplicit = new();
-        GroupMemberCollection include = new();
-        GroupMemberCollection exclude = new();
+        GroupMemberCollection includeExplicit = [];
+        GroupMemberCollection excludeExplicit = [];
+        GroupMemberCollection include = [];
+        GroupMemberCollection exclude = [];
 
         // This is a special case where a document only specifies what users to exclude
         // and does not have any include rules. In this case the exclude rules are not

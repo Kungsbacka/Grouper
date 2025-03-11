@@ -335,11 +335,8 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
             throw new InvalidOperationException($"Can only get members of type {nameof(GroupMemberType.AzureAd)}");
         }
 
-        var groupId = grouperMember.Rules.FirstOrDefault(r => r.Name.IEquals("Group"))?.Value;
-        if (groupId == null)
-        {
-            throw new InvalidOperationException("Cannot find a 'Group' rule with a group ID.");
-        }
+        var groupId = grouperMember.Rules.FirstOrDefault(r => r.Name.IEquals("Group"))?.Value
+            ?? throw new InvalidOperationException("Cannot find a 'Group' rule with a group ID.");
        
         await GetGroupMembersAsync(
             memberCollection,
