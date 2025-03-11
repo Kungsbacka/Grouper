@@ -2,7 +2,7 @@
 
 namespace GrouperLib.Core;
 
-class AzureAdValidator : ICustomValidator
+public class AzureAdValidator : ICustomValidator
 {
     public void Validate(GrouperDocument document, GrouperDocumentMember documentMember, List<ValidationError> validationErrors)
     {

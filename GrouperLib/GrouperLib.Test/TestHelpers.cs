@@ -22,13 +22,13 @@ static class TestHelpers
 
     public static GrouperDocumentRule MakeRule() => MakeRule(new { });
 
-    public static GrouperDocument MakeDocument(dynamic def)
+    public static GrouperDocument MakeDocument(dynamic obj)
     {
-        var defType = def.GetType();
+        var objType = obj.GetType();
         var members = new List<GrouperDocumentMember>();
-        if (defType.GetProperty("Members") != null)
+        if (objType.GetProperty("Members") != null)
         {
-            foreach (dynamic member in def.Members)
+            foreach (dynamic member in obj.Members)
             {
                 members.Add(MakeMember(member));
             }
@@ -37,15 +37,16 @@ static class TestHelpers
         {
             members.Add(MakeMember(new { }));
         }
-        var doc = (GrouperDocument?)Activator.CreateInstance(typeof(GrouperDocument), BindingFlags.Instance | BindingFlags.NonPublic, binder: null, culture: null, args: new object[] {
-            null != defType.GetProperty("Id")        ? def.Id        : DefaultDocumentId,
-            null != defType.GetProperty("Interval")  ? def.Interval  : DefaultProcessingInterval,
-            null != defType.GetProperty("GroupId")   ? def.GroupId   : DefaultGroupId,
-            null != defType.GetProperty("GroupName") ? def.GroupName : DefaultGroupName,
-            null != defType.GetProperty("Store")     ? def.Store     : DefaultGroupStore,
-            null != defType.GetProperty("Owner")     ? def.Owner     : DefaultOwnerAction,
-            members
-        });
+        var doc = (GrouperDocument?)Activator.CreateInstance(typeof(GrouperDocument), BindingFlags.Instance | BindingFlags.NonPublic, binder: null, culture: null, args: [
+            null != objType.GetProperty("Id")        ? obj.Id        : DefaultDocumentId,
+            null != objType.GetProperty("GroupId")   ? obj.GroupId   : DefaultGroupId,
+            null != objType.GetProperty("GroupName") ? obj.GroupName : DefaultGroupName,
+            null != objType.GetProperty("Store")     ? obj.Store     : DefaultGroupStore,
+            members,
+            null != objType.GetProperty("Owner")     ? obj.Owner     : DefaultOwnerAction,
+            null != objType.GetProperty("Interval")  ? obj.Interval  : DefaultProcessingInterval,
+        ]);
+
         return doc ?? throw new InvalidOperationException();
     }
 

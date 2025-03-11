@@ -4,18 +4,10 @@ namespace GrouperLib.Core;
 
 public sealed class GrouperDocumentMember
 {
-    [JsonPropertyName("source")]
-    [JsonPropertyOrder(1)]
-    [JsonConverter(typeof(JsonStringEnumConverter))]
     public GroupMemberSource Source { get; }
 
-    [JsonPropertyName("action")]
-    [JsonPropertyOrder(2)]
-    [JsonConverter(typeof(JsonStringEnumConverter))]
     public GroupMemberAction Action { get; }
 
-    [JsonPropertyName("rules")]
-    [JsonPropertyOrder(3)]
     public IReadOnlyCollection<GrouperDocumentRule> Rules { get; }
         
     [JsonConstructor]

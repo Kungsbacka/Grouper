@@ -13,6 +13,7 @@ public class AzureAdValidatorTest
         GrouperDocument document = TestHelpers.MakeDocument(new
         {
             GroupId = groupId,
+            Store = GroupStore.AzureAd,
             Members = new[]
             {
                 new
@@ -25,10 +26,9 @@ public class AzureAdValidatorTest
                 }
             }
         });
-        ICustomValidator validator = new AzureAdValidator();
-        List<ValidationError> errors = new();
-        validator.Validate(document, document.Members.First(), errors);
-        Assert.True(errors.Count == 0);
+        List<ValidationError> errors = [];
+        new AzureAdValidator().Validate(document, document.Members.First(), errors);
+        Assert.Empty(errors);
     }
 
     [Fact]
@@ -37,6 +37,7 @@ public class AzureAdValidatorTest
         GrouperDocument document = TestHelpers.MakeDocument(new
         {
             GroupId = groupId,
+            Store = GroupStore.AzureAd,
             Members = new[]
             {
                 new
@@ -49,9 +50,8 @@ public class AzureAdValidatorTest
                 }
             }
         });
-        ICustomValidator validator = new AzureAdValidator();
-        List<ValidationError> errors = new();
-        validator.Validate(document, document.Members.First(), errors);
+        List<ValidationError> errors = [];
+        new AzureAdValidator().Validate(document, document.Members.First(), errors);
         Assert.True(errors.Count > 0);
     }
 }

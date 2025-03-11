@@ -1,5 +1,7 @@
-﻿using GrouperLib.Language;
+﻿using System.Text.Encodings.Web;
+using GrouperLib.Language;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace GrouperLib.Core;
@@ -32,7 +34,13 @@ internal static class DocumentValidator
             return MultipleRulesAllowed.Any(r => r.IEquals(ruleName));
         }
     }
-
+    
+    private static readonly JsonSerializerOptions serializerOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+    
     private static readonly Dictionary<GroupStore, ResourceLocation> storeLocations = new() {
         { GroupStore.OnPremAd, ResourceLocation.OnPrem },
         { GroupStore.AzureAd, ResourceLocation.Azure },
@@ -374,7 +382,7 @@ internal static class DocumentValidator
         GrouperDocument? document = null;
         try
         {
-            document = JsonSerializer.Deserialize<GrouperDocument>(json);
+            document = JsonSerializer.Deserialize<GrouperDocument>(json, serializerOptions);
         }
         catch (JsonException ex)
         {

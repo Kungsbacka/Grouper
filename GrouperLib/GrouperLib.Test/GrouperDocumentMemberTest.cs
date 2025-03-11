@@ -1,10 +1,19 @@
 ﻿using GrouperLib.Core;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace GrouperLib.Test;
 
 public class GrouperDocumentMemberTest
 {
+    private static readonly JsonSerializerOptions _serializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
     [Fact]
     public void TestEquals()
     {
@@ -41,7 +50,7 @@ public class GrouperDocumentMemberTest
     public void TestSerializeSource()
     {
         GrouperDocumentMember member = TestHelpers.MakeMember();
-        string json = JsonSerializer.Serialize(member);
+        string json = JsonSerializer.Serialize(member, _serializerOptions);
         Dictionary<string,object>? obj = JsonSerializer.Deserialize<Dictionary<string,object>>(json);
         Assert.Equal(TestHelpers.DefaultGroupMemberSource.ToString(), obj?["source"]?.ToString());
     }
@@ -50,7 +59,7 @@ public class GrouperDocumentMemberTest
     public void TestSerializeAction()
     {
         GrouperDocumentMember member = TestHelpers.MakeMember();
-        string json = JsonSerializer.Serialize(member);
+        string json = JsonSerializer.Serialize(member, _serializerOptions);
         Dictionary<string,object>? obj = JsonSerializer.Deserialize<Dictionary<string,object>>(json);
         Assert.Equal(TestHelpers.DefaultGroupMemberAction.ToString(), obj?["action"]?.ToString());
     }
@@ -59,7 +68,7 @@ public class GrouperDocumentMemberTest
     public void TestSerializedNames()
     {
         GrouperDocumentMember member = TestHelpers.MakeMember();
-        string json = JsonSerializer.Serialize(member);
+        string json = JsonSerializer.Serialize(member, _serializerOptions);
         Dictionary<string,object>? obj = JsonSerializer.Deserialize<Dictionary<string,object>>(json);
         Assert.True(obj?.ContainsKey("source"));
         Assert.True(obj?.ContainsKey("action"));

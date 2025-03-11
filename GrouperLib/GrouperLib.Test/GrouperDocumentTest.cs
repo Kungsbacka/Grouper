@@ -1,53 +1,27 @@
 ﻿using GrouperLib.Core;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace GrouperLib.Test;
 
 public class GrouperDocumentTest
 {
+    private static readonly JsonSerializerOptions _serializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        Converters = { new JsonStringEnumConverter() }
+    };
+    
     [Fact]
     public void TestCloneWithNewName()
     {
         GrouperDocument document = TestHelpers.MakeDocument();
-        string newGroupName = "New Group Name";
+        const string newGroupName = "New Group Name";
         GrouperDocument newDocument = document.CloneWithNewGroupName(newGroupName);
         Assert.Equal(newDocument.Id, TestHelpers.DefaultDocumentId);
         Assert.Equal(newGroupName, newDocument.GroupName);
-    }
-
-    [Fact]
-    public void TestShouldSerializeOwnerWithAzureAd()
-    {
-        bool shoudSerializeOwner = TestHelpers.MakeDocument(new { Store = GroupStore.AzureAd }).ShouldSerializeOwner();
-        Assert.True(shoudSerializeOwner);
-    }
-
-    [Fact]
-    public void TestShouldSerializeOwnerWithOnPremAd()
-    {
-        bool shoudSerializeOwner = TestHelpers.MakeDocument(new { Store = GroupStore.OnPremAd }).ShouldSerializeOwner();
-        Assert.False(shoudSerializeOwner);
-    }
-
-    [Fact]
-    public void TestShouldSerializeOwnerWithExo()
-    {
-        bool shoudSerializeOwner = TestHelpers.MakeDocument(new { Store = GroupStore.Exo }).ShouldSerializeOwner();
-        Assert.False(shoudSerializeOwner);
-    }
-
-    [Fact]
-    public void TestShouldSerializeProcessingIntervalZero()
-    {
-        bool shouldSerializeProcessingInterval = TestHelpers.MakeDocument(new { Interval = 0 }).ShouldSerializeProcessingInterval();
-        Assert.False(shouldSerializeProcessingInterval);
-    }
-
-    [Fact]
-    public void TestShouldSerializeProcessingIntervalNonZero()
-    {
-        bool shouldSerializeProcessingInterval = TestHelpers.MakeDocument(new { Interval = 5 }).ShouldSerializeProcessingInterval();
-        Assert.True(shouldSerializeProcessingInterval);
     }
 
     [Fact]
@@ -55,7 +29,7 @@ public class GrouperDocumentTest
     {
         GrouperDocument document = TestHelpers.MakeDocument();
         string? serializedDocument = document.ToJson();
-        Dictionary<string,object>? obj = JsonSerializer.Deserialize<Dictionary<string,object>>(serializedDocument);
+        Dictionary<string,object>? obj = JsonSerializer.Deserialize<Dictionary<string,object>>(serializedDocument, _serializerOptions);
         Assert.Equal(TestHelpers.DefaultGroupStore.ToString(), obj?["store"].ToString());
     }
 
@@ -78,7 +52,7 @@ public class GrouperDocumentTest
                 Interval = 10
             }
         );
-        string json = JsonSerializer.Serialize(document);
+        string json = JsonSerializer.Serialize(document, _serializerOptions);
         Dictionary<string,object>? obj = JsonSerializer.Deserialize<Dictionary<string,object>>(json);
         Assert.True(obj?.ContainsKey("id"));
         Assert.True(obj?.ContainsKey("interval"));

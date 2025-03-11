@@ -1,10 +1,19 @@
 ﻿using GrouperLib.Core;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace GrouperLib.Test;
 
 public class GrouperDocumentRuleTest
 {
+    private static readonly JsonSerializerOptions _serializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
     [Fact]
     public void TestEquals()
     {
@@ -33,7 +42,7 @@ public class GrouperDocumentRuleTest
     public void TestSerializedNames()
     {
         GrouperDocumentRule rule = TestHelpers.MakeRule();
-        string json = JsonSerializer.Serialize(rule);
+        string json = JsonSerializer.Serialize(rule, _serializerOptions);
         Dictionary<string,object>? obj = JsonSerializer.Deserialize<Dictionary<string,object>>(json);
         Assert.True(obj?.ContainsKey("name"));
         Assert.True(obj?.ContainsKey("value"));

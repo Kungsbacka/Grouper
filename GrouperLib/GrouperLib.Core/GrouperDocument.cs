@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -6,34 +7,19 @@ namespace GrouperLib.Core;
 
 public sealed class GrouperDocument
 {
-    [JsonPropertyName("id")]
-    [JsonPropertyOrder(1)]
     public Guid Id { get; }
 
-    [JsonPropertyName("interval")]
-    [JsonPropertyOrder(2)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public int Interval { get; }
 
-    [JsonPropertyName("groupId")]
-    [JsonPropertyOrder(3)]
     public Guid GroupId { get; }
 
-    [JsonPropertyName("groupName")]
-    [JsonPropertyOrder(4)]
     public string GroupName { get; }
 
-    [JsonPropertyName("store")]
-    [JsonPropertyOrder(5)]
-    [JsonConverter(typeof(JsonStringEnumConverter))]
     public GroupStore Store { get; }
-
-    [JsonPropertyName("owner")]
-    [JsonPropertyOrder(6)]
-    [JsonConverter(typeof(JsonStringEnumConverter))]
+    
     public GroupOwnerAction Owner { get; }
 
-    [JsonPropertyName("members")]
-    [JsonPropertyOrder(7)]
     public IReadOnlyCollection<GrouperDocumentMember> Members { get; }
     
     [JsonIgnore]
@@ -49,10 +35,16 @@ public sealed class GrouperDocument
         }
     }
 
-    private static readonly JsonSerializerOptions serializerOptionsWriteIndented = new() { WriteIndented = true };
+    private static readonly JsonSerializerOptions serializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        Converters = { new JsonStringEnumConverter() }
+    };
 
     [JsonConstructor]
-    private GrouperDocument(Guid id, Guid groupId, string groupName, GroupStore store, IReadOnlyCollection<GrouperDocumentMember> members, GroupOwnerAction owner = GroupOwnerAction.KeepExisting, int interval = 0)
+    private GrouperDocument(Guid id, Guid groupId, string groupName, GroupStore store,
+        IReadOnlyCollection<GrouperDocumentMember> members, GroupOwnerAction owner = GroupOwnerAction.KeepExisting, int interval = 0)
     {
         Id = id;
         Interval = interval;
@@ -63,13 +55,8 @@ public sealed class GrouperDocument
         Members = members;
     }
     
-    public bool ShouldSerializeOwner() => Store == GroupStore.AzureAd;
-
-    public bool ShouldSerializeProcessingInterval() => Interval > 0;
-
-    public static bool ShouldSerializeMemberType() => false;
-    
-    public static GrouperDocument? Create(Guid id, int interval, Guid groupId, string groupName, GroupStore store, GroupOwnerAction owner, IReadOnlyCollection<GrouperDocumentMember> members, List<ValidationError> validationErrors)
+    public static GrouperDocument? Create(Guid id, int interval, Guid groupId, string groupName, GroupStore store,
+        GroupOwnerAction owner, IReadOnlyCollection<GrouperDocumentMember> members, List<ValidationError> validationErrors)
     {
         ArgumentNullException.ThrowIfNull(validationErrors);
         GrouperDocument document = new(id, groupId, groupName, store, members, owner, interval);
@@ -77,7 +64,8 @@ public sealed class GrouperDocument
         return validationErrors.Count > 0 ? null : document;
     }
 
-    public static GrouperDocument Create(Guid id, int interval, Guid groupId, string groupName, GroupStore store, GroupOwnerAction owner, IReadOnlyCollection<GrouperDocumentMember> members)
+    public static GrouperDocument Create(Guid id, int interval, Guid groupId, string groupName, GroupStore store,
+        GroupOwnerAction owner, IReadOnlyCollection<GrouperDocumentMember> members)
     {
         List<ValidationError> validationErrors = [];
         GrouperDocument? document = Create(id, interval, groupId, groupName, store, owner, members, validationErrors);
@@ -91,7 +79,8 @@ public sealed class GrouperDocument
 
     public string ToJson(bool indented = false)
     {
-        return indented ? JsonSerializer.Serialize(this, serializerOptionsWriteIndented) : JsonSerializer.Serialize(this);
+        serializerOptions.WriteIndented = indented;
+        return JsonSerializer.Serialize(this, serializerOptions);
     }
 
     public static GrouperDocument? FromJson(string json, List<ValidationError> validationErrors)

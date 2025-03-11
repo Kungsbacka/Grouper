@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authentication.Negotiate;
 using Newtonsoft.Json.Converters;
 using System.Runtime.Versioning;
 
-// [assembly: CLSCompliant(false)]
 namespace GrouperApi
 {
     [SupportedOSPlatform("windows")]
