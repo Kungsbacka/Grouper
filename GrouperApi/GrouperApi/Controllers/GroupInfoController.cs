@@ -21,9 +21,9 @@ namespace GrouperApi.Controllers
 
         [Authorize(Policy = "All")]
         [HttpPost]
-        public async Task<IActionResult> GetGroupInfo()
+        public async Task<IActionResult> GetGroupInfo([FromBody] GrouperDocument document)
         {
-            GroupInfo info = await _grouperBackend.GetGroupInfoAsync(await DocumentHelper.MakeDocumentAsync(Request));
+            GroupInfo info = await _grouperBackend.GetGroupInfoAsync(document);
             return Ok(info);
         }
     }

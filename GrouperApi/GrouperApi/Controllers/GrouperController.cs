@@ -21,17 +21,16 @@ namespace GrouperApi.Controllers
 
         [Authorize(Policy = "All")]
         [HttpPost("diff")]
-        public async Task<IActionResult> GetDiffAsync(bool? unchanged)
+        public async Task<IActionResult> GetDiffAsync([FromBody] GrouperDocument document, bool? unchanged)
         {
-            GroupMemberDiff diff = await _grouperBackend.GetMemberDiffAsync(await DocumentHelper.MakeDocumentAsync(Request), unchanged ?? false);
+            GroupMemberDiff diff = await _grouperBackend.GetMemberDiffAsync(document, unchanged ?? false);
             return Ok(diff);
         }
 
         [Authorize(Policy = "Admin")]
         [HttpPost("invoke")]
-        public async Task<IActionResult> InvokeGrouper(bool? ignoreChangelimit)
+        public async Task<IActionResult> InvokeGrouper([FromBody] GrouperDocument document, bool? ignoreChangelimit)
         {
-            GrouperDocument document = await DocumentHelper.MakeDocumentAsync(Request);
             GroupMemberDiff diff = await _grouperBackend.GetMemberDiffAsync(document);
             await _grouperBackend.UpdateGroupAsync(diff, ignoreChangelimit ?? false);
             var changes = new List<OperationalLogItem>();

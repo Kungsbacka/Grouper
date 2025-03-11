@@ -129,9 +129,9 @@ namespace GrouperApi.Controllers
 
         [Authorize(Policy = "Admin")]
         [HttpPost]
-        public async Task<IActionResult> StoreDocumentAsync()
+        public async Task<IActionResult> StoreDocumentAsync([FromBody] GrouperDocument document)
         {
-            await GetDocumentDb().StoreDocumentAsync(await DocumentHelper.MakeDocumentAsync(Request));
+            await GetDocumentDb().StoreDocumentAsync(document);
             return Ok();
         }
 
