@@ -6,3 +6,11 @@
 using System.Diagnostics.CodeAnalysis;
 
 [assembly: SuppressMessage("Reliability", "CA2007:Consider calling ConfigureAwait on the awaited task", Justification = "Not applicable in ASP.NET controllers", Scope = "namespaceanddescendants", Target = "~N:GrouperApi")]
+[assembly: SuppressMessage("Maintainability", "CA1515:Consider making public types internal", Justification = "API Controllers should be public", Scope = "type", Target = "~T:GrouperApi.Controllers.DocumentController")]
+[assembly: SuppressMessage("Maintainability", "CA1515:Consider making public types internal", Justification = "API Controllers should be public", Scope = "type", Target = "~T:GrouperApi.Controllers.AuditLogController")]
+[assembly: SuppressMessage("Maintainability", "CA1515:Consider making public types internal", Justification = "API Controllers should be public", Scope = "type", Target = "~T:GrouperApi.Controllers.TestController")]
+[assembly: SuppressMessage("Maintainability", "CA1515:Consider making public types internal", Justification = "API Controllers should be public", Scope = "type", Target = "~T:GrouperApi.Controllers.ErrorController")]
+[assembly: SuppressMessage("Maintainability", "CA1515:Consider making public types internal", Justification = "API Controllers should be public", Scope = "type", Target = "~T:GrouperApi.Controllers.OperationalLogController")]
+[assembly: SuppressMessage("Maintainability", "CA1515:Consider making public types internal", Justification = "API Controllers should be public", Scope = "type", Target = "~T:GrouperApi.Controllers.GroupInfoController")]
+[assembly: SuppressMessage("Maintainability", "CA1515:Consider making public types internal", Justification = "API Controllers should be public", Scope = "type", Target = "~T:GrouperApi.Controllers.EventLogController")]
+[assembly: SuppressMessage("Maintainability", "CA1515:Consider making public types internal", Justification = "API Controllers should be public", Scope = "type", Target = "~T:GrouperApi.Controllers.GrouperController")]

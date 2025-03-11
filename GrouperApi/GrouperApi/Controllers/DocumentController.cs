@@ -165,7 +165,7 @@ namespace GrouperApi.Controllers
             }
             using StreamReader stream = new(Request.Body);
             string document = await stream.ReadToEndAsync();
-            List<ValidationError> errors = new();
+            List<ValidationError> errors = [];
             GrouperDocument.FromJson(document, errors);
             return Ok(errors);
         }
