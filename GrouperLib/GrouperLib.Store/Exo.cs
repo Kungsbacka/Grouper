@@ -123,7 +123,7 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
         if (ps.HadErrors)
         {
             throw new AggregateException("Error creating Exchange Online PowerShell session",
-                ps.Streams.Error.Select(e => e.Exception).ToArray());
+                [.. ps.Streams.Error.Select(e => e.Exception)]);
         }
 
         _initialized = true;
@@ -167,7 +167,7 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
         if (ps.HadErrors || result.Count != 1)
         {
             throw new AggregateException($"Error while invoking command {command}",
-                ps.Streams.Error.Select(e => e.Exception).ToArray());
+                [.. ps.Streams.Error.Select(e => e.Exception)]);
         }
 
         return result;
