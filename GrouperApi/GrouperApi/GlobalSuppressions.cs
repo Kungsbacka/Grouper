@@ -14,3 +14,5 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("Maintainability", "CA1515:Consider making public types internal", Justification = "API Controllers should be public", Scope = "type", Target = "~T:GrouperApi.Controllers.GroupInfoController")]
 [assembly: SuppressMessage("Maintainability", "CA1515:Consider making public types internal", Justification = "API Controllers should be public", Scope = "type", Target = "~T:GrouperApi.Controllers.EventLogController")]
 [assembly: SuppressMessage("Maintainability", "CA1515:Consider making public types internal", Justification = "API Controllers should be public", Scope = "type", Target = "~T:GrouperApi.Controllers.GrouperController")]
+[assembly: SuppressMessage("Design", "CA1052:Static holder types should be Static or NotInheritable", Justification = "Created non static by the ASP.NET API template", Scope = "type", Target = "~T:GrouperApi.Program")]
+[assembly: SuppressMessage("Maintainability", "CA1515:Consider making public types internal", Justification = "Created public by the ASP.NET API template", Scope = "type", Target = "~T:GrouperApi.Program")]
