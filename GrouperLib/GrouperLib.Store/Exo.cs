@@ -19,8 +19,6 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
     private bool _initialized;
     private bool _disposed;
 
-    private static readonly Regex guidRegex = GuidRegex();
-
     public Exo(string organization, string appId, X509Certificate2 certificate)
     {
         _organization = organization ?? throw new ArgumentNullException(nameof(organization));
@@ -172,27 +170,20 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
         return result;
     }
 
-    private static bool IsNotFoundError(RemoteException ex)
+    private static void ThrowNotFoundExceptionIfNotFound(Guid groupId, Guid? memberId, RuntimeException ex)
     {
-        return ex.ErrorRecord.CategoryInfo.Reason.IEquals("ManagementObjectNotFoundException");
-    }
-
-    private static Exception CreateNotFoundException(Guid groupId, Guid? memberId, RemoteException ex)
-    {
-        foreach (Match match in guidRegex.Matches(ex.Message).Cast<Match>())
+        foreach (Match match in NotFoundRegex().Matches(ex.Message).Cast<Match>())
         {
-            Guid? guid = Guid.Parse(match.Groups["guid"].Value);
+            Guid guid = Guid.Parse(match.Groups["guid"].Value);
             if (guid == groupId)
             {
-                return GroupNotFoundException.Create(groupId, ex);
+                throw GroupNotFoundException.Create(groupId, ex);
             }
             if (guid == memberId)
             {
-                return MemberNotFoundException.Create(groupId, ex);
+                throw MemberNotFoundException.Create(groupId, ex);
             }
         }
-
-        return ex;
     }
 
     public async Task GetGroupMembersAsync(GroupMemberCollection memberCollection, Guid groupId)
@@ -210,12 +201,9 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
         {
             result = await InvokeCommand(command, parameters);
         }
-        catch (RemoteException ex)
+        catch (RuntimeException ex)
         {
-            if (IsNotFoundError(ex))
-            {
-                throw CreateNotFoundException(groupId, null, ex);
-            }
+            ThrowNotFoundExceptionIfNotFound(groupId, null, ex);
             throw;
         }
 
@@ -250,12 +238,9 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
         {
             await InvokeCommand(command, parameters);
         }
-        catch (RemoteException ex)
+        catch (RuntimeException ex)
         {
-            if (IsNotFoundError(ex))
-            {
-                throw CreateNotFoundException(groupId, member.Id, ex);
-            }
+            ThrowNotFoundExceptionIfNotFound(groupId, member.Id, ex);
             throw;
         }
     }
@@ -282,12 +267,9 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
         {
             await InvokeCommand(command, parameters);
         }
-        catch (RemoteException ex)
+        catch (RuntimeException ex)
         {
-            if (IsNotFoundError(ex))
-            {
-                throw CreateNotFoundException(groupId, member.Id, ex);
-            }
+            ThrowNotFoundExceptionIfNotFound(groupId, member.Id, ex);
             throw;
         }
     }
@@ -306,12 +288,9 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
         {
             result = await InvokeCommand(command, parameters);
         }
-        catch (RemoteException ex)
+        catch (RuntimeException ex)
         {
-            if (IsNotFoundError(ex))
-            {
-                throw CreateNotFoundException(groupId, null, ex);
-            }
+            ThrowNotFoundExceptionIfNotFound(groupId, null, ex);
             throw;
         }
 
@@ -341,9 +320,7 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
             memberCollection,
             Guid.Parse(groupId)
         );
-    }
-
-    
+    }  
     
     public IEnumerable<GroupMemberSource> GetSupportedGrouperMemberSources() => [GroupMemberSource.ExoGroup];
 
@@ -368,6 +345,6 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
         Dispose(disposing: true);
     }
 
-    [GeneratedRegex("\"(?<guid>[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12})\"", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
-    private static partial Regex GuidRegex();
+    [GeneratedRegex(pattern: "object '(?<guid>[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12})' couldn't be found", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+    private static partial Regex NotFoundRegex();
 }
