@@ -111,7 +111,6 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
                 Connect-ExchangeOnline @params
             """;
         _runspace = RunspaceFactory.CreateRunspace();
-        // _runspace.Open();
         await OpenRunspaceAsync(_runspace);
         using PowerShell ps = PowerShell.Create();
         ps.Runspace = _runspace;
