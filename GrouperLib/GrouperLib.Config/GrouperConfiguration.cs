@@ -138,7 +138,7 @@ public class GrouperConfiguration
             else if (propertyInfo.PropertyType == typeof(Role[]))
             {
                 propertyInfo.SetValue(config,
-                    value.Split(',').Select(x => Enum.Parse<Role>(x.Trim())).ToArray()
+                    value.Split(',').Where(x => !string.IsNullOrEmpty(x)).Select(x => Enum.Parse<Role>(x.Trim())).ToArray()
                 );
             }
             else if (propertyInfo.PropertyType == typeof(string[]))
