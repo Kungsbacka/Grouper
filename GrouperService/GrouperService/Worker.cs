@@ -55,10 +55,7 @@ namespace GrouperService
 
         private void SetupGrouper()
         {
-            if (_grouper != null)
-            {
-                _grouper.Dispose();
-            }
+            _grouper?.Dispose();
             _grouper = Grouper.CreateFromConfig(_config);
         }
 
@@ -125,10 +122,10 @@ namespace GrouperService
         }
 
         // All calls to an empty partial method are optimized out
-        partial void DebugPrint(string str, params object[] args);
+        static partial void DebugPrint(string str, params object[] args);
 
         [Conditional("DEBUG")]
-        partial void DebugPrint(string str, params object[] args)
+        static partial void DebugPrint(string str, params object[] args)
         {
             if (Environment.UserInteractive)
             {
@@ -139,7 +136,7 @@ namespace GrouperService
         private void InvokeGrouper(object source, ElapsedEventArgs e)
         {
             Timer timer = (Timer)source;
-            List<GrouperDocumentEntry> entries = new();
+            List<GrouperDocumentEntry> entries = [];
             bool processAllDocuments = ShouldProcessAllDocuments();
             if (processAllDocuments)
             {
@@ -160,15 +157,14 @@ namespace GrouperService
                     WriteToEventLog(ex.ToString(), EventLogEntryType.Error);
                     throw;
                 }
-                // Get documents that have a processing interval hint and
-                // where the interval has passed.
+                // Get documents that have a processing interval hint and where the interval has passed.
                 IEnumerable<GrouperDocumentEntry> entriesWithInterval =
                     _documentDb.GetEntriesByProcessingInterval(min: 1).GetAwaiter().GetResult();
                 foreach (GrouperDocumentEntry entry in entriesWithInterval)
                 {
                     if (_lastProcessedDictionary.TryGetValue(entry.Document.Id, out DateTime lastProcessed))
                     {
-                        if (lastProcessed.AddMinutes(entry.Document.ProcessingInterval) < DateTime.Now)
+                        if (lastProcessed.AddMinutes(entry.Document.Interval) < DateTime.Now)
                         {
                             entries.Add(entry);
                         }
@@ -190,7 +186,7 @@ namespace GrouperService
                 {
                     diff = _grouper.GetMemberDiffAsync(entry.Document).GetAwaiter().GetResult();
                     _grouper.UpdateGroupAsync(diff).GetAwaiter().GetResult();
-                    if (entry.Document.ProcessingInterval> 0)
+                    if (entry.Document.Interval> 0)
                     {
                         _lastProcessedDictionary[entry.Document.Id] = DateTime.Now;
                     }

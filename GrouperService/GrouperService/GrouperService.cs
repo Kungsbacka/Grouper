@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Runtime.Versioning;
+﻿using System.Runtime.Versioning;
 using System.ServiceProcess;
 
 namespace GrouperService
