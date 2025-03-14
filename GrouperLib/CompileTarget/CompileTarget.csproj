@@ -5,16 +5,13 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <LangVersion>11</LangVersion>
+    <PublishTrimmed>true</PublishTrimmed>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GrouperLib.Backend\GrouperLib.Backend.csproj" />
-    <ProjectReference Include="..\GrouperLib.Config\GrouperLib.Config.csproj" />
     <ProjectReference Include="..\GrouperLib.Core\GrouperLib.Core.csproj" />
-    <ProjectReference Include="..\GrouperLib.Database\GrouperLib.Database.csproj" />
     <ProjectReference Include="..\GrouperLib.Language\GrouperLib.Language.csproj" />
-    <ProjectReference Include="..\GrouperLib.Store\GrouperLib.Store.csproj" />
   </ItemGroup>
 
 </Project>
