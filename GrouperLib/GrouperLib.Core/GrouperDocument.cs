@@ -39,8 +39,17 @@ public sealed class GrouperDocument
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        Converters = { new JsonStringEnumConverter() },
+        WriteIndented = true
+    };
+
+    private static readonly JsonSerializerOptions serializerOptionsCompact = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         Converters = { new JsonStringEnumConverter() }
     };
+
 
     [JsonConstructor]
     private GrouperDocument(Guid id, Guid groupId, string groupName, GroupStore store,
@@ -79,8 +88,11 @@ public sealed class GrouperDocument
 
     public string ToJson(bool indented = false)
     {
-        serializerOptions.WriteIndented = indented;
-        return JsonSerializer.Serialize(this, serializerOptions);
+        if (indented)
+        {
+            return JsonSerializer.Serialize(this, serializerOptions);
+        }
+        return JsonSerializer.Serialize(this, serializerOptionsCompact);
     }
 
     public static GrouperDocument? FromJson(string json, List<ValidationError> validationErrors)
