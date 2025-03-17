@@ -14,4 +14,9 @@
     <ProjectReference Include="..\GrouperLib.Language\GrouperLib.Language.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <TrimmerRootAssembly Include="GrouperLib.Core" />
+    <TrimmerRootAssembly Include="GrouperLib.Language" />
+  </ItemGroup>
+
 </Project>
