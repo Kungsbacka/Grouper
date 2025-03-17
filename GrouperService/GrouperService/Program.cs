@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Runtime.Versioning;
 using System.ServiceProcess;
 
@@ -21,7 +20,7 @@ namespace GrouperService
             else
             {
                 ServiceBase[] servicesToRun;
-                servicesToRun = new ServiceBase[] { new GrouperService() };
+                servicesToRun = [new GrouperService()];
                 ServiceBase.Run(servicesToRun);
             }
         }
