@@ -1,12 +1,10 @@
-﻿using System.Text.Encodings.Web;
-using GrouperLib.Language;
+﻿using GrouperLib.Language;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace GrouperLib.Core;
 
-internal static class DocumentValidator
+internal static partial class DocumentValidator
 {
     private enum ResourceLocation { Independent, OnPrem, Azure }
 
@@ -15,7 +13,7 @@ internal static class DocumentValidator
         public ResourceLocation Location { get; init; }
         public string[][] RuleSets { get; init; } = [];
         public string[] MultipleRulesAllowed { get; init; } = [];
-        public Dictionary<string, Regex> ValidationRules { get; init; } = new();
+        public Dictionary<string, Regex> ValidationRules { get; init; } = [];
         public ICustomValidator[] CustomValidators { get; init; } = [];
 
         public bool InAnyRuleSet(string? ruleName)
@@ -35,65 +33,12 @@ internal static class DocumentValidator
         }
     }
     
-    private static readonly JsonSerializerOptions serializerOptions = new()
-    {
-        PropertyNameCaseInsensitive = true,
-        Converters = { new JsonStringEnumConverter() }
-    };
-    
     private static readonly Dictionary<GroupStore, ResourceLocation> storeLocations = new() {
         { GroupStore.OnPremAd, ResourceLocation.OnPrem },
         { GroupStore.AzureAd, ResourceLocation.Azure },
         { GroupStore.Exo, ResourceLocation.Azure },
         { GroupStore.OpenE, ResourceLocation.OnPrem }
     };
-
-    private static readonly Regex guidRegex = new(
-        "^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant
-    );
-
-    private static readonly Regex eregExtIdRegex = new(
-        "^ARXX|LIXX|BEDA|S_[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}|[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant
-    );
-
-    // Gymnasiet currently uses another system with other IDs for classes and groups
-    //
-    //private static readonly Regex eregKlassIdRegex = new Regex(
-    //    "^EG_[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$",
-    //    RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant
-    //);
-
-    //private static readonly Regex eregGruppIdRegex = new Regex(
-    //    "^FG_[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$",
-    //    RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant
-    //);
-
-    private static readonly Regex personecOrgIdRegex = new(
-        "^011J[0-9A-Z]{8}$",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant
-    );
-
-    private static readonly Regex trueFalseRegex = new(
-        "^true|false$",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant
-    );
-
-    private static readonly Regex rollRegex = new(
-        "^Personal|Elev$",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant
-    );
-
-    private static readonly Regex arskursRegex = new(
-        "^[0-9F]$",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant
-    );
-
-    private static readonly Regex skolformRegex = new(
-        "^(FSK|GR|GRSÄR|GY|GYSÄR)$",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant
-    );
 
     private static readonly Dictionary<GroupMemberSource, DocumentMemberValidationRules> memberSources = new()
     {
@@ -110,8 +55,8 @@ internal static class DocumentValidator
                 ],
                 ValidationRules = new Dictionary<string, Regex>()
                 {
-                    {"Organisation", personecOrgIdRegex },
-                    {"IncludeManager", trueFalseRegex}
+                    {"Organisation", PersonecIdRegex()},
+                    {"IncludeManager", TrueFalseRegex()}
                 },
                 MultipleRulesAllowed = ["Befattning"]
             }
@@ -147,12 +92,12 @@ internal static class DocumentValidator
                 ],
                 ValidationRules = new Dictionary<string, Regex>()
                 {
-                    {"Skolform", skolformRegex},
-                    {"Enhet", eregExtIdRegex},
-                    //{"Klass", eregKlassIdRegex },
-                    //{"Grupp", eregGruppIdRegex },
-                    {"Årskurs", arskursRegex},
-                    {"Roll", rollRegex }
+                    {"Skolform", EregSkolformRegex()},
+                    {"Enhet", EregEnhetIdRegex()},
+                    {"Klass", EregKlassIdRegex()},
+                    {"Grupp", EregGruppIdRegex()},
+                    {"Årskurs", EregArskursRegex()},
+                    {"Roll", EregRollRegex()}
                 },
                 MultipleRulesAllowed = ["Årskurs"]
             }
@@ -166,7 +111,7 @@ internal static class DocumentValidator
                 ],
                 ValidationRules = new Dictionary<string, Regex>()
                 {
-                    {"Group", guidRegex}
+                    {"Group", GuidRegex()}
                 },
                 CustomValidators =
                 [
@@ -190,7 +135,7 @@ internal static class DocumentValidator
                 RuleSets = [["Group"]],
                 ValidationRules = new Dictionary<string, Regex>()
                 {
-                    {"Group", guidRegex}
+                    {"Group", GuidRegex()}
                 },
                 CustomValidators =
                 [
@@ -204,7 +149,7 @@ internal static class DocumentValidator
                 RuleSets = [["Group"]],
                 ValidationRules = new Dictionary<string, Regex>()
                 {
-                    {"Group", guidRegex}
+                    {"Group", GuidRegex()}
                 }
             }
         },
@@ -370,6 +315,7 @@ internal static class DocumentValidator
                 }
             }
         }
+
     }
 
     internal static GrouperDocument? DeserializeAndValidate(string json, List<ValidationError> validationErrors)
@@ -382,7 +328,7 @@ internal static class DocumentValidator
         GrouperDocument? document = null;
         try
         {
-            document = JsonSerializer.Deserialize<GrouperDocument>(json, serializerOptions);
+            document = JsonSerializer.Deserialize(json, GrouperDocumentJsonContext.Default.GrouperDocument);
         }
         catch (JsonException ex)
         {
@@ -401,4 +347,31 @@ internal static class DocumentValidator
     {
         InternalValidateDocument(document, validationErrors);
     }
+
+    [GeneratedRegex("^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+    private static partial Regex GuidRegex();
+
+    [GeneratedRegex("^011J[0-9A-Z]{8}$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+    private static partial Regex PersonecIdRegex();
+
+    [GeneratedRegex("^true|false$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+    private static partial Regex TrueFalseRegex();
+
+    [GeneratedRegex("^ARA|ELOF|S_?[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}|[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+    private static partial Regex EregEnhetIdRegex();
+
+    [GeneratedRegex("^EG_?[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}|[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+    private static partial Regex EregKlassIdRegex();
+
+    [GeneratedRegex("^FG_?[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}|[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+    private static partial Regex EregGruppIdRegex();
+    
+    [GeneratedRegex("^Personal|Elev$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+    private static partial Regex EregRollRegex();
+    
+    [GeneratedRegex("^[0-9F]$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+    private static partial Regex EregArskursRegex();
+    
+    [GeneratedRegex("^(FSK|GR|GRSÄR|GY|GYSÄR)$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+    private static partial Regex EregSkolformRegex();
 }

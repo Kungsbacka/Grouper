@@ -7,19 +7,28 @@ namespace GrouperLib.Core;
 
 public sealed class GrouperDocument
 {
+    [JsonPropertyName("id")]
     public Guid Id { get; }
 
+    [JsonPropertyName("interval")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public int Interval { get; }
 
+    [JsonPropertyName("groupId")] 
     public Guid GroupId { get; }
 
+    [JsonPropertyName("groupName")]
     public string GroupName { get; }
 
+    [JsonPropertyName("store")]
+    [JsonConverter(typeof(JsonStringEnumConverter<GroupStore>))]
     public GroupStore Store { get; }
-    
+
+    [JsonPropertyName("owner")]
+    [JsonConverter(typeof(JsonStringEnumConverter<GroupOwnerAction>))] 
     public GroupOwnerAction Owner { get; }
 
+    [JsonPropertyName("members")]
     public IReadOnlyCollection<GrouperDocumentMember> Members { get; }
     
     [JsonIgnore]
@@ -50,9 +59,11 @@ public sealed class GrouperDocument
         Converters = { new JsonStringEnumConverter() }
     };
 
+    private static readonly GrouperDocumentJsonContext defaultContext = new(serializerOptions);
+    private static readonly GrouperDocumentJsonContext compactContext = new(serializerOptionsCompact);
 
     [JsonConstructor]
-    private GrouperDocument(Guid id, Guid groupId, string groupName, GroupStore store,
+    public GrouperDocument(Guid id, Guid groupId, string groupName, GroupStore store,
         IReadOnlyCollection<GrouperDocumentMember> members, GroupOwnerAction owner = GroupOwnerAction.KeepExisting, int interval = 0)
     {
         Id = id;
@@ -88,11 +99,8 @@ public sealed class GrouperDocument
 
     public string ToJson(bool indented = false)
     {
-        if (indented)
-        {
-            return JsonSerializer.Serialize(this, serializerOptions);
-        }
-        return JsonSerializer.Serialize(this, serializerOptionsCompact);
+        var context = indented ? defaultContext : compactContext;
+        return JsonSerializer.Serialize(this, context.GrouperDocument);
     }
 
     public static GrouperDocument? FromJson(string json, List<ValidationError> validationErrors)

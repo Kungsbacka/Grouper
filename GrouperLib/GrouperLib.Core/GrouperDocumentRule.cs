@@ -4,8 +4,11 @@ namespace GrouperLib.Core;
 
 public sealed class GrouperDocumentRule
 {
+    [JsonPropertyName("name")]
     public string Name { get; }
 
+    [JsonPropertyName("value")]
+    [JsonConverter(typeof(StringOrBooleanConverter))]
     public string Value { get; }
 
     [JsonConstructor]
