@@ -44,7 +44,7 @@ public sealed class GrouperDocumentMember
         {
             return false;
         }
-        return Rules.Intersect(member.Rules).Count() == Rules.Count;
+        return !Rules.Except(member.Rules).Any();
     }
 
     public override int GetHashCode()
@@ -54,13 +54,14 @@ public sealed class GrouperDocumentMember
         unchecked
         {
             int hash = 17;
-            hash = hash * 31 + StringComparer.OrdinalIgnoreCase.GetHashCode(Source);
+            hash = hash * 31 + Source.GetHashCode();
             hash = hash * 31 + Action.GetHashCode();
-            foreach (GrouperDocumentRule rule in Rules)
+            int rulesHash = 0;
+            foreach (var rule in Rules)
             {
-                hash = hash * 31 + rule.GetHashCode();
+                rulesHash ^= rule.GetHashCode();
             }
-            return hash;
+            return hash * 31 + rulesHash;
         }
     }
 }

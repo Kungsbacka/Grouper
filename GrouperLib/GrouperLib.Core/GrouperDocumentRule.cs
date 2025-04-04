@@ -14,8 +14,8 @@ public sealed class GrouperDocumentRule
     [JsonConstructor]
     public GrouperDocumentRule(string name, string value)
     {
-        Name = name;
-        Value = value;
+        Name = name ?? string.Empty;
+        Value = value ?? string.Empty;
     }
 
     internal GrouperDocumentRule(GrouperDocumentRule documentRule)
