@@ -63,7 +63,7 @@ public sealed class GrouperDocument
     private static readonly GrouperDocumentJsonContext compactContext = new(serializerOptionsCompact);
 
     [JsonConstructor]
-    public GrouperDocument(Guid id, Guid groupId, string groupName, GroupStore store,
+    internal GrouperDocument(Guid id, Guid groupId, string groupName, GroupStore store,
         IReadOnlyCollection<GrouperDocumentMember> members, GroupOwnerAction owner = GroupOwnerAction.KeepExisting, int interval = 0)
     {
         Id = id;
