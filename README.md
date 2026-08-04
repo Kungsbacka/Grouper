@@ -69,11 +69,13 @@ start PowerShell: `psexec.exe -i -u DOMAIN\gmsa$ powershell.exe`).
 ### Certificate authentication
 
 If you use certificate authentication for Graph and Exchange Online, and you store the certificates
-in the LocalMachine store, you have to give the service account read permission to the private key.
-You can do this using tools/GrantPrivateKeyAccess.ps1.
+in the LocalMachine store, you have to give the service account (for GrouperService) or application pool (for the API) read permission for the private key. You can do this using tools/GrantPrivateKeyAccess.ps1.
 
 1. Import the certificate (including the private key) to Cert:\LocalMachine\My.
-2. Give the service account read access to the key by running tools/GrantPrivateKeyAccess as an administrator.
+2. Run tools/GrantPrivateKeyAccess as an administrator.
+3. Enter certificate thumbprint
+4. Enter DOMAIN\gMSA for a service account, or IIS APPPOOL\<application pool name> for an application pool.
+
 
 ## Grouper documents
 

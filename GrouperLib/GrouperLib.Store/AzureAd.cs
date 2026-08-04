@@ -238,7 +238,7 @@ public sealed partial class AzureAd : IMemberSource, IGroupStore, IGroupOwnerSou
                 return;
             }
             var pageIterator = PageIterator<DirectoryObject, DirectoryObjectCollectionResponse>.CreatePageIterator(
-                _graphClient,
+                GraphClient,
                 owners,
                 (owner) =>
                 {
