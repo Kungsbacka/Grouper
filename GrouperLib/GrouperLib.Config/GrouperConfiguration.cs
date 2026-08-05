@@ -19,19 +19,21 @@ public class GrouperConfiguration
     private string? azureAdCertificatePassword;
     private string? azureAdCertificateThumbprint;
     private string? azureAdCertificateAsBase64;
-    private string? exchangeOrganization;
-    private string? exchangeAppId;
-    private string? exchangeCertificateFilePath;
-    private string? exchangeCertificatePassword;
-    private string? exchangeCertificateThumbprint;
-    private string? exchangeCertificateAsBase64;
+
+    private string? exoClientSecret;
+    private string? exoClientId;
+    private string? exoTenantId;
+    private string? exoCertificateFilePath;
+    private string? exoCertificatePassword;
+    private string? exoCertificateThumbprint;
+    private string? exoCertificateAsBase64;
+
     private string? onPremAdUserName;
     private string? onPremAdPassword;
     private string? memberDatabaseConnectionString;
     private string? documentDatabaseConnectionString;
     private string? logDatabaseConnectionString;
     private string? openEDatabaseConnectionString;
-
 
     public string[] DpapiProtectedSettings
     {
@@ -57,15 +59,15 @@ public class GrouperConfiguration
     public StoreLocation? AzureAdCertificateStoreLocation { get; set; }
     public string? AzureAdCertificateAsBase64 { get => Unprotect(nameof(AzureAdCertificateAsBase64), azureAdCertificateAsBase64); set => azureAdCertificateAsBase64 = value; }
 
-    public Role[]? ExchangeRole { get; set; }
-    public string? ExchangeOrganization { get => Unprotect(nameof(ExchangeOrganization), exchangeOrganization); set => exchangeOrganization = value; }
-    public string? ExchangeAppId { get => Unprotect(nameof(ExchangeAppId), exchangeAppId); set => exchangeAppId = value; }
-    public string? ExchangeCertificatePassword { get => Unprotect(nameof(ExchangeCertificatePassword), exchangeCertificatePassword); set => exchangeCertificatePassword = value; }
-    public string? ExchangeCertificateFilePath { get => Unprotect(nameof(ExchangeCertificateFilePath), exchangeCertificateFilePath); set => exchangeCertificateFilePath = value; }
-    public string? ExchangeCertificateThumbprint { get => Unprotect(nameof(ExchangeCertificateThumbprint), exchangeCertificateThumbprint); set => exchangeCertificateThumbprint = value; }
-    public StoreLocation? ExchangeCertificateStoreLocation { get; set; }
-    public string? ExchangeCertificateAsBase64 { get => Unprotect(nameof(ExchangeCertificateAsBase64), exchangeCertificateAsBase64); set => exchangeCertificateAsBase64 = value; }
-
+    public Role[]? ExoRole { get; set; }
+    public string? ExoClientId { get => Unprotect(nameof(ExoClientId), exoClientId); set => exoClientId = value; }
+    public string? ExoTenantId { get => Unprotect(nameof(ExoTenantId), exoTenantId); set => exoTenantId = value; }
+    public string? ExoClientSecret { get => Unprotect(nameof(ExoClientSecret), exoClientSecret); set => exoClientSecret = value; }
+    public string? ExoCertificatePassword { get => Unprotect(nameof(ExoCertificatePassword), exoCertificatePassword); set => exoCertificatePassword = value; }
+    public string? ExoCertificateFilePath { get => Unprotect(nameof(ExoCertificateFilePath), exoCertificateFilePath); set => exoCertificateFilePath = value; }
+    public string? ExoCertificateThumbprint { get => Unprotect(nameof(ExoCertificateThumbprint), exoCertificateThumbprint); set => exoCertificateThumbprint = value; }
+    public StoreLocation? ExoCertificateStoreLocation { get; set; }
+    public string? ExoCertificateAsBase64 { get => Unprotect(nameof(ExoCertificateAsBase64), exoCertificateAsBase64); set => exoCertificateAsBase64 = value; }
 
     public Role[]? OnPremAdRole { get; set; }
     public string? OnPremAdUserName { get => Unprotect(nameof(OnPremAdUserName), onPremAdUserName); set => onPremAdUserName = value; }
@@ -79,7 +81,7 @@ public class GrouperConfiguration
     public double ChangeRatioLowerLimit { get; set; }
 
     public bool AzureAdHasRole(Role role) => AzureAdRole != null && AzureAdRole.Any(r => r.Equals(role));
-    public bool ExchangeHasRole(Role role) => ExchangeRole != null && ExchangeRole.Any(r => r.Equals(role));
+    public bool ExoHasRole(Role role) => ExoRole != null && ExoRole.Any(r => r.Equals(role));
     public bool OnPremAdHasRole(Role role) => OnPremAdRole != null && OnPremAdRole.Any(r => r.Equals(role));
 
     private string? Unprotect(string setting, string? value)

@@ -1,217 +1,297 @@
-﻿using GrouperLib.Config;
+﻿using Azure.Core;
+using Azure.Identity;
+using GrouperLib.Config;
 using GrouperLib.Core;
-using System.Collections;
-using System.Management.Automation;
-using System.Management.Automation.Runspaces;
 using System.Runtime.Versioning;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
+using System.Text.Json.Serialization;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text;
+using System.Net;
+using System.Net.Http.Json;
+using System.Net.Http.Headers;
 
 namespace GrouperLib.Store;
 
 [SupportedOSPlatform("windows")]
 public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
 {
-    private readonly X509Certificate2 _certificate;
-    private readonly string _appId;
-    private readonly string _organization;
-    private Runspace? _runspace;
-    private bool _initialized;
+    private readonly HttpClient _httpClient;
+    private readonly string _tenantId;
+    private readonly JsonSerializerOptions _serializeOptions = new() { PropertyNameCaseInsensitive = true };
+    private readonly JsonSerializerOptions _deserializeOptions = new();
+    private readonly X509Certificate2? _certificate;
     private bool _disposed;
 
-    public Exo(string organization, string appId, X509Certificate2 certificate)
+    private static string RequireGuidString(string? value, string settingName)
     {
-        _organization = organization ?? throw new ArgumentNullException(nameof(organization));
-        _appId = appId ?? throw new ArgumentNullException(nameof(appId));
-        _certificate = certificate ?? throw new ArgumentNullException(nameof(certificate));
+        if (value is null || !Guid.TryParse(value, out _))
+        {
+            throw new ArgumentException($"'{settingName}' is not a valid GUID.", settingName);
+        }
+        return value;
+    }
+
+    // Retry sits outside the token handler so every attempt re-stamps the Authorization header.
+    // A backoff long enough to outlive the token would otherwise retry its way into a 401.
+    private static HttpClient CreateHttpClient(TokenCredential tokenCredential) => new(
+        new ThrottleRetryHandler
+        {
+            InnerHandler = new EntraTokenHandler(tokenCredential, "https://outlook.office365.com/.default")
+            {
+                InnerHandler = new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(5) }
+            }
+        })
+    {
+        BaseAddress = new Uri("https://outlook.office365.com/"),
+        // Covers the whole SendAsync, backoff included. Must exceed ThrottleRetryHandler's
+        // worst case - 60s of backoff ((MaxAttempts - 1) * MaxDelay) plus MaxAttempts round
+        // trips - or the timeout cuts retries short and hides the 429 behind a cancellation.
+        Timeout = TimeSpan.FromMinutes(3)
+    };
+
+
+    public Exo(string tenantId, string clientId, string clientSecret)
+    {
+        tenantId = RequireGuidString(tenantId, nameof(tenantId));
+        clientId = RequireGuidString(clientId, nameof(clientId));
+        _httpClient = CreateHttpClient(new ClientSecretCredential(tenantId, clientId, clientSecret));
+        _tenantId = tenantId;
+    }
+
+    public Exo(string tenantId, string clientId, X509Certificate2 certificate)
+    {
+        // Don't save the certificate in _certificate since we don't own it
+        // and should not dispose it.
+        tenantId = RequireGuidString(tenantId, nameof(tenantId));
+        clientId = RequireGuidString(clientId, nameof(clientId));
+        _httpClient = CreateHttpClient(new ClientCertificateCredential(tenantId, clientId, certificate));
+        _tenantId = tenantId;
     }
 
     public Exo(GrouperConfiguration config)
     {
-        _organization = config.ExchangeOrganization
-                        ?? throw new InvalidOperationException($"{nameof(config.ExchangeOrganization)} is not set in the configuration");
-        _appId = config.ExchangeAppId
-                 ?? throw new InvalidOperationException($"{nameof(config.ExchangeAppId)} is not set in the configuration");
-            
-        int num = (config.ExchangeCertificateFilePath is null ? 0 : 1)
-                  + (config.ExchangeCertificateThumbprint is null ? 0 : 1)
-                  + (config.ExchangeCertificateAsBase64 is null ? 0 : 1);
+        string tenantId = RequireGuidString(config.ExoTenantId, nameof(config.ExoTenantId));
+        string clientId = RequireGuidString(config.ExoClientId, nameof(config.ExoClientId));
 
+        _tenantId = tenantId;
+
+        int num = (config.ExoClientSecret is null ? 0 : 1)
+                  + (config.ExoCertificateFilePath is null ? 0 : 1)
+                  + (config.ExoCertificateThumbprint is null ? 0 : 1)
+                  + (config.ExoCertificateAsBase64 is null ? 0 : 1);
         if (num != 1)
         {
             throw new InvalidOperationException(
-                $"You must specify one of {nameof(config.ExchangeCertificateFilePath)}, {nameof(config.ExchangeCertificateThumbprint)} or {nameof(config.ExchangeCertificateAsBase64)} in the configuration"
+                $"You must specify exactly one of {nameof(config.ExoClientSecret)}, {nameof(config.ExoCertificateFilePath)}, {nameof(config.ExoCertificateThumbprint)} or {nameof(config.ExoCertificateAsBase64)} in the configuration."
             );
         }
 
-        if (config.ExchangeCertificateFilePath is not null || config.ExchangeCertificateAsBase64 is not null)
+        if (config.ExoClientSecret is not null)
         {
-            if (config.ExchangeCertificatePassword is null)
-            {
-                throw new InvalidOperationException($"{nameof(config.ExchangeCertificatePassword)} is not set in the configuration");
-            }
-
-            if (config.ExchangeCertificateFilePath is not null)
-            {
-                _certificate = Helpers.GetCertificateFromFile(config.ExchangeCertificateFilePath, config.ExchangeCertificatePassword);
-                return;
-            }
-
-            if (config.ExchangeCertificateAsBase64 is not null)
-            {
-                _certificate = Helpers.GetCertificateFromBase64String(config.ExchangeCertificateAsBase64, config.ExchangeCertificatePassword);
-
-            }
-
-        }
-
-        if (config.ExchangeCertificateThumbprint is not null)
-        {
-            if (config.ExchangeCertificateStoreLocation is null)
-            {
-                throw new InvalidOperationException($"If certificate is loaded from store {nameof(config.ExchangeCertificateStoreLocation)} must be specified in the configuration");
-            }
-            _certificate = Helpers.GetCertificateFromStore(config.ExchangeCertificateThumbprint, config.ExchangeCertificateStoreLocation.Value);
+            _httpClient = CreateHttpClient(new ClientSecretCredential(tenantId, clientId, config.ExoClientSecret));
             return;
         }
 
-        if (_certificate is null)
+        if (config.ExoCertificateFilePath is not null || config.ExoCertificateAsBase64 is not null)
         {
-            throw new InvalidOperationException("No certificate was loaded.");
-        }
-    }
-
-    private async Task Connect()
-    {
-        if (_initialized)
-        {
-            return;
-        }
-
-        if (_runspace != null)
-        {
-            _runspace.Dispose();
-            _runspace = null;
-        }
-
-        const string script = """
-            param($Organization, $AppId, $Certificate)
-                Set-ExecutionPolicy 'RemoteSigned' -Scope 'CurrentUser'
-                Import-Module ExchangeOnlineManagement -MinimumVersion '3.0.0'
-                $params = @{
-                    Organization = $Organization
-                    AppId = $AppId
-                    Certificate = $Certificate
-                    CommandName = @('Get-DistributionGroup','Get-DistributionGroupMember','Add-DistributionGroupMember','Remove-DistributionGroupMember')
-                    ShowBanner = $false
-                    ShowProgress = $false
-                }
-                Connect-ExchangeOnline @params
-            """;
-        _runspace = RunspaceFactory.CreateRunspace();
-        await OpenRunspaceAsync(_runspace);
-        using PowerShell ps = PowerShell.Create();
-        ps.Runspace = _runspace;
-        ps.AddScript(script)
-            .AddParameter("Organization", _organization)
-            .AddParameter("AppId", _appId)
-            .AddParameter("Certificate", _certificate);
-        await ps.InvokeAsync();
-        if (ps.HadErrors)
-        {
-            throw new AggregateException("Error creating Exchange Online PowerShell session",
-                [.. ps.Streams.Error.Select(e => e.Exception)]);
-        }
-
-        _initialized = true;
-    }     
-    
-    private static async Task OpenRunspaceAsync(Runspace runspace)
-    {
-        TaskCompletionSource<bool> tcs = new();
-
-        runspace.StateChanged += (_, args) =>
-        {
-            if (args.RunspaceStateInfo.State == RunspaceState.Opened)
+            if (config.ExoCertificatePassword is null)
             {
-                tcs.TrySetResult(true);
+                throw new InvalidOperationException($"{nameof(config.ExoCertificatePassword)} is not set in the configuration.");
+            }
+            if (config.ExoCertificateFilePath is not null)
+            {
+                _certificate = Helpers.GetCertificateFromFile(config.ExoCertificateFilePath, config.ExoCertificatePassword);
+                _httpClient = CreateHttpClient(new ClientCertificateCredential(tenantId, clientId, _certificate));
                 return;
             }
-            
-            if (args.RunspaceStateInfo.State is RunspaceState.Broken or RunspaceState.Closed)
+            if (config.ExoCertificateAsBase64 is not null)
             {
-                tcs.TrySetException(new InvalidOperationException($"Runspace failed to open: {args.RunspaceStateInfo.Reason}"));
+                _certificate = Helpers.GetCertificateFromBase64String(config.ExoCertificateAsBase64, config.ExoCertificatePassword);
+                _httpClient = CreateHttpClient(new ClientCertificateCredential(tenantId, clientId, _certificate));
+                return;
             }
-        };
-
-        runspace.OpenAsync();
-
-        await tcs.Task;
-    }
-    
-    private async Task<PSDataCollection<PSObject>> InvokeCommand(string command, IDictionary parameters)
-    {
-        await Connect();
-        using PowerShell ps = PowerShell.Create();
-        ps.Runspace = _runspace;
-        ps.AddCommand(command).AddParameters(parameters);
-        var result = await ps.InvokeAsync();
-        if (!ps.HadErrors)
-        {
-            return result;
         }
 
-        if (ps.HadErrors || result.Count != 1)
+        if (config.ExoCertificateThumbprint is not null)
         {
-            throw new AggregateException($"Error while invoking command {command}",
-                [.. ps.Streams.Error.Select(e => e.Exception)]);
+            if (config.ExoCertificateStoreLocation is null)
+            {
+                throw new InvalidOperationException(
+                    $"If certificate is loaded from store {nameof(config.ExoCertificateStoreLocation)} must be specified in the configuration."
+                );
+            }
+            _certificate = Helpers.GetCertificateFromStore(config.ExoCertificateThumbprint, config.ExoCertificateStoreLocation.Value);
+            _httpClient = CreateHttpClient(new ClientCertificateCredential(tenantId, clientId, _certificate));
         }
 
-        return result;
+        if (_httpClient is null)
+        {
+            throw new InvalidOperationException("No HttpClient could be created using the Grouper configuration.");
+        }
     }
 
-    private static void ThrowNotFoundExceptionIfNotFound(Guid groupId, Guid? memberId, RuntimeException ex)
+    private async Task<List<T>> InvokeCommand<T>(string command, object parameters)
     {
-        foreach (Match match in NotFoundRegex().Matches(ex.Message).Cast<Match>())
+        var list = new List<T>();
+        var cmdletRequestId = Guid.NewGuid().ToString();
+        var connectionId = Guid.NewGuid().ToString();
+        var bodyJson = JsonSerializer.Serialize(new
         {
-            Guid guid = Guid.Parse(match.Groups["guid"].Value);
-            if (guid == groupId)
+            CmdletInput = new
             {
-                throw GroupNotFoundException.Create(groupId, ex);
+                CmdletName = command,
+                Parameters = parameters
             }
-            if (guid == memberId)
+        }, _serializeOptions);
+
+        string? nextPageUri = null;
+        bool anotherPage = true;
+
+        // This requires page.nextLink to be empty at some point. If something goes wrong,
+        // it will loop forever. Since the likelyhood is for that happening is very low,
+        // we keep it as-is for now.
+        while (anotherPage)
+        {
+            var url = nextPageUri ?? $"adminapi/beta/{_tenantId}/InvokeCommand";
+
+            using var req = new HttpRequestMessage(HttpMethod.Post, url);
+            req.Headers.Add("X-AnchorMailbox", $"APP:SystemMailbox{{bb558c35-97f1-4cb9-8ff7-d53741dc928c}}@{_tenantId}");
+            req.Headers.Add("X-CmdletName", command);
+            req.Headers.Add("client-request-id", cmdletRequestId);
+            req.Headers.Add("connection-id", connectionId);
+            req.Headers.Add("Prefer", "odata.maxpagesize=1000");
+            req.Content = new StringContent(bodyJson, Encoding.UTF8, "application/json");
+
+            using var resp = await _httpClient.SendAsync(req);
+            if (!resp.IsSuccessStatusCode)
             {
-                throw MemberNotFoundException.Create(groupId, ex);
+                string content = await resp.Content.ReadAsStringAsync();
+                string? detail = TryExtractDetailMessage(content);
+                ThrowExceptionForKnownErrors(detail);
+                throw ExoException.Create(command, resp.StatusCode, detail);
             }
+
+            if (resp.StatusCode == HttpStatusCode.NoContent || resp.Content.Headers.ContentLength == 0)
+            {
+                return list;
+            }
+
+            var page = await resp.Content.ReadFromJsonAsync<ExoResponse<T>>(_deserializeOptions)
+                ?? throw new InvalidOperationException("EXO returned an empty response.");
+
+            if (page.Value != null)
+            {
+                list.AddRange(page.Value);            
+            }
+
+            nextPageUri = page.NextLink;
+            anotherPage = nextPageUri is not null;
+        }
+
+        return list;
+    }
+
+    private static string TryExtractDetailMessage(string json)
+    {
+        string? raw;
+        try
+        {
+            JsonNode? root = JsonNode.Parse(json);
+            raw = AsString(root?["error"]?["details"]?[0]?["message"])
+                ?? AsString(root?["error"]?["message"]);
+        }
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException)
+        {
+            return "";
+        }
+
+        if (raw is null)
+        {
+            return "";
+        }
+
+        try
+        {
+            return AsString(JsonNode.Parse(raw)?["Message"]) ?? raw;
+        }
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException)
+        {
+            return raw;
+        }
+    }
+
+    private static string? AsString(JsonNode? node) =>
+        node is JsonValue value && value.GetValueKind() == JsonValueKind.String
+            ? value.GetValue<string>()
+            : null;
+
+    private static void ThrowExceptionForKnownErrors(string msg)
+    {
+        if (GroupNotFoundRegex().Match(msg) is Match groupMatch && groupMatch.Success)
+        {
+            Guid.TryParse(groupMatch.Groups[1].Value, out Guid groupId);
+            throw GroupNotFoundException.Create(groupId, null);
+        }
+        else if (MemberNotFoundRegex().Match(msg) is Match memberMatch && memberMatch.Success)
+        {
+            Guid.TryParse(memberMatch.Groups[1].Value, out Guid memberId);
+            throw MemberNotFoundException.Create(memberId, null);
+        }
+        else if (AlreadyMemberRegex().Match(msg) is Match alreadyMemberMatch && alreadyMemberMatch.Success)
+        {
+            Guid.TryParse(alreadyMemberMatch.Groups[1].Value, out Guid memberId);
+            Guid.TryParse(alreadyMemberMatch.Groups[2].Value, out Guid groupId);
+            throw ObjectAlreadyMemberException.Create(memberId, groupId, null);
+        }
+        else if (NotMemberRegex().Match(msg) is Match notMemberMatch && notMemberMatch.Success)
+        {
+            Guid.TryParse(notMemberMatch.Groups[1].Value, out Guid memberId);
+            Guid.TryParse(notMemberMatch.Groups[2].Value, out Guid groupId);
+            throw ObjectNotMemberException.Create(memberId, groupId, null);
         }
     }
 
     public async Task GetGroupMembersAsync(GroupMemberCollection memberCollection, Guid groupId)
     {
         const string command = "Get-DistributionGroupMember";
-        Hashtable parameters = new()
+        object parameters = new
         {
-            { "Identity", groupId.ToString() },
-            { "ResultSize", "Unlimited" },
-            { "ErrorAction", "Stop"}
+            Identity = groupId.ToString(),
+            ResultSize = "Unlimited",
+            ErrorAction = "Stop",
         };
 
-        PSDataCollection<PSObject> result;
-        try
-        {
-            result = await InvokeCommand(command, parameters);
-        }
-        catch (RuntimeException ex)
-        {
-            ThrowNotFoundExceptionIfNotFound(groupId, null, ex);
-            throw;
-        }
+        List<ExoGroupMember> result;
+        result = await InvokeCommand<ExoGroupMember>(command, parameters);
 
         foreach (var member in result)
         {
+            // Warning: This can cause member drift if someone adds a non-synced member
+            // without an ExternalDirectoryObjectId.
+            if (member.ExternalDirectoryObjectId is null) continue;
+
+            // Non-mail-enabled users can be members of a distribution group. They don't have a PrimarySmtpAddress,
+            // so we use Identity as a fallback.
+            string displayName;
+            if (!string.IsNullOrEmpty(member.PrimarySmtpAddress))
+            {
+                displayName = member.PrimarySmtpAddress;
+            }
+            else if (!string.IsNullOrEmpty(member.Identity))
+            {
+                displayName = member.Identity;
+            }
+            else
+            {
+                continue;
+            }
+
             memberCollection.Add(new GroupMember(
-                id: (string)member.Properties["ExternalDirectoryObjectId"].Value,
-                displayName: (string)member.Properties["PrimarySmtpAddress"].Value,
+                id: member.ExternalDirectoryObjectId,
+                displayName,
                 memberType: GroupMemberType.AzureAd
             ));
         }
@@ -227,22 +307,14 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
         }
 
         const string command = "Add-DistributionGroupMember";
-        Hashtable parameters = new()
+        object parameters = new
         {
-            { "Identity", groupId.ToString() },
-            { "Member", member.Id.ToString() },
-            { "ErrorAction", "Stop"}
+            Identity = groupId.ToString(),
+            Member = member.Id.ToString(),
+            ErrorAction = "Stop"
         };
 
-        try
-        {
-            await InvokeCommand(command, parameters);
-        }
-        catch (RuntimeException ex)
-        {
-            ThrowNotFoundExceptionIfNotFound(groupId, member.Id, ex);
-            throw;
-        }
+        await InvokeCommand<ExoModifyResponse>(command, parameters);
     }
 
     public async Task RemoveGroupMemberAsync(GroupMember member, Guid groupId)
@@ -255,53 +327,47 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
         }
 
         const string command = "Remove-DistributionGroupMember";
-        Hashtable parameters = new()
+        object parameters = new
         {
-            { "Identity", groupId.ToString() },
-            { "Member", member.Id.ToString() },
-            { "Confirm", false },
-            { "ErrorAction", "Stop"}
+            Identity = groupId.ToString(),
+            Member = member.Id.ToString(),
+            Confirm = false,
+            ErrorAction = "Stop"
         };
 
-        try
-        {
-            await InvokeCommand(command, parameters);
-        }
-        catch (RuntimeException ex)
-        {
-            ThrowNotFoundExceptionIfNotFound(groupId, member.Id, ex);
-            throw;
-        }
+        await InvokeCommand<ExoModifyResponse>(command, parameters);
     }
 
     public async Task<GroupInfo> GetGroupInfoAsync(Guid groupId)
     {
         const string command = "Get-DistributionGroup";
-        Hashtable parameters = new()
+        object parameters = new
         {
-            { "Identity", groupId.ToString() },
-            { "ErrorAction", "Stop"}
+            Identity = groupId.ToString(),
+            ErrorAction = "Stop"
         };
 
-        PSDataCollection<PSObject> result;
-        try
-        {
-            result = await InvokeCommand(command, parameters);
-        }
-        catch (RuntimeException ex)
-        {
-            ThrowNotFoundExceptionIfNotFound(groupId, null, ex);
-            throw;
-        }
+        ExoGroup? exoGroup = (await InvokeCommand<ExoGroup>(command, parameters)).FirstOrDefault() 
+            ?? throw GroupNotFoundException.Create(groupId);
+        
 
-        if (result is null || result.Count == 0)
+        string? displayName;
+        if (!string.IsNullOrEmpty(exoGroup.DisplayName))
         {
-            throw GroupNotFoundException.Create(groupId);
+            displayName = exoGroup.DisplayName;
+        }
+        else if (!string.IsNullOrEmpty(exoGroup.Identity))
+        {
+            displayName = exoGroup.Identity;
+        }
+        else
+        {
+            throw new InvalidOperationException($"Invalid group '{groupId}'");
         }
 
         return new GroupInfo(
             id: groupId,
-            displayName: (string)result[0].Properties["DisplayName"].Value,
+            displayName: displayName,
             store: GroupStore.Exo
         );
     }
@@ -315,13 +381,13 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
 
         var groupId = grouperMember.Rules.FirstOrDefault(r => r.Name.IEquals("Group"))?.Value
             ?? throw new InvalidOperationException("Cannot find a 'Group' rule with a group ID.");
-       
+
         await GetGroupMembersAsync(
             memberCollection,
             Guid.Parse(groupId)
         );
-    }  
-    
+    }
+
     public IEnumerable<GroupMemberSource> GetSupportedGrouperMemberSources() => [GroupMemberSource.ExoGroup];
 
     public IEnumerable<GroupStore> GetSupportedGroupStores() => [GroupStore.Exo];
@@ -335,7 +401,8 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
 
         if (disposing)
         {
-            _runspace?.Dispose();
+            _httpClient?.Dispose();
+            _certificate?.Dispose();
         }
         _disposed = true;
     }
@@ -345,6 +412,129 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
         Dispose(disposing: true);
     }
 
-    [GeneratedRegex(pattern: "object '(?<guid>[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12})' couldn't be found", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
-    private static partial Regex NotFoundRegex();
+    [GeneratedRegex("object '([^']+)' couldn't be found", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+    private static partial Regex GroupNotFoundRegex();
+
+    [GeneratedRegex("^Couldn't find object \"([^\"]+)\"", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+    private static partial Regex MemberNotFoundRegex();
+
+    [GeneratedRegex("\"([^\"]+)\" is already a member of the group \"([^\"]+)\"", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+    private static partial Regex AlreadyMemberRegex();
+
+    [GeneratedRegex("The recipient \"([^\"]+)\" isn't a member of the group \"([^\"]+)\"", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+    private static partial Regex NotMemberRegex();
+}
+
+// Retries requests that Exchange Online rejects as throttled or transiently unavailable,
+// honouring the Retry-After header when EXO supplies one.
+internal sealed class ThrottleRetryHandler : DelegatingHandler
+{
+    private const int MaxAttempts = 4;
+
+    // Caps what a Retry-After can ask for. Keep MaxAttempts and MaxDelay in step with
+    // HttpClient.Timeout in Exo.CreateHttpClient - that timeout spans all attempts.
+    private static readonly TimeSpan MaxDelay = TimeSpan.FromSeconds(20);
+
+    protected override async Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        for (int attempt = 1; ; attempt++)
+        {
+            HttpResponseMessage response = await base.SendAsync(request, cancellationToken);
+
+            if (attempt >= MaxAttempts || !IsTransient(response.StatusCode))
+            {
+                return response;
+            }
+
+            TimeSpan delay = GetDelay(response, attempt);
+            // Dispose the response we are discarding so the connection returns to the pool.
+            response.Dispose();
+            // cancellationToken carries HttpClient.Timeout, so the wait aborts instead of
+            // sleeping past it. Without this the backoff becomes a hang.
+            await Task.Delay(delay, cancellationToken);
+        }
+    }
+
+    // 500 is deliberately absent: EXO uses it for genuine cmdlet failures, and retrying
+    // those only spends more of the throttle budget before reporting the same error.
+    private static bool IsTransient(HttpStatusCode status) =>
+        status is HttpStatusCode.TooManyRequests
+               or HttpStatusCode.ServiceUnavailable
+               or HttpStatusCode.GatewayTimeout;
+
+    private static TimeSpan GetDelay(HttpResponseMessage response, int attempt)
+    {
+        RetryConditionHeaderValue? retryAfter = response.Headers.RetryAfter;
+        TimeSpan? advised = retryAfter?.Delta
+            ?? (retryAfter?.Date is { } date ? date - DateTimeOffset.UtcNow : null);
+
+        TimeSpan delay = advised is { } d && d > TimeSpan.Zero
+            ? d                                               // EXO said how long to wait
+            : TimeSpan.FromSeconds(Math.Pow(2, attempt - 1)); // otherwise 1s, 2s, 4s
+
+        return delay > MaxDelay ? MaxDelay : delay;
+    }
+}
+
+internal sealed class EntraTokenHandler(TokenCredential credential, string scope) : DelegatingHandler
+{
+    private readonly string[] _scopes = [scope];
+
+    protected override async Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        AccessToken token = await credential.GetTokenAsync(
+            new TokenRequestContext(_scopes), cancellationToken);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
+        return await base.SendAsync(request, cancellationToken);
+    }
+}
+
+internal class ExoResponse<T>
+{
+    [JsonPropertyName("value")]
+    public List<T>? Value { get; set; }
+
+    [JsonPropertyName("@odata.nextLink")]
+    public string? NextLink { get; set; }
+}
+
+internal class ExoGroup
+{
+    public string? Identity { get; set; }
+    public string? DisplayName { get; set; }
+}
+
+internal class ExoGroupMember
+{
+    public string? Identity { get; set; }
+    public string? PrimarySmtpAddress { get; set; }
+    public string? ExternalDirectoryObjectId { get; set; }
+}
+
+internal class ExoModifyResponse { }
+
+// Exceptions.cs
+public class ExoException : Exception
+{
+    public HttpStatusCode? StatusCode { get; }
+    public string? CmdletName { get; }
+
+    public ExoException(string message) : base(message) { }
+    public ExoException(string message, Exception? innerException) : base(message, innerException) { }
+
+    private ExoException(string message, HttpStatusCode statusCode, string cmdletName) : base(message)
+    {
+        StatusCode = statusCode;
+        CmdletName = cmdletName;
+    }
+
+    // No inner exception by design - Worker.cs surfaces InnerException.Message over Message.
+    public static ExoException Create(string cmdletName, HttpStatusCode statusCode, string? detail) =>
+        new(string.IsNullOrWhiteSpace(detail)
+                ? $"Exchange Online returned {(int)statusCode} ({statusCode}) for {cmdletName}."
+                : $"Exchange Online returned {(int)statusCode} for {cmdletName}: {detail}",
+            statusCode,
+            cmdletName);
 }

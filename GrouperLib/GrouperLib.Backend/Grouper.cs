@@ -34,7 +34,7 @@ public class Grouper : IDisposable
             {
                 grouper.AddGroupStore(az);
             }
-            if (config.ExchangeHasRole(GrouperConfiguration.Role.MemberSource))
+            if (config.ExoHasRole(GrouperConfiguration.Role.MemberSource))
             {
                 grouper.AddMemberSource(az);
             }
@@ -43,14 +43,14 @@ public class Grouper : IDisposable
                 grouper.AddGroupOwnerSource(az);
             }
         }
-        if (config.ExchangeRole is { Length: > 0 })
+        if (config.ExoRole is { Length: > 0 })
         {
             Exo exo = new(config);
-            if (config.ExchangeHasRole(GrouperConfiguration.Role.GroupStore))
+            if (config.ExoHasRole(GrouperConfiguration.Role.GroupStore))
             {
                 grouper.AddGroupStore(exo);
             }
-            if (config.ExchangeHasRole(GrouperConfiguration.Role.MemberSource))
+            if (config.ExoHasRole(GrouperConfiguration.Role.MemberSource))
             {
                 grouper.AddMemberSource(exo);
             }
