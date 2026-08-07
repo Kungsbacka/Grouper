@@ -16,3 +16,4 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("Maintainability", "CA1515:Consider making public types internal", Justification = "API Controllers should be public", Scope = "type", Target = "~T:GrouperApi.Controllers.GrouperController")]
 [assembly: SuppressMessage("Design", "CA1052:Static holder types should be Static or NotInheritable", Justification = "Created non static by the ASP.NET API template", Scope = "type", Target = "~T:GrouperApi.Program")]
 [assembly: SuppressMessage("Maintainability", "CA1515:Consider making public types internal", Justification = "Created public by the ASP.NET API template", Scope = "type", Target = "~T:GrouperApi.Program")]
+[assembly: SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by Swashbuckle through OperationFilter<T>", Scope = "type", Target = "~T:GrouperApi.AddRequestBodyOperationFilter")]
