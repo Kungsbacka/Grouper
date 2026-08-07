@@ -1,0 +1,39 @@
+# Grouper line-ending and diff policy
+#
+# Verified before adding: all 125 tracked blobs are already LF-only in storage, so the
+# rules below change nothing that is committed. They make the existing behaviour explicit
+# instead of leaving it to each clone's local core.autocrlf setting -- a clone with
+# autocrlf=false, or on a non-Windows host, would otherwise check out LF and drift from
+# the rest of the tree, which is uniformly CRLF.
+
+# ---------------------------------------------------------------------------
+# Text: stored LF in the repository, checked out CRLF in the working tree.
+# Covers .cs, .csproj, .sln, .resx, .config, .json, .sql, .ps1, .md, LICENSE.
+# Visual Studio needs CRLF in .sln files, which this guarantees on every host.
+# ---------------------------------------------------------------------------
+* text=auto eol=crlf
+
+# ---------------------------------------------------------------------------
+# Binary: never normalize, never diff as text. ("binary" == "-text -diff".)
+#
+# No binary file is tracked today -- .gitignore covers bin/, obj/, .vs/, *.pdb and
+# the certificate types. These rules are insurance for a future `git add -f`, so a
+# stray artefact cannot be corrupted by line-ending conversion on the way in.
+# ---------------------------------------------------------------------------
+*.dll binary
+*.exe binary
+*.pdb binary
+*.pfx binary
+*.cer binary
+
+# Deliberately NOT listed: .vs/** and per-user IDE state. .gitignore already keeps
+# them out, and "text=auto" detects genuinely binary content by its NUL bytes without
+# help. Forcing a path binary is not free -- it makes git demand a byte-for-byte match
+# against the working tree, which turns any already-normalized text file underneath
+# that path into a phantom modification.
+
+# ---------------------------------------------------------------------------
+# Language-aware diff hunk headers (git built-in drivers).
+# ---------------------------------------------------------------------------
+*.cs text diff=csharp
+*.md text diff=markdown
