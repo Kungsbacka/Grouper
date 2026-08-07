@@ -40,6 +40,7 @@ public class GrouperConfiguration
         get => _dpapiProtectedSettings.ToArray();
         set
         {
+            if (value is null) return;
             _dpapiProtectedSettings.Clear();
             _dpapiProtectedSettings.UnionWith(value);
         }
@@ -101,7 +102,7 @@ public class GrouperConfiguration
     public static GrouperConfiguration CreateFromHashtable(Hashtable hashtable)
     {
         GrouperConfiguration config = new();
-        foreach (PropertyInfo propertyInfo in config.GetType().GetProperties(BindingFlags.Public))
+        foreach (PropertyInfo propertyInfo in config.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
         {
             object? value = hashtable[propertyInfo.Name];
             if (value != null && propertyInfo.PropertyType == typeof(Role[]))

@@ -18,12 +18,17 @@ namespace GrouperLib.Store;
 [SupportedOSPlatform("windows")]
 public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
 {
+    private static readonly JsonSerializerOptions SerializeOptions = new();
+    private static readonly JsonSerializerOptions DeserializeOptions = new() { PropertyNameCaseInsensitive = true };
     private readonly HttpClient _httpClient;
     private readonly string _tenantId;
-    private readonly JsonSerializerOptions _serializeOptions = new() { PropertyNameCaseInsensitive = true };
-    private readonly JsonSerializerOptions _deserializeOptions = new();
     private readonly X509Certificate2? _certificate;
     private bool _disposed;
+
+    // 105 * odata.maxpagesize=1000 = 105k members. An EXO distribution list can only
+    // contain a maximum of 100k members. 105 covers that and gives some headroom if
+    // the OData server returns a trailing nextLink.
+    private const int MaxPages = 105;
 
     private static string RequireGuidString(string? value, string settingName)
     {
@@ -145,15 +150,12 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
                 CmdletName = command,
                 Parameters = parameters
             }
-        }, _serializeOptions);
+        }, SerializeOptions);
 
         string? nextPageUri = null;
-        bool anotherPage = true;
 
-        // This requires page.nextLink to be empty at some point. If something goes wrong,
-        // it will loop forever. Since the likelyhood is for that happening is very low,
-        // we keep it as-is for now.
-        while (anotherPage)
+        int pages = 0;
+        while (true)
         {
             var url = nextPageUri ?? $"adminapi/beta/{_tenantId}/InvokeCommand";
 
@@ -179,7 +181,7 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
                 return list;
             }
 
-            var page = await resp.Content.ReadFromJsonAsync<ExoResponse<T>>(_deserializeOptions)
+            var page = await resp.Content.ReadFromJsonAsync<ExoResponse<T>>(DeserializeOptions)
                 ?? throw new InvalidOperationException("EXO returned an empty response.");
 
             if (page.Value != null)
@@ -187,8 +189,23 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
                 list.AddRange(page.Value);            
             }
 
+            if (page.NextLink is null)
+            {
+                break;
+            }
+
+            // This does not cover the first request since the initial URL is relative. Subsequent requests are covered.
+            if (page.NextLink == url)
+            {
+                throw new ExoException($"Exchange Online returned the same paging link twice for {command}; paging is not advancing.");
+            }
+
+            if (++pages >= MaxPages)
+            {
+                throw new ExoException($"Exchange Online returned more than {MaxPages} pages for {command}.");
+            }
+
             nextPageUri = page.NextLink;
-            anotherPage = nextPageUri is not null;
         }
 
         return list;
