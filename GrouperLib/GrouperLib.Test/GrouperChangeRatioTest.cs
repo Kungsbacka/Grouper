@@ -10,8 +10,13 @@ namespace GrouperLib.Test;
 ///
 /// The formula is <c>(currentCount - removals + additions) / currentCount</c>, which is
 /// the group's *resulting size divided by its current size*. So the limit is a floor on how
-/// far a group may shrink, not a cap on how much it may churn -- a point the name
-/// "change ratio" obscures, and the reason the full-replacement case below passes the guard.
+/// far a group may shrink, not a cap on how much it may churn.
+///
+/// That is deliberate. The failure mode being guarded against is a member source returning
+/// empty or partial data, which always shows up as the group collapsing in size. Full identity
+/// turnover at stable size is normal here: many education groups replace their entire
+/// membership at each new school year. A retention-based measure was tried and rejected because
+/// it flagged too many groups every August for manual review.
 /// </summary>
 [SupportedOSPlatform("windows")]
 public class GrouperChangeRatioTest
@@ -62,9 +67,13 @@ public class GrouperChangeRatioTest
     }
 
     /// <summary>
-    /// Replacing every member yields a ratio of 1.0 and sails through any limit at or below
-    /// one, because the resulting size equals the current size. The guard cannot catch a
-    /// total membership swap -- worth knowing before relying on it.
+    /// Replacing every member yields a ratio of 1.0 and passes any limit at or below one,
+    /// because the resulting size equals the current size.
+    ///
+    /// This is required behaviour, not a gap: education groups turn over their whole membership
+    /// at each new school year and must roll over unattended. If this test ever fails because
+    /// the ratio became retention-based, the school-year rollover has been broken -- see the
+    /// class summary before changing the formula.
     /// </summary>
     [Fact]
     public async Task TestRatioForCompleteReplacementIsOne()
