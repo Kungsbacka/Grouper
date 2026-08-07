@@ -46,9 +46,7 @@ sc.exe create GrouperService binPath= "C:\Program Files\Grouper\GrouperService.e
 * Update configuration files to match your environment. You are strongly advised to encrypt all
 secrets (see [Encrypting secrets](#encrypting-secrets) below)
 * Build. There have been issues with using `win-x64` as runtime identifier. To avoid issues, use `win10-x64` when deploying to Windows Server.
-* Deploy to a website that is configured with Windows Authentication. If you want to use Exchange Online
-as a group store and a member source, you also have to install PowerShell 7 or later and the Exchange Online
-PowerShell module (ExchangeOnlineManagement).
+* Deploy to a website that is configured with Windows Authentication.
 
 ### PowerShell module
 
@@ -75,7 +73,6 @@ in the LocalMachine store, you have to give the service account (for GrouperServ
 2. Run tools/GrantPrivateKeyAccess as an administrator.
 3. Enter certificate thumbprint
 4. Enter DOMAIN\gMSA for a service account, or IIS APPPOOL\<application pool name> for an application pool.
-
 
 ## Grouper documents
 
