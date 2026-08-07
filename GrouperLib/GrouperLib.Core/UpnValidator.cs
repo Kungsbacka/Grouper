@@ -49,6 +49,6 @@ internal partial class UpnValidator : ICustomValidator
         return upnRegex.Matches(domain).Count == 1;
     }
 
-    [GeneratedRegex(@"(?(\[)(\[(\d{1,3}\.){3}\d{1,3}\])|(([0-9a-zA-Z][-0-9a-zA-Z]*[0-9a-zA-Z]*\.)+[0-9a-zA-Z][-0-9a-zA-Z]{0,22}[0-9a-zA-Z]))$", RegexOptions.Compiled)]
+    [GeneratedRegex(@"^(?(\[)(\[(\d{1,3}\.){3}\d{1,3}\])|(([0-9a-zA-Z][-0-9a-zA-Z]*[0-9a-zA-Z]*\.)+[0-9a-zA-Z][-0-9a-zA-Z]{0,22}[0-9a-zA-Z]))$", RegexOptions.Compiled)]
     private static partial Regex UpnRegex();
 }
