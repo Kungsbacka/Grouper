@@ -6,11 +6,6 @@
 public enum GroupOwnerAction
 {
     /// <summary>
-    /// No action will be taken. If an owner is a member of the group, it will remain a member.
-    /// </summary>
-    NoAction,
-
-    /// <summary>
     /// Add all owners as members to the group, even if the owner does not exist in the member source.
     /// </summary>
     AddAll,
