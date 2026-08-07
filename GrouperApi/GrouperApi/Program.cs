@@ -3,7 +3,7 @@ using GrouperLib.Config;
 using GrouperLib.Core;
 using GrouperLib.Language;
 using Microsoft.AspNetCore.Authentication.Negotiate;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using System.Runtime.Versioning;
 using System.Text.Json.Serialization;
 
@@ -62,8 +62,8 @@ public class Program
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "Grouper API", Version = "v1" });
             c.UseAllOfToExtendReferenceSchemas();
             c.OperationFilter<AddRequestBodyOperationFilter>();
-            c.MapType<GroupMemberDiff>(() => new OpenApiSchema { Type = "object" });
-            c.MapType<GrouperDocument>(() => new OpenApiSchema { Type = "object" });
+            c.MapType<GroupMemberDiff>(() => new OpenApiSchema { Type = JsonSchemaType.Object });
+            c.MapType<GrouperDocument>(() => new OpenApiSchema { Type = JsonSchemaType.Object });
         });
 
         var app = builder.Build();

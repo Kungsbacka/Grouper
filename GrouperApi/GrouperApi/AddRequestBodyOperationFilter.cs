@@ -1,10 +1,10 @@
-﻿using Microsoft.OpenApi.Any;
-using Microsoft.OpenApi.Models;
+﻿using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Text.Json.Nodes;
 
 namespace GrouperApi
 {
-    internal class AddRequestBodyOperationFilter : IOperationFilter
+    internal sealed class AddRequestBodyOperationFilter : IOperationFilter
     {
         public void Apply(OpenApiOperation operation, OperationFilterContext context)
         {
@@ -22,8 +22,8 @@ namespace GrouperApi
                         {
                             Schema = new OpenApiSchema
                             {
-                                Type = "object",
-                                Example = new OpenApiObject(),
+                                Type = JsonSchemaType.Object,
+                                Example = new JsonObject(),
                                 Description = "JSON request body"
                             }
                         }
