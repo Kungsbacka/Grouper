@@ -1374,7 +1374,7 @@ BEGIN
 
     -- If no specific revision is requested, revert to the revision immediately before current.
     IF @revision IS NULL
-        SELECT @revision = revision FROM dbo.document ORDER BY revision DESC OFFSET 1 ROW FETCH NEXT 1 ROW ONLY;
+        SELECT @revision = revision FROM dbo.document WHERE document_id = @document_id ORDER BY revision DESC OFFSET 1 ROW FETCH NEXT 1 ROW ONLY;
 
     IF @revision = @current_revision
         THROW 50000, 'The revision you are trying to restore is already the current revision.', 1;
