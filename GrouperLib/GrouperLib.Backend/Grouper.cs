@@ -34,7 +34,7 @@ public class Grouper : IDisposable
             {
                 grouper.AddGroupStore(az);
             }
-            if (config.ExoHasRole(GrouperConfiguration.Role.MemberSource))
+            if (config.AzureAdHasRole(GrouperConfiguration.Role.MemberSource))
             {
                 grouper.AddMemberSource(az);
             }
@@ -55,7 +55,7 @@ public class Grouper : IDisposable
                 grouper.AddMemberSource(exo);
             }
         }
-        if (config.OnPremAdHasRole(GrouperConfiguration.Role.GroupStore))
+        if (config.OnPremAdRole is { Length: > 0 })
         {
             OnPremAd onPremAd = new(config);
             if (config.OnPremAdHasRole(GrouperConfiguration.Role.GroupStore))
