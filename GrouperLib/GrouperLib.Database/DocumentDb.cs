@@ -48,7 +48,7 @@ public class DocumentDb
                 revisionCreated: reader.GetDateTime(1),
                 isPublished: reader.GetBoolean(2),
                 isDeleted: reader.GetBoolean(3),
-                tags: (reader.IsDBNull(4) ? [] : reader.GetString(4).Split(','))
+                tags: reader.IsDBNull(4) ? [] : reader.GetString(4).Split(',')
             ));
         }
 
