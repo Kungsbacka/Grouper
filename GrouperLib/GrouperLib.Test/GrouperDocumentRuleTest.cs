@@ -31,11 +31,27 @@ public class GrouperDocumentRuleTest
     }
 
     [Fact]
+    public void TestNotEqualsDifferentNameCasing()
+    {
+        GrouperDocumentRule rule1 = TestHelpers.MakeRule(new { Name = "Upn", Value = "Same" });
+        GrouperDocumentRule rule2 = TestHelpers.MakeRule(new { Name = "upn", Value = "Same" });
+        Assert.False(rule1.Equals(rule2));
+    }
+
+    [Fact]
     public void TestNotEqualsDifferentValue()
     {
         GrouperDocumentRule rule1 = TestHelpers.MakeRule(new { Name = "Upn", Value = "One" });
         GrouperDocumentRule rule2 = TestHelpers.MakeRule(new { Name = "Upn", Value = "Two" });
         Assert.False(rule1.Equals(rule2));
+    }
+
+    [Fact]
+    public void TestEqualsDifferentValueCasing()
+    {
+        GrouperDocumentRule rule1 = TestHelpers.MakeRule(new { Name = "Upn", Value = "Same" });
+        GrouperDocumentRule rule2 = TestHelpers.MakeRule(new { Name = "Upn", Value = "SAME" });
+        Assert.True(rule1.Equals(rule2));
     }
 
     [Fact]

@@ -241,6 +241,79 @@ public class DocumentValidatorRuleSetTest
         Assert.Contains(ResourceString.ValidationErrorDuplicateRule, Validate(document).Select(e => e.ErrorId));
     }
 
+    // ---- rule name casing ---------------------------------------------------------------
+
+    /// <summary>
+    /// Rule names match ordinally, so a case variant is an unrecognised name and is reported as
+    /// one. The distinction matters: the rule-set check would also reject this document, but as an
+    /// illegal *combination*, which reads as nonsense for a member object carrying a single rule.
+    /// </summary>
+    [Fact]
+    public void TestWronglyCasedRuleNameIsRejectedAsAnInvalidName()
+    {
+        SourceSpec spec = SpecFor(GroupMemberSource.Elevregister);
+        GrouperDocumentMember member = new(GroupMemberSource.Elevregister, GroupMemberAction.Include,
+            [new GrouperDocumentRule("enhet", "ARA")]);
+        GrouperDocument document = new(documentId, groupId, "Test Group", spec.CompatibleStore, [member]);
+
+        List<ValidationError> errors = Validate(document);
+
+        Assert.Contains(ResourceString.ValidationErrorInvalidRuleName, errors.Select(e => e.ErrorId));
+        Assert.DoesNotContain(ResourceString.ValidationErrorInvalidCombinationOfRules, errors.Select(e => e.ErrorId));
+    }
+
+    /// <summary>
+    /// A repeatable name is the case that escapes if the accumulator keying rule names is
+    /// case-insensitive: the correctly-cased rule seeds the bucket, the case variant merges into
+    /// it, and the rule-set check only ever sees the good casing -- so the document validates
+    /// clean. The variant has to come second for that to happen.
+    /// </summary>
+    [Theory]
+    [InlineData(GroupMemberSource.Personalsystem, "Befattning", "Lärare", "befattning", "Rektor")]
+    [InlineData(GroupMemberSource.Elevregister, "Årskurs", "5", "årskurs", "6")]
+    [InlineData(GroupMemberSource.Static, "Upn", "a@example.com", "upn", "b@example.com")]
+    public void TestWronglyCasedRepeatableRuleNameIsRejected(
+        GroupMemberSource source, string name, string value, string casedName, string casedValue)
+    {
+        SourceSpec spec = SpecFor(source);
+        GrouperDocumentMember member = new(source, GroupMemberAction.Include,
+            [new GrouperDocumentRule(name, value), new GrouperDocumentRule(casedName, casedValue)]);
+        GrouperDocument document = new(documentId, groupId, "Test Group", spec.CompatibleStore, [member]);
+
+        Assert.Contains(ResourceString.ValidationErrorInvalidRuleName, Validate(document).Select(e => e.ErrorId));
+    }
+
+    /// <summary>
+    /// Value regexes are keyed by rule name ordinally, so before names were matched ordinally a
+    /// case variant passed the name checks and then missed its own regex -- the value went
+    /// unvalidated. Rejecting the name is what closes that.
+    /// </summary>
+    [Fact]
+    public void TestWronglyCasedRuleNameDoesNotSkipItsValueRegex()
+    {
+        SourceSpec spec = SpecFor(GroupMemberSource.Elevregister);
+        GrouperDocumentMember member = new(GroupMemberSource.Elevregister, GroupMemberAction.Include,
+            [new GrouperDocumentRule("skolform", "NotASchoolForm")]);
+        GrouperDocument document = new(documentId, groupId, "Test Group", spec.CompatibleStore, [member]);
+
+        Assert.NotEmpty(Validate(document));
+    }
+
+    /// <summary>
+    /// Only names went ordinal. Values still compare case-insensitively, so a repeated name whose
+    /// value differs only in case is duplication rather than a second selector.
+    /// </summary>
+    [Fact]
+    public void TestRepeatableRuleWithValuesDifferingOnlyInCaseIsRejected()
+    {
+        SourceSpec spec = SpecFor(GroupMemberSource.Static);
+        GrouperDocumentMember member = new(GroupMemberSource.Static, GroupMemberAction.Include,
+            [new GrouperDocumentRule("Upn", "a@example.com"), new GrouperDocumentRule("Upn", "A@Example.com")]);
+        GrouperDocument document = new(documentId, groupId, "Test Group", spec.CompatibleStore, [member]);
+
+        Assert.Contains(ResourceString.ValidationErrorDuplicateRule, Validate(document).Select(e => e.ErrorId));
+    }
+
     // ---- rule name and value emptiness --------------------------------------------------
 
     [Fact]
