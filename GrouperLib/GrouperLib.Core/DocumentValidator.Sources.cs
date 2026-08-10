@@ -44,7 +44,7 @@ internal static partial class DocumentValidator
         [GroupMemberSource.OnPremAdGroup] = MemberSourceSpec.OnPrem()
             .Required("Group")
             .Matches("Group", GuidRegex())
-            .Custom(new OnPremAdValidator()),
+            .Custom(new SelfReferenceValidator()),
 
         [GroupMemberSource.OnPremAdQuery] = MemberSourceSpec.OnPrem()
             .Required("LdapFilter")
@@ -53,14 +53,12 @@ internal static partial class DocumentValidator
         [GroupMemberSource.AzureAdGroup] = MemberSourceSpec.Azure()
             .Required("Group")
             .Matches("Group", GuidRegex())
-            .Custom(new AzureAdValidator()),
+            .Custom(new SelfReferenceValidator()),
 
-        // No self-reference validator, unlike its Entra ID and on-premises equivalents. Pinned by
-        // TestExoGroupSelfReferenceIsCurrentlyAllowed; closing the gap would start rejecting
-        // documents that validate today.
         [GroupMemberSource.ExoGroup] = MemberSourceSpec.Azure()
             .Required("Group")
-            .Matches("Group", GuidRegex()),
+            .Matches("Group", GuidRegex())
+            .Custom(new SelfReferenceValidator()),
 
         [GroupMemberSource.CustomView] = MemberSourceSpec.Independent()
             .Required("View"),

@@ -8,7 +8,7 @@ namespace GrouperLib.Test;
 /// the document's own fields, the store/source location cross-check, the per-rule value regexes,
 /// and the custom validators.
 ///
-/// Companion to <see cref="DocumentValidatorRuleSetTest"/>, which covers rule-name combinations.
+/// Companion to <see cref="DocumentValidatorRulesTest"/>, which covers rule-name combinations.
 /// Both exist to make the refactor in docs/plans/2-validation-refactor.md provably
 /// behaviour-preserving.
 /// </summary>
@@ -163,32 +163,23 @@ public class DocumentValidatorTest
 
     // ---- custom validators --------------------------------------------------------------
 
+    /// <summary>
+    /// All three group-member sources attach the same <c>SelfReferenceValidator</c>. ExoGroup was
+    /// the last to get it: a distribution group could previously list itself as its own member
+    /// source where the Entra ID and on-premises equivalents rejected it. That was an oversight
+    /// rather than a policy, closed after confirming no stored document relied on it -- so this
+    /// asserting three sources rather than two is a deliberate behaviour change.
+    /// </summary>
     [Theory]
     [InlineData(GroupMemberSource.AzureAdGroup, GroupStore.AzureAd)]
     [InlineData(GroupMemberSource.OnPremAdGroup, GroupStore.OnPremAd)]
+    [InlineData(GroupMemberSource.ExoGroup, GroupStore.Exo)]
     public void TestGroupCannotBeItsOwnMemberSource(GroupMemberSource source, GroupStore store)
     {
         List<ValidationError> errors = Validate(Document(
             store: store, source: source, ruleName: "Group", ruleValue: groupId.ToString()));
 
         Assert.Contains(ResourceString.ValidationErrorSourceGroupSameAsTarget, errors.Select(e => e.ErrorId));
-    }
-
-    /// <summary>
-    /// Characterizes a known gap: <see cref="GroupMemberSource.ExoGroup"/> has no self-reference
-    /// validator, so a distribution group may list itself as its own member source where the
-    /// Entra ID and on-premises equivalents reject it. Closing this is a decision point in
-    /// docs/plans/2-validation-refactor.md -- it would start rejecting documents that validate
-    /// today. If this test starts failing, the gap was closed deliberately; update it.
-    /// </summary>
-    [Fact]
-    public void TestExoGroupSelfReferenceIsCurrentlyAllowed()
-    {
-        List<ValidationError> errors = Validate(Document(
-            store: GroupStore.Exo, source: GroupMemberSource.ExoGroup,
-            ruleName: "Group", ruleValue: groupId.ToString()));
-
-        Assert.Empty(errors);
     }
 
     // ---- rule value regexes -------------------------------------------------------------
