@@ -18,18 +18,18 @@ internal static partial class DocumentValidator
 
         public bool InAnyRuleSet(string? ruleName)
         {
-            return RuleSets.Any(rs => rs.Any(r => r.IEquals(ruleName)));
+            return RuleSets.Any(rs => rs.Any(r => r.Equals(ruleName)));
         }
 
         public bool HasMatchingRuleSet(IEnumerable<string?> rules)
         {
-            var rulesHashSet = new HashSet<string?>(rules, StringComparer.OrdinalIgnoreCase);
+            var rulesHashSet = new HashSet<string?>(rules);
             return RuleSets.Any(ruleSet => ruleSet.All(rulesHashSet.Contains) && rulesHashSet.Count == ruleSet.Length);
         }
 
         public bool IsMultipleRulesAllowed(string? ruleName)
         {
-            return MultipleRulesAllowed.Any(r => r.IEquals(ruleName));
+            return MultipleRulesAllowed.Any(r => r.Equals(ruleName));
         }
     }
     
@@ -258,7 +258,7 @@ internal static partial class DocumentValidator
             validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Rules), ResourceString.ValidationErrorMemberObjectHasNoRules));
             return;
         }
-        var rules = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+        var rules = new Dictionary<string, HashSet<string>>();
         if (!memberSources.TryGetValue(memberSource, out DocumentMemberValidationRules? memberSourceInfo))
         {
             validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Source), ResourceString.ValidationErrorInvalidMemberSource, memberSource));

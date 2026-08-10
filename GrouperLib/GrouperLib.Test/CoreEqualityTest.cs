@@ -103,14 +103,18 @@ public class CoreEqualityTest
         Assert.False(rule.Equals(null));
     }
 
-    /// <summary>Rule names and values compare case-insensitively.</summary>
+    /// <summary>
+    /// Rule names compare case-sensitively -- the document is the contract and the name has to be
+    /// spelled the way the validator declares it. Values stay case-insensitive.
+    /// </summary>
     [Fact]
-    public void TestDocumentRuleComparisonIsCaseInsensitive()
+    public void TestDocumentRuleComparisonIsNameSensitiveAndValueInsensitive()
     {
-        Assert.Equal(new GrouperDocumentRule("Upn", "A@Example.com"), new GrouperDocumentRule("UPN", "a@example.com"));
+        Assert.NotEqual(new GrouperDocumentRule("Upn", "a@example.com"), new GrouperDocumentRule("UPN", "a@example.com"));
+        Assert.Equal(new GrouperDocumentRule("Upn", "A@Example.com"), new GrouperDocumentRule("Upn", "a@example.com"));
         Assert.Equal(
             new GrouperDocumentRule("Upn", "A@Example.com").GetHashCode(),
-            new GrouperDocumentRule("UPN", "a@example.com").GetHashCode());
+            new GrouperDocumentRule("Upn", "a@example.com").GetHashCode());
     }
 
     /// <summary>Null name or value is coerced to empty rather than throwing.</summary>

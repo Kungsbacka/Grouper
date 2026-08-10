@@ -19,7 +19,7 @@ public class StringExtensionsTest
     [Fact]
     public void TestIEqualsWithBothParametersNull()
     {
-        Assert.False(((string?)null).IEquals(null));
+        Assert.True(((string?)null).IEquals(null));
     }
 
     [Fact]

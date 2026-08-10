@@ -30,20 +30,15 @@ public sealed class GrouperDocumentRule
         {
             return false;
         }
-        return Name.IEquals(rule.Name) && Value.IEquals(rule.Value);
+        return Name.Equals(rule.Name) && Value.IEquals(rule.Value);
     }
 
     public override int GetHashCode()
     {
-        // https://stackoverflow.com/questions/1646807/quick-and-simple-hash-code-combinations
-        // unchecked to allow integer overflow
-        unchecked
-        {
-            int hash = 17;
-            hash = hash * 31 + StringComparer.OrdinalIgnoreCase.GetHashCode(Name);
-            hash = hash * 31 + StringComparer.OrdinalIgnoreCase.GetHashCode(Value);
-            return hash;
-        }
+        HashCode hash = new();
+        hash.Add(Name);
+        hash.Add(Value, StringComparer.OrdinalIgnoreCase);
+        return hash.ToHashCode();
     }
 
     public override string ToString()
