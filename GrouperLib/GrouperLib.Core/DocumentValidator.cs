@@ -4,172 +4,13 @@ using System.Text.RegularExpressions;
 
 namespace GrouperLib.Core;
 
+/// <summary>
+/// The validation engine. Every check here is shared by all member sources; what each source
+/// permits is declared in DocumentValidator.Sources.cs. If a check in this file needs to know
+/// which source it is looking at, something belongs in a spec instead.
+/// </summary>
 internal static partial class DocumentValidator
 {
-    private class DocumentMemberValidationRules
-    {
-        public ResourceLocation Location { get; init; }
-        public string[][] RuleSets { get; init; } = [];
-        public string[] MultipleRulesAllowed { get; init; } = [];
-        public Dictionary<string, Regex> ValidationRules { get; init; } = [];
-        public ICustomValidator[] CustomValidators { get; init; } = [];
-
-        public bool InAnyRuleSet(string? ruleName)
-        {
-            return RuleSets.Any(rs => rs.Any(r => r.Equals(ruleName)));
-        }
-
-        public bool HasMatchingRuleSet(IEnumerable<string?> rules)
-        {
-            var rulesHashSet = new HashSet<string?>(rules);
-            return RuleSets.Any(ruleSet => ruleSet.All(rulesHashSet.Contains) && rulesHashSet.Count == ruleSet.Length);
-        }
-
-        public bool IsMultipleRulesAllowed(string? ruleName)
-        {
-            return MultipleRulesAllowed.Any(r => r.Equals(ruleName));
-        }
-    }
-    
-    private static readonly Dictionary<GroupStore, ResourceLocation> storeLocations = new() {
-        { GroupStore.OnPremAd, ResourceLocation.OnPrem },
-        { GroupStore.AzureAd, ResourceLocation.Azure },
-        { GroupStore.Exo, ResourceLocation.Azure },
-        { GroupStore.OpenE, ResourceLocation.OnPrem }
-    };
-
-    private static readonly Dictionary<GroupMemberSource, DocumentMemberValidationRules> memberSources = new()
-    {
-        { GroupMemberSource.Personalsystem, new DocumentMemberValidationRules()
-            {
-                Location = ResourceLocation.Independent,
-                RuleSets =
-                [
-                    ["Organisation"],
-                    ["Befattning"],
-                    ["Organisation", "Befattning"],
-                    ["Organisation", "IncludeManager"],
-                    ["Organisation", "Befattning", "IncludeManager"]
-                ],
-                ValidationRules = new Dictionary<string, Regex>()
-                {
-                    {"Organisation", PersonecIdRegex()},
-                    {"IncludeManager", TrueFalseRegex()}
-                },
-                MultipleRulesAllowed = ["Befattning"]
-            }
-        },
-        { GroupMemberSource.Elevregister, new DocumentMemberValidationRules()
-            {
-                Location = ResourceLocation.Independent,
-                RuleSets =
-                [
-                    ["Roll"],
-                    ["Enhet"],
-                    ["Roll", "Enhet"],
-                    ["Klass"],
-                    ["Roll", "Klass"],
-                    ["Enhet", "Klass"],
-                    ["Roll", "Enhet", "Klass"],
-                    ["Grupp"],
-                    ["Roll", "Grupp"],
-                    ["Enhet", "Grupp"],
-                    ["Roll", "Enhet", "Grupp"],
-                    ["Skolform"],
-                    ["Roll", "Skolform"],
-                    ["Enhet", "Skolform"],
-                    ["Roll", "Enhet", "Skolform"],
-                    ["Årskurs"],
-                    ["Roll", "Årskurs"],
-                    ["Enhet", "Årskurs"],
-                    ["Roll", "Enhet", "Årskurs"],
-                    ["Skolform", "Årskurs"],
-                    ["Roll", "Skolform", "Årskurs"],
-                    ["Enhet", "Skolform", "Årskurs"],
-                    ["Roll", "Enhet", "Skolform", "Årskurs"]
-                ],
-                ValidationRules = new Dictionary<string, Regex>()
-                {
-                    {"Skolform", EregSkolformRegex()},
-                    {"Enhet", EregEnhetIdRegex()},
-                    {"Klass", EregKlassIdRegex()},
-                    {"Grupp", EregGruppIdRegex()},
-                    {"Årskurs", EregArskursRegex()},
-                    {"Roll", EregRollRegex()}
-                },
-                MultipleRulesAllowed = ["Årskurs"]
-            }
-        },
-        { GroupMemberSource.OnPremAdGroup, new DocumentMemberValidationRules()
-            {
-                Location = ResourceLocation.OnPrem,
-                RuleSets =
-                [
-                    ["Group"]
-                ],
-                ValidationRules = new Dictionary<string, Regex>()
-                {
-                    {"Group", GuidRegex()}
-                },
-                CustomValidators =
-                [
-                    new OnPremAdValidator()
-                ]
-            }
-        },
-        { GroupMemberSource.OnPremAdQuery, new DocumentMemberValidationRules()
-            {
-                Location = ResourceLocation.OnPrem,
-                RuleSets =
-                [
-                    ["LdapFilter"],
-                    ["LdapFilter", "SearchBase"]
-                ]
-            }
-        },
-        { GroupMemberSource.AzureAdGroup, new DocumentMemberValidationRules()
-            {
-                Location = ResourceLocation.Azure,
-                RuleSets = [["Group"]],
-                ValidationRules = new Dictionary<string, Regex>()
-                {
-                    {"Group", GuidRegex()}
-                },
-                CustomValidators =
-                [
-                    new AzureAdValidator()
-                ]
-            }
-        },
-        { GroupMemberSource.ExoGroup, new DocumentMemberValidationRules()
-            {
-                Location = ResourceLocation.Azure,
-                RuleSets = [["Group"]],
-                ValidationRules = new Dictionary<string, Regex>()
-                {
-                    {"Group", GuidRegex()}
-                }
-            }
-        },
-        { GroupMemberSource.CustomView, new DocumentMemberValidationRules()
-            {
-                Location = ResourceLocation.Independent,
-                RuleSets = [["View"]]
-            }
-        },
-        { GroupMemberSource.Static, new DocumentMemberValidationRules()
-            {
-                Location = ResourceLocation.Independent,
-                RuleSets = [["Upn"]],
-                CustomValidators =
-                [
-                    new UpnValidator()
-                ],
-                MultipleRulesAllowed = ["Upn"]
-            }
-        }
-    };
-
     private static void InternalValidateDocument(GrouperDocument document, List<ValidationError> validationErrors)
     {
         if (document.Id == Guid.Empty)
@@ -200,9 +41,9 @@ internal static partial class DocumentValidator
         }
         foreach (GrouperDocumentMember documentMember in document.Members)
         {
-            if (memberSources.TryGetValue(documentMember.Source, out DocumentMemberValidationRules? memberSourceInfo))
+            if (memberSources.TryGetValue(documentMember.Source, out MemberSourceSpec? spec))
             {
-                foreach (ICustomValidator validator in memberSourceInfo.CustomValidators)
+                foreach (ICustomValidator validator in spec.CustomValidators)
                 {
                     validator.Validate(document, documentMember, validationErrors);
                 }
@@ -219,9 +60,9 @@ internal static partial class DocumentValidator
         }
         foreach (GrouperDocumentMember member in documentMembers)
         {
-            if (memberSources.TryGetValue(member.Source, out DocumentMemberValidationRules? memberSourceInfo))
+            if (memberSources.TryGetValue(member.Source, out MemberSourceSpec? spec))
             {
-                if (memberSourceInfo.Location != ResourceLocation.Independent && memberSourceInfo.Location != groupLocation)
+                if (spec.Location != ResourceLocation.Independent && spec.Location != groupLocation)
                 {
                     validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Source), ResourceString.ValidationErrorInvalidCombinationOfGroupStoreAndMemberSource, groupStore, member.Source));
                 }
@@ -240,7 +81,9 @@ internal static partial class DocumentValidator
         {
             if (members.Add(member))
             {
-                InternalValidateRules(member.Rules, member.Source, validationErrors);
+                // Every source resolved in the loop above, and the gate on it returned if any did
+                // not -- so the indexer cannot miss here.
+                InternalValidateRules(member.Rules, member.Source, memberSources[member.Source], validationErrors);
             }
             else
             {
@@ -249,19 +92,16 @@ internal static partial class DocumentValidator
         }
     }
 
-    private static void InternalValidateRules(IReadOnlyCollection<GrouperDocumentRule> documentRules, GroupMemberSource memberSource, List<ValidationError> validationErrors)
+    private static void InternalValidateRules(IReadOnlyCollection<GrouperDocumentRule> documentRules, GroupMemberSource memberSource, MemberSourceSpec spec, List<ValidationError> validationErrors)
     {
         if (documentRules.Count == 0)
         {
             validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Rules), ResourceString.ValidationErrorMemberObjectHasNoRules));
             return;
         }
-        var rules = new Dictionary<string, HashSet<string>>();
-        if (!memberSources.TryGetValue(memberSource, out DocumentMemberValidationRules? memberSourceInfo))
-        {
-            validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Source), ResourceString.ValidationErrorInvalidMemberSource, memberSource));
-            return;
-        }
+        // Rule names are matched ordinally; rule values are not. A name spelled with the wrong
+        // casing is an unrecognised name, which is what stops it from missing its value regex.
+        var rules = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         foreach (GrouperDocumentRule rule in documentRules)
         {
             if (string.IsNullOrEmpty(rule.Name))
@@ -272,7 +112,7 @@ internal static partial class DocumentValidator
             {
                 if (rules.TryGetValue(rule.Name, out HashSet<string>? values))
                 {
-                    if (!memberSourceInfo.IsMultipleRulesAllowed(rule.Name))
+                    if (!spec.IsRepeatable(rule.Name))
                     {
                         validationErrors.Add(new ValidationError(nameof(rule.Name), ResourceString.ValidationErrorDuplicateRuleName, rule.Name));
                     }
@@ -285,7 +125,7 @@ internal static partial class DocumentValidator
                 {
                     rules.Add(rule.Name, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { rule.Value });
                 }
-                if (!memberSourceInfo.InAnyRuleSet(rule.Name))
+                if (!spec.IsKnownName(rule.Name))
                 {
                     validationErrors.Add(new ValidationError(nameof(rule.Name), ResourceString.ValidationErrorInvalidRuleName, rule.Name, memberSource));
                 }
@@ -295,7 +135,9 @@ internal static partial class DocumentValidator
         {
             return;
         }
-        if (!memberSourceInfo.HasMatchingRuleSet(rules.Keys))
+        // Every name is recognised by now, so the clauses only have to judge the combination.
+        var ruleNames = new HashSet<string>(rules.Keys, StringComparer.Ordinal);
+        if (spec.FirstUnsatisfied(ruleNames) is not null)
         {
             validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Rules), ResourceString.ValidationErrorInvalidCombinationOfRules, memberSource));
         }
@@ -305,7 +147,7 @@ internal static partial class DocumentValidator
             {
                 validationErrors.Add(new ValidationError(nameof(rule.Value), ResourceString.ValidationErrorRuleValueIsNullOrEmpty, rule.Name));
             }
-            else if (memberSourceInfo.ValidationRules.TryGetValue(rule.Name, out Regex? validationRegex))
+            else if (spec.TryGetPattern(rule.Name, out Regex? validationRegex))
             {
                 if (!validationRegex.IsMatch(rule.Value))
                 {
@@ -313,7 +155,6 @@ internal static partial class DocumentValidator
                 }
             }
         }
-
     }
 
     internal static GrouperDocument? DeserializeAndValidate(string json, List<ValidationError> validationErrors)
@@ -345,31 +186,4 @@ internal static partial class DocumentValidator
     {
         InternalValidateDocument(document, validationErrors);
     }
-
-    [GeneratedRegex("^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
-    private static partial Regex GuidRegex();
-
-    [GeneratedRegex("^011J[0-9A-Z]{8}$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
-    private static partial Regex PersonecIdRegex();
-
-    [GeneratedRegex("^(true|false)$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
-    private static partial Regex TrueFalseRegex();
-
-    [GeneratedRegex("^(ARA|ELOF|S_?[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}|[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12})$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
-    private static partial Regex EregEnhetIdRegex();
-
-    [GeneratedRegex("^(EG_?[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}|[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12})$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
-    private static partial Regex EregKlassIdRegex();
-
-    [GeneratedRegex("^(FG_?[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}|[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12})$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
-    private static partial Regex EregGruppIdRegex();
-    
-    [GeneratedRegex("^(Personal|Elev)$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
-    private static partial Regex EregRollRegex();
-    
-    [GeneratedRegex("^[0-9F]$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
-    private static partial Regex EregArskursRegex();
-    
-    [GeneratedRegex("^(FSK|GR|GRSÄR|GY|GYSÄR)$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
-    private static partial Regex EregSkolformRegex();
 }

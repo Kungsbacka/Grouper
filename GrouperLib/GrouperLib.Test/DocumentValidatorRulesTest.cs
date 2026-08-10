@@ -4,18 +4,14 @@ using GrouperLib.Language;
 namespace GrouperLib.Test;
 
 /// <summary>
-/// Characterization suite for the rule-set half of <c>DocumentValidator</c>.
+/// Characterization suite for the rules validation half of <c>DocumentValidator</c>.
 ///
 /// Every member source declares the exact *combinations* of rule names it accepts, so this
 /// enumerates **every subset** of each source's recognised names and asserts the accept/reject
 /// verdict against the combinations transcribed from <c>DocumentValidator.memberSources</c>.
 /// Values are always valid samples, so only the combination is under test.
-///
-/// This exists to make the validation refactor in docs/plans/2-validation-refactor.md provably
-/// behaviour-preserving: the enumerated tables there collapse into a handful of composable
-/// clauses, and this suite is what proves the two agree. Do not relax it into spot checks.
 /// </summary>
-public class DocumentValidatorRuleSetTest
+public class DocumentValidatorRulesTest
 {
     private static readonly Guid documentId = Guid.Parse("aa11bb22-cc33-dd44-ee55-ff6677889900");
     private static readonly Guid groupId = Guid.Parse("bb22cc33-dd44-ee55-ff66-778899001122");
