@@ -132,6 +132,9 @@
   <data name="ValidationCouldNotDeserializeJson" xml:space="preserve">
     <value>Kunde inte översätta JSON till ett Grouper-dokument. Kontrollera att JSON representerar ett Grouper dokument</value>
   </data>
+  <data name="ValidationErrorAtLeastOneRuleRequired" xml:space="preserve">
+    <value>Medlemskällan {0} kräver minst en av dessa regler: {1}</value>
+  </data>
   <data name="ValidationErrorDocumentIdNotValid" xml:space="preserve">
     <value>Dokument-ID saknas eller har fel format (ID: {0})</value>
   </data>
@@ -156,9 +159,6 @@
   <data name="ValidationErrorInvalidCombinationOfGroupStoreAndMemberSource" xml:space="preserve">
     <value>Kombinationen av gruppkatalog och medlemskälla är inte giltig (Group store: {0}, Member source: {1})</value>
   </data>
-  <data name="ValidationErrorInvalidCombinationOfRules" xml:space="preserve">
-    <value>Kombinationen av regler är inte tillåten för vald medlemskälla (Member source: {0})</value>
-  </data>
   <data name="ValidationErrorInvalidGroupStore" xml:space="preserve">
     <value>Gruppkatalog saknas eller är tomt (Group store: {0})</value>
   </data>
@@ -180,8 +180,17 @@
   <data name="ValidationErrorMemberObjectHasNoRules" xml:space="preserve">
     <value>Inga regler finns för medlemsobjektet</value>
   </data>
+  <data name="ValidationErrorMutuallyExclusiveRules" xml:space="preserve">
+    <value>Dessa regler kan inte användas tillsammans för medlemskällan {0}: {1}</value>
+  </data>
   <data name="ValidationErrorNoMemberObjects" xml:space="preserve">
     <value>Inga medlemsobjeckt finns</value>
+  </data>
+  <data name="ValidationErrorRequiredRuleMissing" xml:space="preserve">
+    <value>En obligatorisk regel saknas (Rule name: {0}, Member source: {1})</value>
+  </data>
+  <data name="ValidationErrorRuleRequiresAnotherRule" xml:space="preserve">
+    <value>Regeln {0} kan bara användas tillsammans med {1} (Member source: {2})</value>
   </data>
   <data name="ValidationErrorRuleValueDoesNotValidate" xml:space="preserve">
     <value>Regels värde är ogiltigt (Rule name: {0}, Rule value: {1})</value>

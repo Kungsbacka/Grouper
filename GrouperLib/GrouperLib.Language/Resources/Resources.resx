@@ -132,6 +132,9 @@
   <data name="ValidationCouldNotDeserializeJson" xml:space="preserve">
     <value>Unable to deserialize JSON to intermediate Grouper document. Check if JSON represents a Grouper document</value>
   </data>
+  <data name="ValidationErrorAtLeastOneRuleRequired" xml:space="preserve">
+    <value>Member source {0} requires at least one of these rule names: {1}</value>
+  </data>
   <data name="ValidationErrorDocumentIdNotValid" xml:space="preserve">
     <value>Document ID is missing or not a valid GUID (ID: {0})</value>
   </data>
@@ -156,9 +159,6 @@
   <data name="ValidationErrorInvalidCombinationOfGroupStoreAndMemberSource" xml:space="preserve">
     <value>Invalid combination of group store and member source (Group store: {0}, Member source: {1})</value>
   </data>
-  <data name="ValidationErrorInvalidCombinationOfRules" xml:space="preserve">
-    <value>This combination of rules is not valid for selected member source (Member source: {0})</value>
-  </data>
   <data name="ValidationErrorInvalidGroupStore" xml:space="preserve">
     <value>Group store is missing or invalid (Group store: {0})</value>
   </data>
@@ -180,8 +180,17 @@
   <data name="ValidationErrorMemberObjectHasNoRules" xml:space="preserve">
     <value>No rules found for member object</value>
   </data>
+  <data name="ValidationErrorMutuallyExclusiveRules" xml:space="preserve">
+    <value>These rule names cannot be used together for member source {0}: {1}</value>
+  </data>
   <data name="ValidationErrorNoMemberObjects" xml:space="preserve">
     <value>No member objects found</value>
+  </data>
+  <data name="ValidationErrorRequiredRuleMissing" xml:space="preserve">
+    <value>A required rule name is missing (Rule name: {0}, Member source: {1})</value>
+  </data>
+  <data name="ValidationErrorRuleRequiresAnotherRule" xml:space="preserve">
+    <value>Rule name {0} can only be used together with {1} (Member source: {2})</value>
   </data>
   <data name="ValidationErrorRuleValueDoesNotValidate" xml:space="preserve">
     <value>Rule value is invalid (Rule name: {0}, Rule value: {1})</value>

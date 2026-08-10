@@ -135,11 +135,14 @@ internal static partial class DocumentValidator
         {
             return;
         }
-        // Every name is recognised by now, so the clauses only have to judge the combination.
+        // Every name is recognised by now, so the clauses only have to judge the combination. The
+        // failing clause names its own reason -- only the first is reported, so an admin fixes one
+        // problem at a time rather than reading a list that may partly resolve itself.
         var ruleNames = new HashSet<string>(rules.Keys, StringComparer.Ordinal);
-        if (spec.FirstUnsatisfied(ruleNames) is not null)
+        if (spec.FirstUnsatisfied(ruleNames) is RuleClause unsatisfied)
         {
-            validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Rules), ResourceString.ValidationErrorInvalidCombinationOfRules, memberSource));
+            (string errorId, object?[] args) = unsatisfied.DescribeFailure(ruleNames, memberSource);
+            validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Rules), errorId, args));
         }
         foreach (GrouperDocumentRule rule in documentRules)
         {

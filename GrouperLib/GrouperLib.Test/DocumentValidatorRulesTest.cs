@@ -171,7 +171,7 @@ public class DocumentValidatorRulesTest
     }
 
     /// <summary>
-    /// A rule combination that is individually recognised but not a legal *set* reports the
+    /// A rule combination that is individually recognised but not a legal *set* reports a
     /// combination error specifically, not a per-name error.
     /// </summary>
     [Fact]
@@ -181,7 +181,67 @@ public class DocumentValidatorRulesTest
 
         List<ValidationError> errors = Validate(Build(spec, ["Klass", "Skolform"]));
 
-        Assert.Contains(ResourceString.ValidationErrorInvalidCombinationOfRules, errors.Select(e => e.ErrorId));
+        Assert.Contains(ResourceString.ValidationErrorMutuallyExclusiveRules, errors.Select(e => e.ErrorId));
+        Assert.DoesNotContain(ResourceString.ValidationErrorInvalidRuleName, errors.Select(e => e.ErrorId));
+    }
+
+    // ---- why a combination was rejected -------------------------------------------------
+
+    /// <summary>
+    /// Each clause explains its own failure, so the four ways a combination can be illegal produce
+    /// four distinct messages. There is no generic "invalid combination" message to fall back to.
+    ///
+    /// Every case here rejected the document before this change too -- only the message moved.
+    /// <see cref="TestRuleCombinationVerdictMatchesTheEnumeratedRuleSets"/> is what proves the
+    /// verdicts themselves did not.
+    /// </summary>
+    [Theory]
+    // Nothing from the required-or-optional pair: SearchBase without its LdapFilter.
+    [InlineData(GroupMemberSource.OnPremAdQuery, "SearchBase", ResourceString.ValidationErrorRequiredRuleMissing)]
+    // Neither of the two names that select a population.
+    [InlineData(GroupMemberSource.Personalsystem, "IncludeManager", ResourceString.ValidationErrorAtLeastOneRuleRequired)]
+    // IncludeManager present, but nothing for it to be relative to.
+    [InlineData(GroupMemberSource.Personalsystem, "Befattning,IncludeManager", ResourceString.ValidationErrorRuleRequiresAnotherRule)]
+    // Two competing ways to pick a cohort.
+    [InlineData(GroupMemberSource.Elevregister, "Klass,Grupp", ResourceString.ValidationErrorMutuallyExclusiveRules)]
+    [InlineData(GroupMemberSource.Elevregister, "Klass,Skolform,Årskurs", ResourceString.ValidationErrorMutuallyExclusiveRules)]
+    public void TestIllegalCombinationReportsWhichClauseFailed(
+        GroupMemberSource source, string ruleNames, string expectedErrorId)
+    {
+        List<ValidationError> errors = Validate(Build(SpecFor(source), ruleNames.Split(',')));
+
+        Assert.Contains(expectedErrorId, errors.Select(e => e.ErrorId));
+    }
+
+    /// <summary>
+    /// The message has to name the rules involved to be worth more than the generic one it
+    /// replaced, so assert the substituted arguments rather than just the id.
+    /// </summary>
+    [Fact]
+    public void TestMutuallyExclusiveMessageNamesOneRulePerCollidingGroup()
+    {
+        SourceSpec spec = SpecFor(GroupMemberSource.Elevregister);
+
+        // Skolform and Årskurs are one group, so the collision is Klass against Skolform -- Årskurs
+        // is not a third party to it.
+        string message = Validate(Build(spec, ["Klass", "Skolform", "Årskurs"]))
+            .Single(e => e.ErrorId == ResourceString.ValidationErrorMutuallyExclusiveRules).ErrorMessage;
+
+        Assert.Contains("Klass", message);
+        Assert.Contains("Skolform", message);
+        Assert.DoesNotContain("Årskurs", message);
+    }
+
+    [Fact]
+    public void TestRequiresMessageNamesBothTheDependentAndThePrerequisite()
+    {
+        SourceSpec spec = SpecFor(GroupMemberSource.Personalsystem);
+
+        string message = Validate(Build(spec, ["Befattning", "IncludeManager"]))
+            .Single(e => e.ErrorId == ResourceString.ValidationErrorRuleRequiresAnotherRule).ErrorMessage;
+
+        Assert.Contains("IncludeManager", message);
+        Assert.Contains("Organisation", message);
     }
 
     // ---- repeatable vs single-occurrence rule names -------------------------------------
@@ -255,7 +315,7 @@ public class DocumentValidatorRulesTest
         List<ValidationError> errors = Validate(document);
 
         Assert.Contains(ResourceString.ValidationErrorInvalidRuleName, errors.Select(e => e.ErrorId));
-        Assert.DoesNotContain(ResourceString.ValidationErrorInvalidCombinationOfRules, errors.Select(e => e.ErrorId));
+        Assert.DoesNotContain(ResourceString.ValidationErrorAtLeastOneRuleRequired, errors.Select(e => e.ErrorId));
     }
 
     /// <summary>

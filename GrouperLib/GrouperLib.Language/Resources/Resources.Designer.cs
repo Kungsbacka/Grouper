@@ -106,6 +106,15 @@ namespace GrouperLib.Language {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Member source {0} requires at least one of these rule names: {1}.
+        /// </summary>
+        public static string ValidationErrorAtLeastOneRuleRequired {
+            get {
+                return ResourceManager.GetString("ValidationErrorAtLeastOneRuleRequired", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Document ID is missing or not a valid GUID (ID: {0}).
         /// </summary>
         public static string ValidationErrorDocumentIdNotValid {
@@ -178,15 +187,6 @@ namespace GrouperLib.Language {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to This combination of rules is not valid for selected member source (Member source: {0}).
-        /// </summary>
-        public static string ValidationErrorInvalidCombinationOfRules {
-            get {
-                return ResourceManager.GetString("ValidationErrorInvalidCombinationOfRules", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Group store is missing or invalid (Group store: {0}).
         /// </summary>
         public static string ValidationErrorInvalidGroupStore {
@@ -250,6 +250,15 @@ namespace GrouperLib.Language {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to These rule names cannot be used together for member source {0}: {1}.
+        /// </summary>
+        public static string ValidationErrorMutuallyExclusiveRules {
+            get {
+                return ResourceManager.GetString("ValidationErrorMutuallyExclusiveRules", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to No member objects found.
         /// </summary>
         public static string ValidationErrorNoMemberObjects {
@@ -258,6 +267,24 @@ namespace GrouperLib.Language {
             }
         }
         
+        /// <summary>
+        ///   Looks up a localized string similar to A required rule name is missing (Rule name: {0}, Member source: {1}).
+        /// </summary>
+        public static string ValidationErrorRequiredRuleMissing {
+            get {
+                return ResourceManager.GetString("ValidationErrorRequiredRuleMissing", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Rule name {0} can only be used together with {1} (Member source: {2}).
+        /// </summary>
+        public static string ValidationErrorRuleRequiresAnotherRule {
+            get {
+                return ResourceManager.GetString("ValidationErrorRuleRequiresAnotherRule", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to Rule value is invalid (Rule name: {0}, Rule value: {1}).
         /// </summary>

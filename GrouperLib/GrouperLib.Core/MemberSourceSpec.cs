@@ -23,13 +23,29 @@ internal sealed class MemberSourceSpec
     public static MemberSourceSpec Azure()       => new(ResourceLocation.Azure);
 
     public MemberSourceSpec Required(string name) => Add(new RequiredClause(name));
-    public MemberSourceSpec Optional(params string[] names) => Add(new OptionalClause(names));
     public MemberSourceSpec AtLeastOneOf(params string[] names) => Add(new AtLeastOneOfClause(names));
     public MemberSourceSpec Requires(string dependent, string prerequisite) => Add(new RequiresClause(dependent, prerequisite));
     public MemberSourceSpec MutuallyExclusiveGroups(params string[][] groups) => Add(new MutuallyExclusiveGroupsClause(groups));
     public MemberSourceSpec Repeatable(string name) { _repeatable.Add(name); return this; }
     public MemberSourceSpec Matches(string name, Regex pattern) { _patterns.Add(name, pattern); return this; }
     public MemberSourceSpec Custom(ICustomValidator validator) { _custom.Add(validator); return this; }
+
+    /// <summary>
+    /// Declares rule names that no clause constrains -- recognised, but legal in any combination.
+    /// The one path that adds to the vocabulary without going through a clause.
+    /// </summary>
+    public MemberSourceSpec Optional(params string[] names)
+    {
+        if (names.Length == 0)
+        {
+            throw new ArgumentException("Declare at least one rule name.", nameof(names));
+        }
+        foreach (string name in names)
+        {
+            _names.Add(name);
+        }
+        return this;
+    }
 
     private MemberSourceSpec Add(RuleClause clause)
     {
