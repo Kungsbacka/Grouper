@@ -4,11 +4,6 @@ namespace GrouperLib.Store;
 
 internal static class Helpers
 {
-    public static bool IEquals(this string? left, string right)
-    {
-        return left is not null && left.Equals(right, StringComparison.OrdinalIgnoreCase);
-    }
-
     public static X509Certificate2 GetCertificateFromFile(string fileName, string password)
     {
         return X509CertificateLoader.LoadPkcs12FromFile(fileName, password, X509KeyStorageFlags.PersistKeySet);

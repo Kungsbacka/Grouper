@@ -4,12 +4,6 @@ namespace GrouperLib.Database;
 
 internal static class Helpers
 {
-    public static bool IEquals(this string? value, string other)
-    {
-        // This deviates from standard string.Equals which will throw if the input string is null
-        return value != null && value.Equals(other, StringComparison.OrdinalIgnoreCase);
-    }
-
     public static string? NullIfEmpty(this string? str)
     {
         return string.IsNullOrEmpty(str) ? null : str;
