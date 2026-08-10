@@ -6,8 +6,6 @@ namespace GrouperLib.Core;
 
 internal static partial class DocumentValidator
 {
-    private enum ResourceLocation { Independent, OnPrem, Azure }
-
     private class DocumentMemberValidationRules
     {
         public ResourceLocation Location { get; init; }

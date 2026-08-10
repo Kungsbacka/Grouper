@@ -166,3 +166,11 @@ public enum LogLevel
     /// </summary>
     Error = 3
 }
+
+// Used by the validator only
+internal enum ResourceLocation
+{ 
+    Independent,
+    OnPrem,
+    Azure
+}
