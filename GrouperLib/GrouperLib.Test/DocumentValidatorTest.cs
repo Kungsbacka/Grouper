@@ -426,7 +426,7 @@ public class DocumentValidatorTest
     ///
     /// Only trailing junk is asserted. Leading junk lands in the *user-name* half, which is
     /// validated by a character blocklist rather than by this regex -- see
-    /// <see cref="TestUpnUserNameAcceptsWhitespace"/>.
+    /// <see cref="TestUpnUserNameRejectsWhitespace"/>.
     /// </summary>
     [Theory]
     [InlineData("member@example.com")]
@@ -439,22 +439,36 @@ public class DocumentValidatorTest
     }
 
     /// <summary>
-    /// Characterizes the user-name half of the UPN check, which is a character blocklist rather
-    /// than a pattern. <c>UpnValidator.invalidCharsInUserName</c> lists
-    /// <c>!@#$%^&amp;*()+=[]{}\/|;:"&lt;&gt;?,</c> -- so whitespace, apostrophes and other
-    /// characters that cannot appear in a real UPN are accepted. "junk member@example.com"
-    /// validates today.
+    /// The user-name half of the UPN check is a character blocklist rather than a pattern:
+    /// <c>UpnValidator.invalidCharsInUserName</c>. Space is now part of that list, so a UPN with
+    /// whitespace in the local part is rejected.
     ///
-    /// Milder than the anchoring gaps and the same practical outcome: the document validates and
-    /// then matches nobody. Recorded, not fixed -- tightening this is a blocklist-versus-allowlist
-    /// decision, not a one-character anchor. If these flip to rejecting, the check was tightened;
-    /// update the expectations.
+    /// This used to be accepted, and the practical consequence was that "junk member@example.com"
+    /// validated and then matched nobody, so the member object silently contributed no members.
+    /// A leading space was added to the blocklist to close that.
     /// </summary>
     [Theory]
     [InlineData("junk member@example.com")]
     [InlineData("first last@example.com")]
+    [InlineData(" leading@example.com")]
+    [InlineData("trailing @example.com")]
+    public void TestUpnUserNameRejectsWhitespace(string upn)
+    {
+        Assert.Contains(ResourceString.ValidationErrorInvalidUpn,
+            Validate(Document(ruleName: "Upn", ruleValue: upn)).Select(e => e.ErrorId));
+    }
+
+    /// <summary>
+    /// The blocklist is still a blocklist, not an allowlist, so characters it does not name remain
+    /// accepted. An apostrophe is the case that matters, because names like O'Brien are legitimate
+    /// in a UPN and tightening the check must not have caught them.
+    /// </summary>
+    [Theory]
     [InlineData("o'brien@example.com")]
-    public void TestUpnUserNameAcceptsWhitespace(string upn)
+    [InlineData("first.last@example.com")]
+    [InlineData("first-last@example.com")]
+    [InlineData("first_last@example.com")]
+    public void TestUpnUserNameAcceptsCharactersOutsideTheBlocklist(string upn)
     {
         Assert.Empty(Validate(Document(ruleName: "Upn", ruleValue: upn)));
     }
