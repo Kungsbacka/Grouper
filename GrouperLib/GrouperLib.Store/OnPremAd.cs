@@ -7,8 +7,9 @@ using System.Runtime.Versioning;
 namespace GrouperLib.Store;
 
 [SupportedOSPlatform("windows")]
-public class OnPremAd : IMemberSource, IGroupStore
+public sealed class OnPremAd : IMemberSource, IGroupStore, IDisposable
 {
+    private bool _disposed;
     private readonly IMemoryCache _dnCache;
     private readonly Ldap _ldap;
     private readonly GroupMemberSource[] _supportedGroupMemberSources =
@@ -196,5 +197,17 @@ public class OnPremAd : IMemberSource, IGroupStore
             displayName ??= identity.ToString();
             memberCollection.Add(new GroupMember(identity, displayName, GroupMemberType.OnPremAd));
         }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _dnCache.Dispose();
+        _ldap.Dispose();
+        _disposed = true;
     }
 }

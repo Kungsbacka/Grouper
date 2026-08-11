@@ -6,15 +6,12 @@ internal static class Helpers
 {
     public static X509Certificate2 GetCertificateFromFile(string fileName, string password)
     {
-        return X509CertificateLoader.LoadPkcs12FromFile(fileName, password, X509KeyStorageFlags.PersistKeySet);
+        return X509CertificateLoader.LoadPkcs12FromFile(fileName, password);
     }
 
     public static X509Certificate2 GetCertificateFromBase64String(string base64String, string password)
     {
-        return X509CertificateLoader.LoadPkcs12(
-            Convert.FromBase64String(base64String), 
-            password,
-            X509KeyStorageFlags.PersistKeySet);
+        return X509CertificateLoader.LoadPkcs12(Convert.FromBase64String(base64String), password);
     }
 
     public static X509Certificate2 GetCertificateFromStore(string thumbprint, StoreLocation storeLocation)

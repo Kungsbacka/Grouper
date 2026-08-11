@@ -7,7 +7,7 @@ using System.Runtime.Versioning;
 namespace GrouperLib.Backend;
 
 [SupportedOSPlatform("windows")]
-public class Grouper : IDisposable
+public sealed class Grouper : IDisposable
 {
     private ILogger? _logger;
     private bool _disposed;
@@ -284,30 +284,37 @@ public class Grouper : IDisposable
         throw new InvalidOperationException($"There is no group store added for {document.Store}");
     }
 
-    protected virtual void Dispose(bool disposing)
+    public void Dispose()
     {
         if (_disposed)
         {
             return;
         }
 
-        if (disposing)
+        foreach (var memberSource in _memberSources.Values)
         {
-            if (_memberSources.TryGetValue(GroupMemberSource.ExoGroup, out IMemberSource? source))
+            if (memberSource is IDisposable disposable)
             {
-                ((Exo)source).Dispose();
-            }
-            if (_groupStores.TryGetValue(GroupStore.Exo, out IGroupStore? store))
-            {
-                ((Exo)store).Dispose();
+                disposable.Dispose();
             }
         }
-        _disposed = true;
-    }
 
-    public void Dispose()
-    {
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
+        foreach (var ownerSource in _ownerSources.Values)
+        {
+            if (ownerSource is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+        }
+
+        foreach (var store in _groupStores.Values)
+        {
+            if (store is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+        }
+
+        _disposed = true;
     }
 }

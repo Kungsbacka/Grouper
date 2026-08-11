@@ -68,12 +68,11 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
 
     public Exo(string tenantId, string clientId, X509Certificate2 certificate)
     {
-        // Don't save the certificate in _certificate since we don't own it
-        // and should not dispose it.
         tenantId = RequireGuidString(tenantId, nameof(tenantId));
         clientId = RequireGuidString(clientId, nameof(clientId));
         _httpClient = CreateHttpClient(new ClientCertificateCredential(tenantId, clientId, certificate));
         _tenantId = tenantId;
+        // Don't save the certificate in _certificate since we don't own it and should not dispose it.
     }
 
     public Exo(GrouperConfiguration config)
@@ -409,24 +408,15 @@ public sealed partial class Exo : IMemberSource, IGroupStore, IDisposable
 
     public IEnumerable<GroupStore> GetSupportedGroupStores() => [GroupStore.Exo];
 
-    private void Dispose(bool disposing)
+    public void Dispose()
     {
         if (_disposed)
         {
             return;
         }
-
-        if (disposing)
-        {
-            _httpClient?.Dispose();
-            _certificate?.Dispose();
-        }
+        _httpClient.Dispose();
+        _certificate?.Dispose();
         _disposed = true;
-    }
-
-    public void Dispose()
-    {
-        Dispose(disposing: true);
     }
 
     [GeneratedRegex("object '([^']+)' couldn't be found", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]

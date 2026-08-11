@@ -3,12 +3,13 @@ using System.Net;
 
 namespace GrouperLib.Store;
 
-internal class Ldap
+internal sealed class Ldap : IDisposable
 {
 
     private LdapConnection? _ldapConnection;
     private string? _defaultNamingContext;
     private string? _ldapServer;
+    private bool _disposed;
     private readonly NetworkCredential? _credential;
 
     private const string CatchAllFilter = "(objectClass=*)";
@@ -96,12 +97,12 @@ internal class Ldap
 
     public async Task<SearchResponse> SendSearchRequestAsync(SearchRequest request)
     {
-        return (SearchResponse)(await SendRequestAsync(request));
+        return (SearchResponse)await SendRequestAsync(request);
     }
 
     public async Task<ModifyResponse> SendModifyRequestAsync(ModifyRequest request)
     {
-        return (ModifyResponse)(await SendRequestAsync(request));
+        return (ModifyResponse)await SendRequestAsync(request);
     }
 
     private async Task<DirectoryResponse> SendRequestAsync(DirectoryRequest request)
@@ -120,7 +121,7 @@ internal class Ldap
         {
             return (Server: _ldapServer, DefaultNamingContext: _defaultNamingContext);
         }
-        LdapConnection ldapConnection = new(new LdapDirectoryIdentifier(null));
+        using LdapConnection ldapConnection = new(new LdapDirectoryIdentifier(null));
         SearchRequest searchRequest = new(
             distinguishedName: null,
             CatchAllFilter,
@@ -128,11 +129,13 @@ internal class Ldap
             DnsHostNameAttribute,
             DefaultNamingContextAttribute
         );
+        
         SearchResponse searchResponse = (SearchResponse)ldapConnection.SendRequest(searchRequest);
         _ldapServer = searchResponse.Entries[0].GetAsString(DnsHostNameAttribute) ??
                       throw new InvalidOperationException("Could not retrieve default LDAP server");
         _defaultNamingContext = searchResponse.Entries[0].GetAsString(DefaultNamingContextAttribute) ??
                                 throw new InvalidOperationException("Could not retrieve default naming context");
+
         return (Server: _ldapServer, DefaultNamingContext: _defaultNamingContext);
     }
 
@@ -158,5 +161,16 @@ internal class Ldap
             _ldapConnection.Credential = _credential;
         }
         return _ldapConnection;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _ldapConnection?.Dispose();
+        _disposed = true;
     }
 }

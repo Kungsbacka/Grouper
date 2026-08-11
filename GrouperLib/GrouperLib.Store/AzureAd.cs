@@ -12,10 +12,12 @@ using System.Text.RegularExpressions;
 namespace GrouperLib.Store;
 
 [SupportedOSPlatform("windows")]
-public sealed partial class AzureAd : IMemberSource, IGroupStore, IGroupOwnerSource
+public sealed partial class AzureAd : IMemberSource, IGroupStore, IGroupOwnerSource, IDisposable
 {
     private readonly TokenCredential _tokenCredential;
     private GraphServiceClient? _graphClient;
+    private bool _disposed;
+    private readonly X509Certificate2? _certificate;
 
     private static readonly Regex guidRegex = GuidRegex();
 
@@ -41,6 +43,7 @@ public sealed partial class AzureAd : IMemberSource, IGroupStore, IGroupOwnerSou
     {
         ValidateCommonParameters(tenantId, clientId);
         _tokenCredential = new ClientCertificateCredential(tenantId, clientId, certificate);
+        // Don't save the certificate in _certificate since we don't own it and should not dispose it.
     }
 
     public AzureAd(GrouperConfiguration config)
@@ -74,20 +77,14 @@ public sealed partial class AzureAd : IMemberSource, IGroupStore, IGroupOwnerSou
             }
             if (config.AzureAdCertificateFilePath is not null)
             {
-                _tokenCredential = new ClientCertificateCredential(
-                    tenantId,
-                    clientId,
-                    Helpers.GetCertificateFromFile(config.AzureAdCertificateFilePath, config.AzureAdCertificatePassword)
-                );
+                _certificate = Helpers.GetCertificateFromFile(config.AzureAdCertificateFilePath, config.AzureAdCertificatePassword);
+                _tokenCredential = new ClientCertificateCredential(tenantId, clientId, _certificate);
                 return;
             }
             if (config.AzureAdCertificateAsBase64 is not null)
             {
-                _tokenCredential = new ClientCertificateCredential(
-                    tenantId,
-                    clientId,
-                    Helpers.GetCertificateFromBase64String(config.AzureAdCertificateAsBase64, config.AzureAdCertificatePassword)
-                );
+                _certificate = Helpers.GetCertificateFromBase64String(config.AzureAdCertificateAsBase64, config.AzureAdCertificatePassword);
+                _tokenCredential = new ClientCertificateCredential(tenantId, clientId, _certificate);
                 return;
             }
         }
@@ -100,11 +97,8 @@ public sealed partial class AzureAd : IMemberSource, IGroupStore, IGroupOwnerSou
                     $"If certificate is loaded from store {nameof(config.AzureAdCertificateStoreLocation)} must be specified in the configuration."
                 );
             }
-            _tokenCredential = new ClientCertificateCredential(
-                tenantId,
-                clientId,
-                Helpers.GetCertificateFromStore(config.AzureAdCertificateThumbprint, config.AzureAdCertificateStoreLocation.Value)
-            );
+            _certificate = Helpers.GetCertificateFromStore(config.AzureAdCertificateThumbprint, config.AzureAdCertificateStoreLocation.Value);
+            _tokenCredential = new ClientCertificateCredential(tenantId, clientId, _certificate);
         }
 
         if (_tokenCredential is null)
@@ -356,4 +350,16 @@ public sealed partial class AzureAd : IMemberSource, IGroupStore, IGroupOwnerSou
 
     [GeneratedRegex("'(?<guid>[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12})'", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
     private static partial Regex GuidRegex();
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _graphClient?.Dispose();
+        _certificate?.Dispose();
+        _disposed = true;
+    }
 }
