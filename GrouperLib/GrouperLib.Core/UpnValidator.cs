@@ -5,7 +5,7 @@ namespace GrouperLib.Core;
 
 internal partial class UpnValidator : ICustomValidator
 {
-    private static readonly System.Buffers.SearchValues<char> invalidCharsInUserName = System.Buffers.SearchValues.Create("!@#$%^&*()+=[]{}\\/|;:\"<>?,");
+    private static readonly System.Buffers.SearchValues<char> invalidCharsInUserName = System.Buffers.SearchValues.Create(" !@#$%^&*()+=[]{}\\/|;:\"<>?,");
     private static readonly Regex upnRegex = UpnRegex();
     
     public void Validate(GrouperDocument document, GrouperDocumentMember documentMember, List<ValidationError> validationErrors)
