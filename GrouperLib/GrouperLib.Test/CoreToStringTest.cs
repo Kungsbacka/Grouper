@@ -36,32 +36,44 @@ public class CoreToStringTest
     }
 
     /// <summary>
-    /// Characterizes a typo. The past tense is built as <c>Operation.ToString() + "ed "</c>, which
-    /// gives "Added" for Add but **"Removeed"** for Remove -- the enum name already ends in "e".
-    /// Cosmetic and log-only, so recorded rather than fixed; if it is corrected, this test should
-    /// flip to expect "Removed".
+    /// The past tense used to be built as <c>Operation.ToString() + "ed "</c>, which gave "Added"
+    /// for Add but "Removeed" for Remove, because the enum name already ends in "e". Both words are
+    /// now written out per operation, so this asserts the corrected spelling.
     /// </summary>
     [Fact]
-    public void TestOperationalLogItemToStringMisspellsRemoved()
+    public void TestOperationalLogItemToStringReadsAsASentenceForRemove()
     {
         OperationalLogItem removed = new(TestHelpers.MakeDocument(), GroupMemberOperation.Remove, member);
 
-        Assert.Contains("Removeed member@example.com from Test Group", removed.ToString());
+        Assert.Contains("Removed member@example.com from Test Group", removed.ToString());
     }
 
     /// <summary>
-    /// The None operation cannot be persisted, but ToString still has to render it rather than
-    /// producing "Noneed".
+    /// The None operation cannot be persisted, but ToString still has to render it.
     /// </summary>
     [Fact]
     public void TestOperationalLogItemToStringHandlesTheNoneOperation()
     {
         OperationalLogItem item = new(TestHelpers.MakeDocument(), GroupMemberOperation.None, member);
 
+        Assert.Contains("No change for member@example.com in Test Group", item.ToString());
+    }
+
+    /// <summary>
+    /// ToString is called while logging, including from the code that reports why something else
+    /// failed, so an operation it does not recognise must not throw. The value is rendered instead:
+    /// its name when the enum has one, its number when it does not.
+    /// </summary>
+    [Fact]
+    public void TestOperationalLogItemToStringRendersAnUnrecognisedOperation()
+    {
+        OperationalLogItem item = new(TestHelpers.MakeDocument(), (GroupMemberOperation)99, member);
+
         string text = item.ToString();
 
-        Assert.Contains("Did nothing to", text);
-        Assert.Contains("for Test Group", text);
+        Assert.Contains("Unrecognised operation 99", text);
+        Assert.Contains("member@example.com", text);
+        Assert.Contains("Test Group", text);
     }
 
     [Fact]
@@ -117,8 +129,8 @@ public class CoreToStringTest
         Assert.Contains("Group Name: Test Group", text);
         Assert.Contains("Group Store: OnPremAd", text);
         Assert.Contains("Owner Action: KeepExisting", text);
-        Assert.Contains(document.GroupId.ToString(), text);
-        Assert.Contains(document.Id.ToString(), text);
+        Assert.Contains($"Group ID: {document.GroupId}", text);
+        Assert.Contains($"Document ID: {document.Id}", text);
         Assert.Contains("Member Rules: 1", text);
     }
 
@@ -141,21 +153,14 @@ public class CoreToStringTest
         Assert.Contains("(2) Exclude: OnPremAdGroup", text);
     }
 
-    /// <summary>
-    /// Characterizes a formatting defect. With a processing interval set, the "Document ID:" label
-    /// is emitted and then immediately followed by the interval block, so the label ends up
-    /// captioning the interval and the actual document id lands unlabelled on the next line.
-    /// See GrouperDocument.ToString -- the AppendLine for the id sits after the interval block.
-    /// Recorded, not fixed: this is log-only output and changing it is cosmetic.
-    /// </summary>
     [Fact]
-    public void TestDocumentLogFormatMislabelsTheIntervalLine()
+    public void TestDocumentLogFormatIncludesIntervalWhenNonZero()
     {
         GrouperDocument document = TestHelpers.MakeDocument(new { Interval = 30 });
 
         string text = document.ToString(logFormat: true);
 
-        Assert.Contains("Document ID: Processing Interval: 30", text);
+        Assert.Contains("Processing Interval: 30", text);
     }
 
     [Fact]
@@ -183,7 +188,7 @@ public class CoreToStringTest
     [Fact]
     public void TestValidationErrorToStringIsTheMessage()
     {
-        ValidationError error = new("GroupName", GrouperLib.Language.ResourceString.ValidationErrorGroupNameIsNullOrEmpty);
+        ValidationError error = new("GroupName", Language.ResourceString.ValidationErrorGroupNameIsNullOrEmpty);
 
         Assert.Equal(error.ErrorMessage, error.ToString());
         Assert.False(string.IsNullOrWhiteSpace(error.ToString()));

@@ -134,12 +134,12 @@ public sealed class GrouperDocument
         sb.Append("           Group ID: ");
         sb.AppendLine(GroupId.ToString());
         sb.Append("        Document ID: ");
+        sb.AppendLine(Id.ToString());
         if (Interval > 0)
         {
             sb.Append("Processing Interval: ");
             sb.AppendLine(Interval.ToString());
         }
-        sb.AppendLine(Id.ToString());
         sb.Append("       Member Rules: ");
         sb.AppendLine(Members.Count.ToString());
         int maxIndent = (int)Math.Floor(Math.Log10(Members.Count));

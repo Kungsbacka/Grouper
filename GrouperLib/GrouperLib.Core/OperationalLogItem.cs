@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 using System.Text.Json.Serialization;
 
 namespace GrouperLib.Core;
@@ -65,32 +66,23 @@ public sealed class OperationalLogItem
 
     public override string ToString()
     {
+        (string verb, string preposition) = Operation switch
+        {
+            GroupMemberOperation.Add => ("Added", "to"),
+            GroupMemberOperation.Remove => ("Removed", "from"),
+            GroupMemberOperation.None => ("No change for", "in"),
+            _ => ($"Unrecognised operation {Operation} for", "in")
+        };
+
         StringBuilder sb = new();
         sb.Append(LogTime.ToString("yyyy-MM-dd HH:mm:ss"));
         sb.Append(": ");
-        if (Operation != GroupMemberOperation.None)
-        {
-            sb.Append(Operation.ToString());
-            sb.Append("ed ");
-        }
-        else
-        {
-            sb.Append("Did nothing to ");
-        }
+        sb.Append(verb);
+        sb.Append(' ');
         sb.Append(TargetDisplayName ?? TargetId.ToString());
-        switch (Operation)
-        {
-            case GroupMemberOperation.Add:
-                sb.Append(" to ");
-                break;
-            case GroupMemberOperation.Remove:
-                sb.Append(" from ");
-                break;
-            case GroupMemberOperation.None:
-            default:
-                sb.Append(" for ");
-                break;
-        }
+        sb.Append(' ');
+        sb.Append(preposition);
+        sb.Append(' ');
         sb.Append(GroupDisplayName ?? GroupId.ToString());
         return sb.ToString();
     }
