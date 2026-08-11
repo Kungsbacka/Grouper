@@ -23,13 +23,6 @@ public sealed class GrouperDocumentMember
         Rules = rules;
     }
 
-    internal GrouperDocumentMember(GrouperDocumentMember documentMember)
-    {
-        Source = documentMember.Source;
-        Action = documentMember.Action;
-        Rules = documentMember.Rules;
-    }
-
     public override bool Equals(object? obj)
     {
         if (obj is not GrouperDocumentMember member)

@@ -18,12 +18,6 @@ public sealed class GrouperDocumentRule
         Value = value ?? string.Empty;
     }
 
-    internal GrouperDocumentRule(GrouperDocumentRule documentRule)
-    {
-        Name = documentRule.Name;
-        Value = documentRule.Value;
-    }
-
     public override bool Equals(object? obj)
     {
         if (obj is not GrouperDocumentRule rule)
