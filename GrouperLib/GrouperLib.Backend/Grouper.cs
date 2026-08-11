@@ -82,8 +82,6 @@ public class Grouper : IDisposable
         return grouper;
     }
 
-    // ReSharper disable once MemberCanBePrivate.Global
-    // This is used by GrouperApi and GrouperService
     public Grouper AddMemberSource(IMemberSource memberSource)
     {
         foreach (GroupMemberSource source in memberSource.GetSupportedGrouperMemberSources())
@@ -96,8 +94,6 @@ public class Grouper : IDisposable
         return this;
     }
 
-    // ReSharper disable once MemberCanBePrivate.Global
-    // This is used by GrouperApi and GrouperService
     public Grouper AddGroupStore(IGroupStore groupStore)
     {
         foreach (GroupStore store in groupStore.GetSupportedGroupStores())
@@ -110,8 +106,6 @@ public class Grouper : IDisposable
         return this;
     }
 
-    // ReSharper disable once MemberCanBePrivate.Global
-    // This is used by GrouperApi and GrouperService
     public Grouper AddGroupOwnerSource(IGroupOwnerSource ownerSource)
     {
         foreach (GroupStore store in ownerSource.GetSupportedGroupStores())
@@ -124,8 +118,6 @@ public class Grouper : IDisposable
         return this;
     }
 
-    // ReSharper disable once MemberCanBePrivate.Global
-    // This is used by GrouperApi and GrouperService
     public Grouper AddLogger(ILogger logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
