@@ -330,6 +330,80 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 
+CREATE FUNCTION [dbo].[fn_get_document_flattened_with_synthetic_member_id] (
+    @document_id uniqueidentifier
+)
+RETURNS TABLE
+AS
+RETURN
+WITH MemberWithId AS (
+    SELECT
+        document_id,
+        revision,
+        created,
+        published,
+        deleted,
+        (SELECT STRING_AGG(tag, ',') FROM dbo.document_tag a WHERE a.document_id = @document_id) AS tags,
+        group_id,
+        group_name,
+        group_store,
+        owner_action,
+        CASE WHEN processing_interval IS NULL THEN 0 ELSE CAST(processing_interval AS int) END AS processing_interval,
+        [member].[source] AS member_source,
+        [member].[action] AS member_action,
+        [member].[rules] AS member_rules,
+        ROW_NUMBER() OVER(PARTITION BY document_id ORDER BY (SELECT NULL)) AS synthetic_member_id,
+        document_json
+    FROM
+        dbo.document
+    CROSS APPLY
+        OPENJSON(document_json, '$.members')
+            WITH (
+                [source] nvarchar(20) '$.source',
+                [action] nvarchar(10) '$.action',
+                [rules] nvarchar(MAX) '$.rules' AS JSON
+            ) AS [member]
+    WHERE
+        document_id = @document_id
+    AND
+        revision = (SELECT MAX(revision) FROM dbo.document a WHERE a.document_id = @document_id)
+)
+SELECT
+    mwi.document_id,
+    mwi.revision,
+    mwi.created,
+    mwi.published,
+    mwi.deleted,
+    mwi.tags,
+    mwi.group_id,
+    mwi.group_name,
+    mwi.group_store,
+    mwi.owner_action,
+    mwi.processing_interval,
+    mwi.synthetic_member_id,
+    mwi.member_source,
+    mwi.member_action,
+    [rule].[name] AS rule_name,
+    [rule].[value] AS rule_value,
+    mwi.document_json
+FROM
+    MemberWithId mwi
+CROSS APPLY
+    OPENJSON(mwi.member_rules)
+        WITH (
+            [name] nvarchar(30) '$.name',
+            [value] nvarchar(200) '$.value'
+        ) AS [rule]
+
+
+
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
 
 
 
@@ -1606,4 +1680,8 @@ BEGIN
     COMMIT TRANSACTION;
 
 END
+GO
+USE [master]
+GO
+ALTER DATABASE [Grouper] SET  READ_WRITE 
 GO
