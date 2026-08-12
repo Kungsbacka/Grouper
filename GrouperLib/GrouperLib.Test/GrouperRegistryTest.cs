@@ -34,11 +34,15 @@ public class GrouperRegistryTest
         await Assert.ThrowsAsync<InvalidOperationException>(() => harness.DiffAsync());
     }
 
-    /// <summary>Current members and target members must be the same member type.</summary>
+    /// <summary>
+    /// Current members and target members must be the same member type. The store is on premises so
+    /// that the document itself is a legitimate one -- an on-premises source in an Azure store is
+    /// rejected by validation long before the member types are compared.
+    /// </summary>
     [Fact]
     public async Task TestMismatchedMemberTypesThrow()
     {
-        BackendTestHarness harness = new BackendTestHarness()
+        BackendTestHarness harness = new BackendTestHarness { Store = GroupStore.OnPremAd }
             .WithCurrentMembers(azureMember)
             .WithRule(GroupMemberSource.OnPremAdGroup, GroupMemberAction.Include, onPremMember);
 
@@ -123,6 +127,26 @@ public class GrouperRegistryTest
     {
         Grouper grouper = new(0.0);
         await Assert.ThrowsAsync<ArgumentNullException>(() => grouper.GetMemberDiffAsync(null!));
+    }
+
+    /// <summary>
+    /// Documents are fetched from the database without being gated on validation, so one that no
+    /// longer satisfies the rules can reach this far. It describes a membership nobody can vouch
+    /// for, and is refused before the group store is asked anything.
+    /// </summary>
+    [Fact]
+    public async Task TestGetMemberDiffRejectsAnInvalidDocument()
+    {
+        BackendTestHarness harness = new BackendTestHarness()
+            .WithRule(GroupMemberSource.AzureAdGroup, GroupMemberAction.Include, azureMember);
+        GrouperDocument invalid = harness.BuildDocument().CloneWithNewGroupName("");
+
+        InvalidGrouperDocumentException exception = await Assert.ThrowsAsync<InvalidGrouperDocumentException>(
+            () => harness.BuildGrouper().GetMemberDiffAsync(invalid));
+
+        Assert.NotEmpty(exception.ValidationErrors);
+        harness.GroupStoreMock.Verify(
+            s => s.GetGroupMembersAsync(It.IsAny<GroupMemberCollection>(), It.IsAny<Guid>()), Times.Never);
     }
 
     [Fact]

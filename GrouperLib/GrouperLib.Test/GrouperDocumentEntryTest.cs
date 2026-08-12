@@ -1,5 +1,6 @@
 using GrouperLib.Core;
 using GrouperLib.Database;
+using GrouperLib.Language;
 
 namespace GrouperLib.Test;
 
@@ -116,5 +117,31 @@ public class GrouperDocumentEntryTest
 
         Assert.False(entry.IsPublished);
         Assert.True(entry.IsDeleted);
+    }
+
+    /// <summary>
+    /// An entry is built for whatever the database holds, including a revision written before a rule
+    /// changed. Rather than refusing to exist, it says whether the document it carries still
+    /// satisfies the rules as they stand now.
+    /// </summary>
+    [Fact]
+    public void TestEntryForAValidDocumentReportsNoErrors()
+    {
+        GrouperDocumentEntry entry = MakeEntry();
+
+        Assert.True(entry.IsValid);
+        Assert.Empty(entry.ValidationErrors);
+    }
+
+    [Fact]
+    public void TestEntryForAnInvalidDocumentCarriesTheErrors()
+    {
+        GrouperDocument document = TestHelpers.MakeDocument(new { GroupName = "" });
+
+        GrouperDocumentEntry entry = new(document, 1, DateTime.Now, true, false, null);
+
+        Assert.False(entry.IsValid);
+        Assert.Contains(ResourceString.ValidationErrorGroupNameIsNullOrEmpty,
+            entry.ValidationErrors.Select(e => e.ErrorId));
     }
 }

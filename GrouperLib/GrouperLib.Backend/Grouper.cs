@@ -127,6 +127,12 @@ public sealed class Grouper : IDisposable
     public async Task<GroupMemberDiff> GetMemberDiffAsync(GrouperDocument document, bool includeUnchanged = false)
     {
         ArgumentNullException.ThrowIfNull(document);
+        IReadOnlyList<ValidationError> validationErrors = document.Validate();
+        if (validationErrors.Count > 0)
+        {
+            throw new InvalidGrouperDocumentException(validationErrors);
+        }
+        
         var currentMembers = await GetCurrentMembersAsync(document);
         var targetMembers = await GetTargetMembersAsync(document, currentMembers);
         IGroupOwnerSource? ownerSource = GetOwnerSource(document);
@@ -143,16 +149,19 @@ public sealed class Grouper : IDisposable
                 targetMembers.Add(owners);
             }
         }
+
         if (!currentMembers.ContainsMatchingMemberType(targetMembers))
         {
             throw new InvalidOperationException("Member types does not match");
         }
+
         GroupMemberCollection unchangedMembers = [];
         if (includeUnchanged)
         {
             unchangedMembers = currentMembers.Clone();
             unchangedMembers.IntersectWith(targetMembers);
         }
+
         int currentCount = currentMembers.Count;
         currentMembers.FilterUniqueMember(targetMembers);
         double changeRatio;
@@ -164,6 +173,7 @@ public sealed class Grouper : IDisposable
         {
             changeRatio = (currentCount - currentMembers.Count + targetMembers.Count) / (double)currentCount;
         }
+        
         return new GroupMemberDiff(document, targetMembers, currentMembers, unchangedMembers, changeRatio);
     }
 

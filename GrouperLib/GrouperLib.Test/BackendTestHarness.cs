@@ -10,15 +10,15 @@ namespace GrouperLib.Test;
 /// Builds a <see cref="Grouper"/> wired to fake stores and member sources so the
 /// membership pipeline can be exercised without a directory, a database or a network.
 ///
-/// Member objects are identified by a "Label" rule. The fake member source returns
-/// whatever was registered for that label, which lets one source serve several member
-/// objects in the same document with different results.
+/// Each member object is given a single rule whose value is unique within the document.
+/// The fake member source returns whatever was registered for that value, which lets one
+/// source serve several member objects in the same document with different results. Which
+/// rule carries the value depends on the source, because the documents built here have to
+/// pass validation like any other -- see <see cref="LabelRule"/>.
 /// </summary>
 [SupportedOSPlatform("windows")]
 internal sealed class BackendTestHarness
 {
-    private const string LabelRule = "Label";
-
     private readonly List<GrouperDocumentMember> _documentMembers = [];
     private readonly Dictionary<string, GroupMember[]> _resultsByLabel = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<GroupMemberSource> _sourcesToRegister = [];
@@ -83,23 +83,48 @@ internal sealed class BackendTestHarness
     /// <summary>Adds a member object to the document and the members its source will return.</summary>
     public BackendTestHarness WithRule(GroupMemberSource source, GroupMemberAction action, params GroupMember[] members)
     {
-        string label = $"L{++_labelCounter}";
-        _resultsByLabel[label] = members;
+        GrouperDocumentRule rule = LabelRule(source, ++_labelCounter);
+        _resultsByLabel[rule.Value] = members;
         _sourcesToRegister.Add(source);
-        _documentMembers.Add(new GrouperDocumentMember(source, action, [new GrouperDocumentRule(LabelRule, label)]));
+        _documentMembers.Add(new GrouperDocumentMember(source, action, [rule]));
         return this;
     }
 
     /// <summary>Adds a member object whose source is deliberately left unregistered.</summary>
     public BackendTestHarness WithUnregisteredRule(GroupMemberSource source, GroupMemberAction action)
     {
-        _documentMembers.Add(new GrouperDocumentMember(source, action, [new GrouperDocumentRule(LabelRule, "none")]));
+        // Nothing is registered under this rule's value, so the source would return no members
+        // even if it were reached.
+        _documentMembers.Add(new GrouperDocumentMember(source, action, [LabelRule(source, ++_labelCounter)]));
         return this;
     }
 
+    /// <summary>
+    /// The one rule that labels a member object, chosen to suit the source. GetMemberDiffAsync
+    /// refuses a document that does not validate, so the label has to ride on a rule the source
+    /// permits, carrying a value its format allows, rather than on an invented rule name.
+    /// </summary>
+    private static GrouperDocumentRule LabelRule(GroupMemberSource source, int counter) => source switch
+    {
+        GroupMemberSource.AzureAdGroup or GroupMemberSource.OnPremAdGroup or GroupMemberSource.ExoGroup =>
+            new GrouperDocumentRule("Group", LabelGuid(counter)),
+        GroupMemberSource.Elevregister => new GrouperDocumentRule("Enhet", LabelGuid(counter)),
+        GroupMemberSource.Personalsystem => new GrouperDocumentRule("Befattning", $"L{counter}"),
+        GroupMemberSource.OnPremAdQuery => new GrouperDocumentRule("LdapFilter", $"(cn=L{counter})"),
+        GroupMemberSource.CustomView => new GrouperDocumentRule("View", $"L{counter}"),
+        GroupMemberSource.Static => new GrouperDocumentRule("Upn", $"l{counter}@example.com"),
+        _ => throw new ArgumentOutOfRangeException(nameof(source), source, "No label rule is declared for this member source."),
+    };
+
+    /// <summary>
+    /// A distinct GUID per label, never <see cref="GroupId"/>, which self-reference would reject.
+    /// </summary>
+    private static string LabelGuid(int counter) => $"00000000-0000-4000-8000-{counter:D12}";
+
     public GrouperDocument BuildDocument() =>
-        // Internal constructor, reachable via InternalsVisibleTo. Bypasses validation on
-        // purpose: these tests cover the diff pipeline, not document validation.
+        // Internal constructor, reachable via InternalsVisibleTo, so the document is built without
+        // going through Create. It still has to satisfy validation, because GetMemberDiffAsync
+        // refuses a document that does not.
         new(DocumentId, GroupId, "Test Group", Store, _documentMembers, OwnerAction, 0);
 
     public Grouper BuildGrouper()
@@ -123,7 +148,8 @@ internal sealed class BackendTestHarness
                 It.IsAny<GroupMemberCollection>(), It.IsAny<GrouperDocumentMember>(), It.IsAny<GroupMemberType>()))
             .Returns((GroupMemberCollection collection, GrouperDocumentMember documentMember, GroupMemberType _) =>
             {
-                string label = documentMember.Rules.First(r => r.Name == LabelRule).Value;
+                // Every member object built here carries exactly one rule, and its value is the label.
+                string label = documentMember.Rules.First().Value;
                 foreach (GroupMember member in _resultsByLabel.GetValueOrDefault(label, []))
                 {
                     collection.Add(member);

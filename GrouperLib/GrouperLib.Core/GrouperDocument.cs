@@ -89,7 +89,7 @@ public sealed class GrouperDocument
     {
         List<ValidationError> validationErrors = [];
         GrouperDocument? document = Create(id, interval, groupId, groupName, store, owner, members, validationErrors);
-        return document ?? throw new InvalidGrouperDocumentException();
+        return document ?? throw new InvalidGrouperDocumentException(validationErrors);
     }
     
     public GrouperDocument CloneWithNewGroupName(string groupName)
@@ -114,7 +114,40 @@ public sealed class GrouperDocument
     {
         List<ValidationError> validationErrors = [];
         GrouperDocument? document = FromJson(json, validationErrors);
-        return document ?? throw new InvalidGrouperDocumentException();
+        return document ?? throw new InvalidGrouperDocumentException(validationErrors);
+    }
+
+    /// <summary>
+    /// Parses JSON into a document without checking it against the current validation rules. A
+    /// document written under an earlier version of those rules still parses, which is what makes an
+    /// old revision readable and editable. Only failures that leave nothing to read are reported:
+    /// missing or malformed JSON, and values the document model cannot represent at all. Use
+    /// <see cref="FromJson(string)"/> whenever the document is about to be acted on or stored.
+    /// </summary>
+    public static GrouperDocument? FromJsonUnvalidated(string json, List<ValidationError> parseErrors)
+    {
+        ArgumentNullException.ThrowIfNull(parseErrors);
+        return DocumentValidator.Deserialize(json, parseErrors);
+    }
+
+    public static GrouperDocument FromJsonUnvalidated(string json)
+    {
+        List<ValidationError> parseErrors = [];
+        GrouperDocument? document = FromJsonUnvalidated(json, parseErrors);
+        return document ?? throw new InvalidGrouperDocumentException(parseErrors);
+    }
+
+    /// <summary>
+    /// Checks the document against the current validation rules and reports what it finds. The
+    /// result describes the document rather than gating it, so each caller decides for itself how
+    /// strict it needs to be. Validity is a property of today's rules, not of the document, which is
+    /// why it is asked for rather than stored.
+    /// </summary>
+    public IReadOnlyList<ValidationError> Validate()
+    {
+        List<ValidationError> validationErrors = [];
+        DocumentValidator.Validate(this, validationErrors);
+        return validationErrors;
     }
 
     public string ToString(bool logFormat)

@@ -12,6 +12,17 @@ public sealed class GrouperDocumentEntry
     public bool IsPublished { get; }
     public bool IsDeleted { get; }
     public IList<string> Tags => _tags.AsReadOnly();
+
+    /// <summary>
+    /// What the current validation rules make of the stored document. Documents are read without
+    /// being gated on validation, so that a revision written under an earlier version of the rules
+    /// can still be fetched and corrected. An entry always says which it is, and anything that acts
+    /// on the document is expected to look first.
+    /// </summary>
+    public IReadOnlyList<ValidationError> ValidationErrors { get; }
+
+    public bool IsValid => ValidationErrors.Count == 0;
+
     private readonly List<string> _tags;
 
     public GrouperDocumentEntry(GrouperDocument document, int revision, DateTime revisionCreated, bool isPublished, bool isDeleted, string[]? tags)
@@ -26,5 +37,8 @@ public sealed class GrouperDocumentEntry
         IsPublished = isPublished;
         IsDeleted = isDeleted;
         _tags = tags == null ? [] : [..tags];
+        // Validating here rather than taking the result as a parameter is what keeps an entry from
+        // claiming to be valid when nobody checked.
+        ValidationErrors = document.Validate();
     }
 }

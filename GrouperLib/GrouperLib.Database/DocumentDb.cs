@@ -42,8 +42,13 @@ public class DocumentDb
         await using SqlDataReader reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync())
         {
+            // Reading is deliberately not gated on validation. Rules change over time, so an older
+            // revision may no longer satisfy them, and refusing to hand it back would leave it
+            // impossible to fetch and correct. The entry carries the verdict instead. JSON that
+            // cannot be turned into a document at all still throws, because that is corruption
+            // rather than an outdated document.
             result.Add(new GrouperDocumentEntry(
-                document: GrouperDocument.FromJson(reader.GetString(5)),
+                document: GrouperDocument.FromJsonUnvalidated(reader.GetString(5)),
                 revision: reader.GetInt32(0),
                 revisionCreated: reader.GetDateTime(1),
                 isPublished: reader.GetBoolean(2),
@@ -196,6 +201,19 @@ public class DocumentDb
 
     public async Task PublishDocumentAsync(Guid documentId)
     {
+        // Publishing is the one step that hands a document to the service, and dbo.set_published
+        // publishes the latest revision. Everything else that changes what the latest revision holds
+        // leaves the document unpublished -- dbo.revert_to_revision, dbo.set_deleted and
+        // dbo.new_document all write published = 0. We guard against old invalid documents being
+        // published by first fetching and validating
+        IList<GrouperDocumentEntry> entries =
+            await GetEntriesByDocumentIdAsync(documentId, includeUnpublished: true, includeDeleted: true);
+        // Nothing found means the id matches no document. That is left to the stored procedure, which
+        // decides on its own what an unknown document means.
+        if (entries.FirstOrDefault() is GrouperDocumentEntry entry && !entry.IsValid)
+        {
+            throw new InvalidGrouperDocumentException(entry.ValidationErrors);
+        }
         await InternalSetPublishedFlagAsync(documentId, published: true);
     }
 
@@ -226,6 +244,15 @@ public class DocumentDb
 
     public async Task StoreDocumentAsync(GrouperDocument document)
     {
+        ArgumentNullException.ThrowIfNull(document);
+        // Every revision that reaches the database has to satisfy the current rules,
+        // which is what makes an invalid document on the read side evidence of a rule
+        // change rather than of a bad save.
+        IReadOnlyList<ValidationError> validationErrors = document.Validate();
+        if (validationErrors.Count > 0)
+        {
+            throw new InvalidGrouperDocumentException(validationErrors);
+        }
         await InternalExecuteStoredProcedureAsync("dbo.store_document",
             new Dictionary<string, object?>() {
                 { "author", _author },

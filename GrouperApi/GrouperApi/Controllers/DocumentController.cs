@@ -92,7 +92,14 @@ namespace GrouperApi.Controllers
         [HttpPost("publish/{id:guid}")]
         public async Task<IActionResult> PublishDocumentAsync(Guid id)
         {
-            await GetDocumentDb().PublishDocumentAsync(id);
+            try
+            {
+                await GetDocumentDb().PublishDocumentAsync(id);
+            }
+            catch (InvalidGrouperDocumentException ex)
+            {
+                return BadRequest(ex.ValidationErrors);
+            }
             return Ok();
         }
 
@@ -131,6 +138,11 @@ namespace GrouperApi.Controllers
         [HttpPost]
         public async Task<IActionResult> StoreDocumentAsync([FromBody] GrouperDocument document)
         {
+            IReadOnlyList<ValidationError> validationErrors = document.Validate();
+            if (validationErrors.Count > 0)
+            {
+                return BadRequest(validationErrors);
+            }
             await GetDocumentDb().StoreDocumentAsync(document);
             return Ok();
         }

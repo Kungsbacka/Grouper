@@ -221,4 +221,102 @@ public class GrouperDocumentJsonTest
         Assert.Throws<InvalidGrouperDocumentException>(() => GrouperDocument.Create(
             Guid.NewGuid(), 0, Guid.Empty, "", GroupStore.AzureAd, GroupOwnerAction.AddAll, []));
     }
+
+    // ---- Reading a document written under earlier rules ----------------------------------
+
+    /// <summary>
+    /// A document of the kind this exists for. Elevregister's "Klass" rule used to hold a class
+    /// display name and now holds a class GUID, so revisions written before that change no longer
+    /// satisfy the rules -- and still have to be readable, or they could never be corrected.
+    /// </summary>
+    private const string OutdatedJson = """
+        {
+          "id": "aa11bb22-cc33-dd44-ee55-ff6677889900",
+          "groupId": "bb22cc33-dd44-ee55-ff66-778899001122",
+          "groupName": "Test Group",
+          "store": "AzureAd",
+          "members": [
+            { "source": "Elevregister", "action": "Include",
+              "rules": [ { "name": "Klass", "value": "7A" } ] }
+          ]
+        }
+        """;
+
+    [Fact]
+    public void TestOutdatedDocumentIsRejectedByFromJson()
+    {
+        List<ValidationError> errors = [];
+        GrouperDocument? document = GrouperDocument.FromJson(OutdatedJson, errors);
+
+        Assert.Null(document);
+        Assert.Contains(ResourceString.ValidationErrorRuleValueDoesNotValidate, errors.Select(e => e.ErrorId));
+    }
+
+    [Fact]
+    public void TestOutdatedDocumentIsReadableWithoutValidation()
+    {
+        GrouperDocument document = GrouperDocument.FromJsonUnvalidated(OutdatedJson);
+
+        Assert.Equal("7A", document.Members.Single().Rules.Single().Value);
+    }
+
+    [Fact]
+    public void TestUnvalidatedParseReportsNoErrorsOfItsOwn()
+    {
+        List<ValidationError> parseErrors = [];
+        GrouperDocument? document = GrouperDocument.FromJsonUnvalidated(OutdatedJson, parseErrors);
+
+        Assert.NotNull(document);
+        Assert.Empty(parseErrors);
+    }
+
+    /// <summary>
+    /// Skipping validation is not the same as accepting anything. JSON that cannot be turned into a
+    /// document at all is corruption rather than an outdated document, and still fails.
+    /// </summary>
+    [Theory]
+    [InlineData("{ not valid json")]
+    [InlineData("")]
+    public void TestUnvalidatedParseStillRejectsUnreadableJson(string json)
+    {
+        Assert.Throws<InvalidGrouperDocumentException>(() => GrouperDocument.FromJsonUnvalidated(json));
+    }
+
+    [Fact]
+    public void TestUnvalidatedParseStillRejectsAnUnknownStore()
+    {
+        Assert.Throws<InvalidGrouperDocumentException>(
+            () => GrouperDocument.FromJsonUnvalidated(ValidJson.Replace("AzureAd", "NoSuchStore")));
+    }
+
+    [Fact]
+    public void TestValidateReportsWhatFromJsonWouldHaveRejected()
+    {
+        GrouperDocument document = GrouperDocument.FromJsonUnvalidated(OutdatedJson);
+
+        IReadOnlyList<ValidationError> errors = document.Validate();
+
+        Assert.Contains(ResourceString.ValidationErrorRuleValueDoesNotValidate, errors.Select(e => e.ErrorId));
+    }
+
+    [Fact]
+    public void TestValidateFindsNothingWrongWithAValidDocument()
+    {
+        Assert.Empty(GrouperDocument.FromJson(ValidJson).Validate());
+    }
+
+    /// <summary>
+    /// The errors travel with the exception, so a caller that only catches still learns what was
+    /// wrong rather than being told the document was bad and nothing more.
+    /// </summary>
+    [Fact]
+    public void TestExceptionCarriesTheValidationErrors()
+    {
+        InvalidGrouperDocumentException exception =
+            Assert.Throws<InvalidGrouperDocumentException>(() => GrouperDocument.FromJson(OutdatedJson));
+
+        Assert.Contains(ResourceString.ValidationErrorRuleValueDoesNotValidate,
+            exception.ValidationErrors.Select(e => e.ErrorId));
+        Assert.Contains("Klass", exception.Message);
+    }
 }

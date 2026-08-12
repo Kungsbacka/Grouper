@@ -17,28 +17,34 @@ internal static partial class DocumentValidator
         {
             validationErrors.Add(new ValidationError(nameof(document.Id), ResourceString.ValidationErrorDocumentIdNotValid, document.Id));
         }
+
         if (document.Interval < 0)
         {
             validationErrors.Add(new ValidationError(nameof(document.Interval), ResourceString.ValidationErrorIllegalInterval));
         }
+
         if (string.IsNullOrEmpty(document.GroupName))
         {
             validationErrors.Add(new ValidationError(nameof(document.GroupName), ResourceString.ValidationErrorGroupNameIsNullOrEmpty));
         }
+
         if (document.GroupId == Guid.Empty)
         {
             validationErrors.Add(new ValidationError(nameof(document.GroupId), ResourceString.ValidationErrorGroupIdNotValid, document.GroupId));
         }
+
         if (!storeLocations.TryGetValue(document.Store, out ResourceLocation groupLocation))
         {
             validationErrors.Add(new ValidationError(nameof(document.Store), ResourceString.ValidationErrorStoreNotRecognized, document.Store.ToString()));
             return;
         }
+
         InternalValidateMembers(document.Members, document.Store, groupLocation, validationErrors);
         if (validationErrors.Count > 0)
         {
             return;
         }
+
         foreach (GrouperDocumentMember documentMember in document.Members)
         {
             if (memberSources.TryGetValue(documentMember.Source, out MemberSourceSpec? spec))
@@ -58,6 +64,7 @@ internal static partial class DocumentValidator
             validationErrors.Add(new ValidationError(nameof(GrouperDocument.Members), ResourceString.ValidationErrorNoMemberObjects));
             return;
         }
+
         foreach (GrouperDocumentMember member in documentMembers)
         {
             if (memberSources.TryGetValue(member.Source, out MemberSourceSpec? spec))
@@ -72,10 +79,12 @@ internal static partial class DocumentValidator
                 validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Source), ResourceString.ValidationErrorInvalidMemberSource, member.Source));
             }
         }
+
         if (validationErrors.Count > 0)
         {
             return;
         }
+
         HashSet<GrouperDocumentMember> members = [];
         foreach (GrouperDocumentMember member in documentMembers)
         {
@@ -99,8 +108,7 @@ internal static partial class DocumentValidator
             validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Rules), ResourceString.ValidationErrorMemberObjectHasNoRules));
             return;
         }
-        // Rule names are matched ordinally; rule values are not. A name spelled with the wrong
-        // casing is an unrecognised name, which is what stops it from missing its value regex.
+
         var rules = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         foreach (GrouperDocumentRule rule in documentRules)
         {
@@ -125,25 +133,26 @@ internal static partial class DocumentValidator
                 {
                     rules.Add(rule.Name, new HashSet<string>(StringComparer.OrdinalIgnoreCase) { rule.Value });
                 }
+                
                 if (!spec.IsKnownName(rule.Name))
                 {
                     validationErrors.Add(new ValidationError(nameof(rule.Name), ResourceString.ValidationErrorInvalidRuleName, rule.Name, memberSource));
                 }
             }
         }
+
         if (validationErrors.Count > 0)
         {
             return;
         }
-        // Every name is recognised by now, so the clauses only have to judge the combination. The
-        // failing clause names its own reason -- only the first is reported, so an admin fixes one
-        // problem at a time rather than reading a list that may partly resolve itself.
+
         var ruleNames = new HashSet<string>(rules.Keys, StringComparer.Ordinal);
         if (spec.FirstUnsatisfied(ruleNames) is RuleClause unsatisfied)
         {
             (string errorId, object?[] args) = unsatisfied.DescribeFailure(ruleNames, memberSource);
             validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Rules), errorId, args));
         }
+
         foreach (GrouperDocumentRule rule in documentRules)
         {
             if (string.IsNullOrEmpty(rule.Value))
@@ -160,13 +169,14 @@ internal static partial class DocumentValidator
         }
     }
 
-    internal static GrouperDocument? DeserializeAndValidate(string json, List<ValidationError> validationErrors)
+    internal static GrouperDocument? Deserialize(string json, List<ValidationError> validationErrors)
     {
         if (string.IsNullOrEmpty(json))
         {
             validationErrors.Add(new ValidationError(nameof(json), ResourceString.ValidationJsonMissingError));
             return null;
         }
+
         GrouperDocument? document = null;
         try
         {
@@ -176,11 +186,24 @@ internal static partial class DocumentValidator
         {
             validationErrors.Add(new ValidationError(nameof(json), ResourceString.ValidationJsonParsingError, ex.LineNumber!, ex.BytePositionInLine!, ex.Message));
         }
+
         if (document == null)
         {
             validationErrors.Add(new ValidationError(nameof(json), ResourceString.DefaultValidationError));
             return null;
         }
+
+        return document;
+    }
+
+    internal static GrouperDocument? DeserializeAndValidate(string json, List<ValidationError> validationErrors)
+    {
+        GrouperDocument? document = Deserialize(json, validationErrors);
+        if (document == null)
+        {
+            return null;
+        }
+
         InternalValidateDocument(document, validationErrors);
         return document;
     }

@@ -181,6 +181,18 @@ namespace GrouperService
                 {
                     return;
                 }
+                if (!entry.IsValid)
+                {
+                    // Fetching a document no longer refuses one that fails today's rules, so the
+                    // decision not to process it is taken here. GetMemberDiffAsync would refuse it
+                    // as well, but there is no reason to reach the group store first, and skipping
+                    // it here means the run continues with the remaining documents.
+                    string validationMessage = "Document does not validate against the current rules and was not processed. "
+                        + string.Join(" ", entry.ValidationErrors.Select(error => error.ErrorMessage));
+                    WriteToLogDb(entry.Document, validationMessage, LogLevel.Error);
+                    WriteToEventLog(validationMessage, EventLogEntryType.Warning);
+                    continue;
+                }
                 GroupMemberDiff diff;
                 try
                 {
