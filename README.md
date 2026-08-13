@@ -128,10 +128,6 @@ references a single NuGet package. That is what lets PSGrouper load `GrouperLib.
 operator's machine and build and validate documents entirely offline, before anything reaches the
 server.
 
-One project is a placeholder: `CompileTarget` is a `Main` that returns 0. It exists purely as a
-publish target — `dotnet publish --self-contained` against it produces the .NET runtime plus the
-`GrouperLib.Core.dll` and `GrouperLib.Language.dll` set that ships in `PSGrouper/lib`.
-
 ### The Grouper document
 
 Defined by [GrouperDocument.cs](GrouperLib/GrouperLib.Core/GrouperDocument.cs):

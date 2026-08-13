@@ -5,8 +5,6 @@ VisualStudioVersion = 17.5.33502.453
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GrouperLib.Backend", "GrouperLib.Backend\GrouperLib.Backend.csproj", "{194762EB-EDD7-48C0-BB58-3E966E665FE3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CompileTarget", "CompileTarget\CompileTarget.csproj", "{3E094A1D-CF20-4521-8200-92CC252AA65F}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GrouperLib.Config", "GrouperLib.Config\GrouperLib.Config.csproj", "{055F86F6-C062-478B-A754-8BA2FBA2FB39}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GrouperLib.Core", "GrouperLib.Core\GrouperLib.Core.csproj", "{73E8BD0E-0CB0-4C5F-9B20-BFCD4AD62EFC}"
@@ -29,10 +27,6 @@ Global
 		{194762EB-EDD7-48C0-BB58-3E966E665FE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{194762EB-EDD7-48C0-BB58-3E966E665FE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{194762EB-EDD7-48C0-BB58-3E966E665FE3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3E094A1D-CF20-4521-8200-92CC252AA65F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3E094A1D-CF20-4521-8200-92CC252AA65F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3E094A1D-CF20-4521-8200-92CC252AA65F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3E094A1D-CF20-4521-8200-92CC252AA65F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{055F86F6-C062-478B-A754-8BA2FBA2FB39}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{055F86F6-C062-478B-A754-8BA2FBA2FB39}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{055F86F6-C062-478B-A754-8BA2FBA2FB39}.Release|Any CPU.ActiveCfg = Release|Any CPU
