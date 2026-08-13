@@ -123,6 +123,9 @@
   <data name="ErrorBelowChangeLimit" xml:space="preserve">
     <value>Förhållandet mellan tillägg och borttag är lägre än gränsvärdet. Inga ändringar av medlemmarna i gruppen kommer att göras.</value>
   </data>
+  <data name="ErrorGroupNotFound" xml:space="preserve">
+    <value>Gruppen hittades inte i gruppkatalogen</value>
+  </data>
   <data name="ErrorGrouperDocumentNotValid" xml:space="preserve">
     <value>JSON-dokumentet representerar inte ett giltigt Grouper-dokument</value>
   </data>

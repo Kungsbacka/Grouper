@@ -123,6 +123,9 @@
   <data name="ErrorBelowChangeLimit" xml:space="preserve">
     <value>Change ratio is below limit. No changes are made to the group members</value>
   </data>
+  <data name="ErrorGroupNotFound" xml:space="preserve">
+    <value>The group was not found in the store</value>
+  </data>
   <data name="ErrorGrouperDocumentNotValid" xml:space="preserve">
     <value>JSON document does not represent a valid Grouper document</value>
   </data>

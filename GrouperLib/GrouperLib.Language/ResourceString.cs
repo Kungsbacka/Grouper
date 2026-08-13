@@ -4,6 +4,7 @@ public static class ResourceString
 {
     public const string DefaultValidationError = "DefaultValidationError";
     public const string ErrorBelowChangeLimit = "ErrorBelowChangeLimit";
+    public const string ErrorGroupNotFound = "ErrorGroupNotFound";
     public const string ErrorGrouperDocumentNotValid = "ErrorGrouperDocumentNotValid";
     public const string ValidationErrorAtLeastOneRuleRequired = "ValidationErrorAtLeastOneRuleRequired";
     public const string ValidationErrorDocumentIdNotValid = "ValidationErrorDocumentIdNotValid";
