@@ -24,6 +24,16 @@ public class GrouperDocumentJsonTest
         }
         """;
 
+    private static string JsonWithMember(string member) => $$"""
+        {
+          "id": "aa11bb22-cc33-dd44-ee55-ff6677889900",
+          "groupId": "bb22cc33-dd44-ee55-ff66-778899001122",
+          "groupName": "Test Group",
+          "store": "AzureAd",
+          "members": [ {{member}} ]
+        }
+        """;
+
     private static string JsonWithIncludeManager(string rawValue) => $$"""
         {
           "id": "aa11bb22-cc33-dd44-ee55-ff6677889900",
@@ -117,6 +127,174 @@ public class GrouperDocumentJsonTest
     public void TestFromJsonThrowsOnInvalidDocument()
     {
         Assert.Throws<InvalidGrouperDocumentException>(() => GrouperDocument.FromJson("{ not valid json"));
+    }
+
+    // ---- JSON that leaves a property out entirely ----------------------------------------
+
+    /// <summary>
+    /// Deserialization supplies null for an omitted property, so a document can reach the validator
+    /// with no members at all. Every one of these is a state a half-written document passes through
+    /// in an editor, and each has to come back as a validation error rather than as an exception.
+    /// </summary>
+    [Theory]
+    [InlineData("""{ "store": "AzureAd" }""")]
+    [InlineData("""{ "store": "AzureAd", "groupName": "Test Group" }""")]
+    [InlineData("""{ "store": "AzureAd", "groupName": "Test Group", "members": null }""")]
+    public void TestDocumentWithoutMembersReportsNoMemberObjects(string json)
+    {
+        List<ValidationError> errors = [];
+        GrouperDocument? document = GrouperDocument.FromJson(json, errors);
+
+        Assert.Null(document);
+        Assert.Contains(ResourceString.ValidationErrorNoMemberObjects, errors.Select(e => e.ErrorId));
+    }
+
+    [Theory]
+    [InlineData("""{ "source": "Static", "action": "Include" }""")]
+    [InlineData("""{ "source": "Static", "action": "Include", "rules": null }""")]
+    public void TestMemberWithoutRulesReportsMemberObjectHasNoRules(string member)
+    {
+        string json = JsonWithMember(member);
+
+        List<ValidationError> errors = [];
+        GrouperDocument? document = GrouperDocument.FromJson(json, errors);
+
+        Assert.Null(document);
+        Assert.Contains(ResourceString.ValidationErrorMemberObjectHasNoRules, errors.Select(e => e.ErrorId));
+    }
+
+    /// <summary>
+    /// An omitted group name has to read the same way an empty one does, because the validator's
+    /// only question about it is whether there is a name.
+    /// </summary>
+    [Fact]
+    public void TestDocumentWithoutGroupNameReportsGroupNameIsNullOrEmpty()
+    {
+        List<ValidationError> errors = [];
+        GrouperDocument? document = GrouperDocument.FromJson(ValidJson.Replace("\"groupName\": \"Test Group\",", ""), errors);
+
+        Assert.Null(document);
+        Assert.Contains(ResourceString.ValidationErrorGroupNameIsNullOrEmpty, errors.Select(e => e.ErrorId));
+    }
+
+    /// <summary>
+    /// The unvalidated parse hands the document straight back, so the substitution has to happen in
+    /// the constructor rather than in the validator. Otherwise this returns an object whose Members
+    /// is null, and every later reader of it fails instead.
+    /// </summary>
+    [Fact]
+    public void TestUnvalidatedParseNeverYieldsNullCollections()
+    {
+        GrouperDocument document = GrouperDocument.FromJsonUnvalidated("""{ "store": "AzureAd" }""");
+
+        Assert.NotNull(document.Members);
+        Assert.Empty(document.Members);
+        Assert.Equal(string.Empty, document.GroupName);
+    }
+
+    [Fact]
+    public void TestUnvalidatedParseOfAMemberWithoutRulesYieldsAnEmptyRuleList()
+    {
+        GrouperDocument document = GrouperDocument.FromJsonUnvalidated(
+            """{ "store": "AzureAd", "members": [ { "source": "Static", "action": "Include" } ] }""");
+
+        Assert.NotNull(document.Members.Single().Rules);
+        Assert.Empty(document.Members.Single().Rules);
+    }
+
+    /// <summary>Validate describes such a document instead of throwing on it.</summary>
+    [Fact]
+    public void TestValidateReportsOnADocumentThatWasParsedWithoutMembers()
+    {
+        GrouperDocument document = GrouperDocument.FromJsonUnvalidated("""{ "store": "AzureAd" }""");
+
+        IReadOnlyList<ValidationError> errors = document.Validate();
+
+        Assert.Contains(ResourceString.ValidationErrorNoMemberObjects, errors.Select(e => e.ErrorId));
+    }
+
+    // ---- Properties whose absence the model cannot represent ------------------------------
+
+    /// <summary>
+    /// Why store, source and action are singled out: the zero value of each of their enums is a real,
+    /// usable value, so an omitted property does not land anywhere the validator would object to. If
+    /// one of these enums ever gains an "unspecified" member, this test fails and the presence check
+    /// in the validator can go.
+    /// </summary>
+    [Fact]
+    public void TestTheseEnumsHaveNoValueMeaningNotStated()
+    {
+        Assert.Equal(GroupStore.OnPremAd, default);
+        Assert.Equal(GroupMemberSource.Personalsystem, default);
+        Assert.Equal(GroupMemberAction.Include, default);
+    }
+
+    /// <summary>An omitted store would otherwise be OnPremAd, and validate.</summary>
+    [Fact]
+    public void TestOmittedStoreIsReportedRatherThanDefaultingToOnPremAd()
+    {
+        List<ValidationError> errors = [];
+        GrouperDocument? document = GrouperDocument.FromJson(WithoutStore(), errors);
+
+        Assert.Null(document);
+        ValidationError error = errors.Single(e => e.ErrorId == ResourceString.ValidationErrorRequiredPropertyMissing);
+        Assert.Contains("store", error.ErrorMessage);
+    }
+
+    /// <summary>
+    /// An omitted source would be Personalsystem and an omitted action would be Include. The source
+    /// case used to be caught only when the rules that followed happened not to fit Personalsystem,
+    /// and the action case was not caught at all.
+    /// </summary>
+    [Theory]
+    [InlineData("""{ "action": "Include", "rules": [ { "name": "Organisation", "value": "011JABCDEF12" } ] }""", "source")]
+    [InlineData("""{ "source": "Static", "rules": [ { "name": "Upn", "value": "member@example.com" } ] }""", "action")]
+    public void TestOmittedMemberPropertyIsReported(string member, string expectedProperty)
+    {
+        List<ValidationError> errors = [];
+        GrouperDocument? document = GrouperDocument.FromJson(JsonWithMember(member), errors);
+
+        Assert.Null(document);
+        ValidationError error = errors.Single(e => e.ErrorId == ResourceString.ValidationErrorRequiredPropertyMissing);
+        Assert.Contains(expectedProperty, error.ErrorMessage);
+    }
+
+    /// <summary>
+    /// The unvalidated parse refuses these too. A document with no store is not an old document that
+    /// today's rules reject, it is one the model cannot hold, so there is nothing to read and correct.
+    /// </summary>
+    [Fact]
+    public void TestUnvalidatedParseAlsoRefusesADocumentWithoutAStore()
+    {
+        Assert.Throws<InvalidGrouperDocumentException>(() => GrouperDocument.FromJsonUnvalidated(WithoutStore()));
+    }
+
+    /// <summary>
+    /// The contrast: owner and interval are left out all the time and have documented defaults, so
+    /// leaving them out is not an error at all.
+    /// </summary>
+    [Fact]
+    public void TestOmittedOwnerAndIntervalAreNotReportedAsMissing()
+    {
+        List<ValidationError> errors = [];
+        GrouperDocument? document = GrouperDocument.FromJson(ValidJson.Replace("\"owner\": \"KeepExisting\",", ""), errors);
+
+        Assert.Empty(errors);
+        Assert.NotNull(document);
+        Assert.Equal(GroupOwnerAction.KeepExisting, document.Owner);
+        Assert.Equal(0, document.Interval);
+    }
+
+    private static string WithoutStore() => ValidJson.Replace("\"store\": \"AzureAd\",", "");
+
+    /// <summary>A rules list supplied as null directly is treated the same as an omitted one.</summary>
+    [Fact]
+    public void TestMemberConstructedWithNullRulesExposesAnEmptyList()
+    {
+        GrouperDocumentMember member = new(GroupMemberSource.Static, GroupMemberAction.Include, null);
+
+        Assert.NotNull(member.Rules);
+        Assert.Empty(member.Rules);
     }
 
     // ---- StringOrBooleanConverter --------------------------------------------------------

@@ -126,12 +126,6 @@
   <data name="ErrorGrouperDocumentNotValid" xml:space="preserve">
     <value>JSON document does not represent a valid Grouper document</value>
   </data>
-  <data name="GenericErrorMessage" xml:space="preserve">
-    <value>An error occured</value>
-  </data>
-  <data name="ValidationCouldNotDeserializeJson" xml:space="preserve">
-    <value>Unable to deserialize JSON to intermediate Grouper document. Check if JSON represents a Grouper document</value>
-  </data>
   <data name="ValidationErrorAtLeastOneRuleRequired" xml:space="preserve">
     <value>Member source {0} requires at least one of these rule names: {1}</value>
   </data>
@@ -159,12 +153,6 @@
   <data name="ValidationErrorInvalidCombinationOfGroupStoreAndMemberSource" xml:space="preserve">
     <value>Invalid combination of group store and member source (Group store: {0}, Member source: {1})</value>
   </data>
-  <data name="ValidationErrorInvalidGroupStore" xml:space="preserve">
-    <value>Group store is missing or invalid (Group store: {0})</value>
-  </data>
-  <data name="ValidationErrorInvalidMemberAction" xml:space="preserve">
-    <value>Member action is missing or invalid. Valid actions are "Include" or "Exclude" (Member action: {0})</value>
-  </data>
   <data name="ValidationErrorInvalidMemberSource" xml:space="preserve">
     <value>Member source is missing or invalid (Member source: {0})</value>
   </data>
@@ -185,6 +173,9 @@
   </data>
   <data name="ValidationErrorNoMemberObjects" xml:space="preserve">
     <value>No member objects found</value>
+  </data>
+  <data name="ValidationErrorRequiredPropertyMissing" xml:space="preserve">
+    <value>A required property is missing (Property: {0})</value>
   </data>
   <data name="ValidationErrorRequiredRuleMissing" xml:space="preserve">
     <value>A required rule name is missing (Rule name: {0}, Member source: {1})</value>

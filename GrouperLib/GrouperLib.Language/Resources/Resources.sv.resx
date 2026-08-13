@@ -126,12 +126,6 @@
   <data name="ErrorGrouperDocumentNotValid" xml:space="preserve">
     <value>JSON-dokumentet representerar inte ett giltigt Grouper-dokument</value>
   </data>
-  <data name="GenericErrorMessage" xml:space="preserve">
-    <value>Ett fel inträffade</value>
-  </data>
-  <data name="ValidationCouldNotDeserializeJson" xml:space="preserve">
-    <value>Kunde inte översätta JSON till ett Grouper-dokument. Kontrollera att JSON representerar ett Grouper dokument</value>
-  </data>
   <data name="ValidationErrorAtLeastOneRuleRequired" xml:space="preserve">
     <value>Medlemskällan {0} kräver minst en av dessa regler: {1}</value>
   </data>
@@ -159,12 +153,6 @@
   <data name="ValidationErrorInvalidCombinationOfGroupStoreAndMemberSource" xml:space="preserve">
     <value>Kombinationen av gruppkatalog och medlemskälla är inte giltig (Group store: {0}, Member source: {1})</value>
   </data>
-  <data name="ValidationErrorInvalidGroupStore" xml:space="preserve">
-    <value>Gruppkatalog saknas eller är tomt (Group store: {0})</value>
-  </data>
-  <data name="ValidationErrorInvalidMemberAction" xml:space="preserve">
-    <value>Medlemsåtgärd saknas eller är ogiltig. Godkända åtgärder är "Include" eller "Exclude" (Member action: {0})</value>
-  </data>
   <data name="ValidationErrorInvalidMemberSource" xml:space="preserve">
     <value>Medlemskälla saknas eller är ogiltig (Member source: {0})</value>
   </data>
@@ -185,6 +173,9 @@
   </data>
   <data name="ValidationErrorNoMemberObjects" xml:space="preserve">
     <value>Inga medlemsobjeckt finns</value>
+  </data>
+  <data name="ValidationErrorRequiredPropertyMissing" xml:space="preserve">
+    <value>En obligatorisk egenskap saknas (Property: {0})</value>
   </data>
   <data name="ValidationErrorRequiredRuleMissing" xml:space="preserve">
     <value>En obligatorisk regel saknas (Rule name: {0}, Member source: {1})</value>

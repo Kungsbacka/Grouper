@@ -86,25 +86,7 @@ namespace GrouperLib.Language {
                 return ResourceManager.GetString("ErrorGrouperDocumentNotValid", resourceCulture);
             }
         }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to An error occured.
-        /// </summary>
-        public static string GenericErrorMessage {
-            get {
-                return ResourceManager.GetString("GenericErrorMessage", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Unable to deserialize JSON to intermediate Grouper document. Check if JSON represents a Grouper document.
-        /// </summary>
-        public static string ValidationCouldNotDeserializeJson {
-            get {
-                return ResourceManager.GetString("ValidationCouldNotDeserializeJson", resourceCulture);
-            }
-        }
-        
+       
         /// <summary>
         ///   Looks up a localized string similar to Member source {0} requires at least one of these rule names: {1}.
         /// </summary>
@@ -183,24 +165,6 @@ namespace GrouperLib.Language {
         public static string ValidationErrorInvalidCombinationOfGroupStoreAndMemberSource {
             get {
                 return ResourceManager.GetString("ValidationErrorInvalidCombinationOfGroupStoreAndMemberSource", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Group store is missing or invalid (Group store: {0}).
-        /// </summary>
-        public static string ValidationErrorInvalidGroupStore {
-            get {
-                return ResourceManager.GetString("ValidationErrorInvalidGroupStore", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Member action is missing or invalid. Valid actions are &quot;Include&quot; or &quot;Exclude&quot; (Member action: {0}).
-        /// </summary>
-        public static string ValidationErrorInvalidMemberAction {
-            get {
-                return ResourceManager.GetString("ValidationErrorInvalidMemberAction", resourceCulture);
             }
         }
         

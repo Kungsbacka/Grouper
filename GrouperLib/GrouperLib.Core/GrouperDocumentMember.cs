@@ -9,18 +9,18 @@ public sealed class GrouperDocumentMember
     public GroupMemberSource Source { get; }
 
     [JsonPropertyName("action")]
-    [JsonConverter(typeof(JsonStringEnumConverter<GroupMemberAction>))] 
+    [JsonConverter(typeof(JsonStringEnumConverter<GroupMemberAction>))]
     public GroupMemberAction Action { get; }
 
     [JsonPropertyName("rules")]
     public IReadOnlyCollection<GrouperDocumentRule> Rules { get; }
-        
+
     [JsonConstructor]
-    public GrouperDocumentMember(GroupMemberSource source, GroupMemberAction action, IReadOnlyCollection<GrouperDocumentRule> rules)
+    public GrouperDocumentMember(GroupMemberSource source, GroupMemberAction action, IReadOnlyCollection<GrouperDocumentRule>? rules)
     {
         Source = source;
         Action = action;
-        Rules = rules;
+        Rules = rules ?? [];
     }
 
     public override bool Equals(object? obj)

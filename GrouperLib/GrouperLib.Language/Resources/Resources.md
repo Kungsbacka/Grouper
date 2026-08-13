@@ -3,8 +3,6 @@ Key | Value
 DefaultValidationError | Unable to validate document contents
 ErrorBelowChangeLimit | Change ratio is below limit\. No changes are made to the group members
 ErrorGrouperDocumentNotValid | JSON document does not represent a valid Grouper document
-GenericErrorMessage | An error occured
-ValidationCouldNotDeserializeJson | Unable to deserialize JSON to intermediate Grouper document\. Check if JSON represents a Grouper document
 ValidationErrorAtLeastOneRuleRequired | Member source \{0\} requires at least one of these rule names: \{1\}
 ValidationErrorDocumentIdNotValid | Document ID is missing or not a valid GUID \(ID: \{0\}\)
 ValidationErrorDuplicateMemberObject | The same member object can only appear once for each group \(Member source: \{0\}, Member action: \{1\}, Member count: \{2\}\)
@@ -13,8 +11,6 @@ ValidationErrorDuplicateRuleName | Rule name can only appear once for every ruls
 ValidationErrorGroupIdNotValid | Group ID is missing or not a valid GUID \(ID: \{0\}\)
 ValidationErrorGroupNameIsNullOrEmpty | Group name is missing or empty
 ValidationErrorInvalidCombinationOfGroupStoreAndMemberSource | Invalid combination of group store and member source \(Group store: \{0\}, Member source: \{1\}\)
-ValidationErrorInvalidGroupStore | Group store is missing or invalid \(Group store: \{0\}\)
-ValidationErrorInvalidMemberAction | Member action is missing or invalid\. Valid actions are "Include" or "Exclude" \(Member action: \{0\}\)
 ValidationErrorInvalidMemberSource | Member source is missing or invalid \(Member source: \{0\}\)
 ValidationErrorInvalidOwnerAction | Owner action is missing or invalid\. Valid actions are "AddAll", "KeepExisting" or "MatchSource" \(Owner action: \{0\}\)"
 ValidationErrorInvalidRuleName | Rule name is missing or can not be used in combination with the selected member source \(Rule name: \{0\}, Member source: \{1\}\)

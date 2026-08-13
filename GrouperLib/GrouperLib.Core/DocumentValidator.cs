@@ -40,6 +40,12 @@ internal static partial class DocumentValidator
         }
 
         InternalValidateMembers(document.Members, document.Store, groupLocation, validationErrors);
+
+        // Deliberately the whole list and not just what the call above added: the custom validators
+        // run only on a document that is otherwise sound, so that a structural problem is not
+        // reported together with the UPN or self-reference errors it may well be the cause of. The
+        // gates inside InternalValidateMembers are scoped, because those suppress findings that have
+        // nothing to do with each other; this one is a decision about what is worth reporting.
         if (validationErrors.Count > 0)
         {
             return;
@@ -65,6 +71,7 @@ internal static partial class DocumentValidator
             return;
         }
 
+        int errorsBeforeSources = validationErrors.Count;
         foreach (GrouperDocumentMember member in documentMembers)
         {
             if (memberSources.TryGetValue(member.Source, out MemberSourceSpec? spec))
@@ -80,7 +87,9 @@ internal static partial class DocumentValidator
             }
         }
 
-        if (validationErrors.Count > 0)
+        // Only this loop's own findings may stop the rule checks below, because what they protect is
+        // the source lookup on line 95 -- nothing else here makes the rules unreadable.
+        if (validationErrors.Count > errorsBeforeSources)
         {
             return;
         }
@@ -109,6 +118,7 @@ internal static partial class DocumentValidator
             return;
         }
 
+        int errorsBeforeNames = validationErrors.Count;
         var rules = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         foreach (GrouperDocumentRule rule in documentRules)
         {
@@ -141,7 +151,7 @@ internal static partial class DocumentValidator
             }
         }
 
-        if (validationErrors.Count > 0)
+        if (validationErrors.Count > errorsBeforeNames)
         {
             return;
         }
@@ -169,6 +179,52 @@ internal static partial class DocumentValidator
         }
     }
 
+    /// <summary>
+    /// Reports the properties whose absence the document model cannot represent. Store, source and
+    /// action are enums with no value meaning "not stated", so leaving one out of the payload yields
+    /// the first member of the enum -- OnPremAd, Personalsystem, Include -- and every later check
+    /// accepts it. The payload is the last place the difference is still visible, which is why this
+    /// reads it rather than the document. Everything else that can be left out either has a documented
+    /// default (owner, interval) or lands on a value the validator already rejects.
+    /// </summary>
+    private static void ValidateRequiredProperties(string json, List<ValidationError> validationErrors)
+    {
+        using JsonDocument parsed = JsonDocument.Parse(json);
+        if (parsed.RootElement.ValueKind != JsonValueKind.Object)
+        {
+            return;
+        }
+
+        // Property names are matched exactly, because that is how the deserializer matched them.
+        if (!parsed.RootElement.TryGetProperty("store", out _))
+        {
+            validationErrors.Add(new ValidationError(nameof(GrouperDocument.Store), ResourceString.ValidationErrorRequiredPropertyMissing, "store"));
+        }
+
+        if (!parsed.RootElement.TryGetProperty("members", out JsonElement members) || members.ValueKind != JsonValueKind.Array)
+        {
+            return;
+        }
+
+        foreach (JsonElement member in members.EnumerateArray())
+        {
+            if (member.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+
+            if (!member.TryGetProperty("source", out _))
+            {
+                validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Source), ResourceString.ValidationErrorRequiredPropertyMissing, "source"));
+            }
+
+            if (!member.TryGetProperty("action", out _))
+            {
+                validationErrors.Add(new ValidationError(nameof(GrouperDocumentMember.Action), ResourceString.ValidationErrorRequiredPropertyMissing, "action"));
+            }
+        }
+    }
+
     internal static GrouperDocument? Deserialize(string json, List<ValidationError> validationErrors)
     {
         if (string.IsNullOrEmpty(json))
@@ -190,6 +246,16 @@ internal static partial class DocumentValidator
         if (document == null)
         {
             validationErrors.Add(new ValidationError(nameof(json), ResourceString.DefaultValidationError));
+            return null;
+        }
+
+        // Deliberately here rather than alongside the rule checks, so that both parse entry points
+        // agree. A document with no store is not an old document that today's rules reject; it is one
+        // the model cannot hold, which is exactly what this entry point promises to refuse.
+        int errorsBefore = validationErrors.Count;
+        ValidateRequiredProperties(json, validationErrors);
+        if (validationErrors.Count > errorsBefore)
+        {
             return null;
         }
 

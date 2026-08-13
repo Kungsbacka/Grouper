@@ -486,6 +486,87 @@ public class DocumentValidatorTest
         Assert.DoesNotContain(ResourceString.ValidationErrorInvalidUpn, errors.Select(e => e.ErrorId));
     }
 
+    // ---- what one finding is allowed to hide from another ---------------------------------
+
+    /// <summary>
+    /// The gate above is deliberate and stays. The gates inside the member and rule checks are a
+    /// different matter: they compare against the error count they started with rather than against
+    /// zero, because the list they add to is shared with the document-level checks and with every
+    /// other member object. Comparing against zero meant an empty group name was enough to hide
+    /// every problem inside every member object.
+    /// </summary>
+    [Fact]
+    public void TestADocumentLevelErrorDoesNotHideARuleError()
+    {
+        GrouperDocumentMember member = new(GroupMemberSource.Elevregister, GroupMemberAction.Include,
+            [new GrouperDocumentRule("Klass", "EG_41e60dc2-1300-471d-a3a9-674664320e25"),
+             new GrouperDocumentRule("Grupp", "FG_41e60dc2-1300-471d-a3a9-674664320e25")]);
+        GrouperDocument document = new(documentId, groupId, "", GroupStore.AzureAd, [member],
+            GroupOwnerAction.KeepExisting, 0);
+
+        IEnumerable<string> errorIds = Validate(document).Select(e => e.ErrorId);
+
+        Assert.Contains(ResourceString.ValidationErrorGroupNameIsNullOrEmpty, errorIds);
+        Assert.Contains(ResourceString.ValidationErrorMutuallyExclusiveRules, errorIds);
+    }
+
+    /// <summary>
+    /// Rules are checked one member object at a time against the one shared list, so the first
+    /// member object used to silence every one after it.
+    /// </summary>
+    [Fact]
+    public void TestOneMemberObjectDoesNotHideAnothersRuleNameError()
+    {
+        GrouperDocumentMember first = new(GroupMemberSource.Elevregister, GroupMemberAction.Include,
+            [new GrouperDocumentRule("NoSuchRule", "x")]);
+        GrouperDocumentMember second = new(GroupMemberSource.Personalsystem, GroupMemberAction.Include,
+            [new GrouperDocumentRule("AlsoBogus", "y")]);
+        GrouperDocument document = new(documentId, groupId, "Test Group", GroupStore.AzureAd,
+            [first, second], GroupOwnerAction.KeepExisting, 0);
+
+        List<ValidationError> errors = Validate(document);
+
+        Assert.Equal(2, errors.Count);
+        Assert.Contains(errors, e => e.ErrorMessage.Contains("NoSuchRule"));
+        Assert.Contains(errors, e => e.ErrorMessage.Contains("AlsoBogus"));
+    }
+
+    [Fact]
+    public void TestAClauseFailureDoesNotHideALaterMembersValueError()
+    {
+        GrouperDocumentMember first = new(GroupMemberSource.Personalsystem, GroupMemberAction.Include,
+            [new GrouperDocumentRule("IncludeManager", "true")]);
+        GrouperDocumentMember second = new(GroupMemberSource.Elevregister, GroupMemberAction.Include,
+            [new GrouperDocumentRule("Roll", "NotARole")]);
+        GrouperDocument document = new(documentId, groupId, "Test Group", GroupStore.OnPremAd,
+            [first, second], GroupOwnerAction.KeepExisting, 0);
+
+        IEnumerable<string> errorIds = Validate(document).Select(e => e.ErrorId);
+
+        Assert.Contains(ResourceString.ValidationErrorAtLeastOneRuleRequired, errorIds);
+        Assert.Contains(ResourceString.ValidationErrorRuleValueDoesNotValidate, errorIds);
+    }
+
+    /// <summary>
+    /// Scoping the gates does not make a single member object report several combination problems.
+    /// Only the first unsatisfied clause is described, which is the behaviour the clause design
+    /// deliberately chose, and this documents that the two are separate decisions.
+    /// </summary>
+    [Fact]
+    public void TestASingleMemberObjectStillReportsOneCombinationProblem()
+    {
+        GrouperDocumentMember member = new(GroupMemberSource.Elevregister, GroupMemberAction.Include,
+            [new GrouperDocumentRule("Klass", "EG_41e60dc2-1300-471d-a3a9-674664320e25"),
+             new GrouperDocumentRule("Grupp", "FG_41e60dc2-1300-471d-a3a9-674664320e25"),
+             new GrouperDocumentRule("Skolform", "GR")]);
+        GrouperDocument document = new(documentId, groupId, "Test Group", GroupStore.AzureAd, [member],
+            GroupOwnerAction.KeepExisting, 0);
+
+        ValidationError error = Assert.Single(Validate(document));
+
+        Assert.Equal(ResourceString.ValidationErrorMutuallyExclusiveRules, error.ErrorId);
+    }
+
     /// <summary>Sources with no declared value validation accept anything non-empty.</summary>
     [Theory]
     [InlineData(GroupMemberSource.CustomView, GroupStore.AzureAd, "View", "anything at all")]
