@@ -47,9 +47,15 @@ secrets (see [Encrypting secrets](#encrypting-secrets) below)
 sc.exe create GrouperService binPath= "C:\Program Files\Grouper\GrouperService.exe" start= auto obj= user password= pass
 ```
 
-Note that a build fails with `MSB3030` until the two config files exist, because they are copied to the
-output directory as part of the build. To check that the code compiles without creating them, use
-`dotnet build … -t:Compile`.
+* Register the event source. The service writes its start and stop messages, together with errors it
+cannot handle on its own, to the Application log under the source name `GrouperService`. Windows requires
+the source to be registered before the first entry can be written, and `sc.exe` does not create it. The
+command below has to run elevated, and is only needed once per server. If the source is missing, the
+service still runs, but the messages are lost.
+
+```powershell
+[System.Diagnostics.EventLog]::CreateEventSource('GrouperService', 'Application')
+```
 
 ### API
 
@@ -116,7 +122,7 @@ the people who write documents.
 
 Inside GrouperLib the dependency direction is one-way:
 
-```
+```text
 Language <- Core <- ┬ Store    ┐
                     └ Database ┴ <- Backend
 Config <- Store, Database, Backend
@@ -264,32 +270,32 @@ many groups every August that they had to be reviewed and re-run by hand. The pr
 erroneous full swap is low, so that risk is knowingly accepted in exchange for unattended school-year
 rollover. Consequences:
 
-- Growth always passes; the ratio exceeds 1.
-- **Replacing every member yields exactly 1.0** and passes any limit at or below one. This is the
+* Growth always passes; the ratio exceeds 1.
+* **Replacing every member yields exactly 1.0** and passes any limit at or below one. This is the
   intended behaviour described above, and the reason the guard is not retention-based.
-- With an empty group (`Grouper.cs:159-161`) the value is the raw target *count* rather than a ratio,
+* With an empty group (`Grouper.cs:159-161`) the value is the raw target *count* rather than a ratio,
   so populating an empty group is never blocked.
 
 ### Store and source adapters
 
 The `IGroupStore` / `IMemberSource` interfaces hide four very different transports:
 
-- [AzureAd.cs](GrouperLib/GrouperLib.Store/AzureAd.cs) — Microsoft Graph SDK with
+* [AzureAd.cs](GrouperLib/GrouperLib.Store/AzureAd.cs) — Microsoft Graph SDK with
   `PageIterator`. Group store, member source, and the only owner source.
-- [Exo.cs](GrouperLib/GrouperLib.Store/Exo.cs) — direct REST against
+* [Exo.cs](GrouperLib/GrouperLib.Store/Exo.cs) — direct REST against
   `outlook.office365.com/adminapi/beta/{tenant}/InvokeCommand`, posting EXO cmdlets
   (`Get-DistributionGroupMember`, `Add-`/`Remove-DistributionGroupMember`) as JSON. Carries a custom
   `EntraTokenHandler` and a `ThrottleRetryHandler` (4 attempts, honours `Retry-After`, 20s cap,
   deliberately does *not* retry 500). Paging is bounded twice: it throws if a `nextLink` repeats and
   again at a `MaxPages` ceiling of 105. Known errors are recovered by regex-matching EXO's English
   prose messages.
-- [OnPremAd.cs](GrouperLib/GrouperLib.Store/OnPremAd.cs) /
+* [OnPremAd.cs](GrouperLib/GrouperLib.Store/OnPremAd.cs) /
   [Ldap.cs](GrouperLib/GrouperLib.Store/Ldap.cs) —
   `System.DirectoryServices.Protocols`, Kerberos with sealing and signing, paged at 1000, 10-minute
   cache of GUID→DN lookups.
-- [OpenE.cs](GrouperLib/GrouperLib.Store/OpenE.cs) — SQL stored procedures
+* [OpenE.cs](GrouperLib/GrouperLib.Store/OpenE.cs) — SQL stored procedures
   (`dbo.spOpenE*`). Group store only, no member source.
-- [MemberDb.cs](GrouperLib/GrouperLib.Database/MemberDb.cs) — the metadirectory, and the
+* [MemberDb.cs](GrouperLib/GrouperLib.Database/MemberDb.cs) — the metadirectory, and the
   source for everything that is not a directory group: `Personalsystem`, `Elevregister`, `Static`
   and `CustomView`, each via its own `dbo.spGrouper*` proc.
 

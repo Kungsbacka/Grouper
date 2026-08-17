@@ -24,6 +24,7 @@ namespace GrouperService
         private DocumentDb _documentDb;
         private LogDb _logDb;
         private bool _stopRequested;
+        private string _lastRunErrorMessage;
         private Dictionary<Guid, DateTime> _lastProcessedDictionary;
         private readonly GrouperConfiguration _config;
 
@@ -45,12 +46,14 @@ namespace GrouperService
             SetupGrouper();
             FillLastProcessedDictionary();
             SetupTimer();
+            WriteToEventLog("GrouperService has started.", EventLogEntryType.Information);
         }
 
         public void Stop()
         {
             _stopRequested = true;
             DisposeTimer();
+            WriteToEventLog("GrouperService has stopped.", EventLogEntryType.Information);
         }
 
         private void SetupGrouper()
@@ -97,7 +100,15 @@ namespace GrouperService
             }
             else
             {
-                _eventLog.WriteEntry(message, entryType);
+                try
+                {
+                    _eventLog.WriteEntry(message, entryType);
+                }
+                catch (Exception)
+                {
+                    // Don't let a failure to write to the event log take down
+                    // the whole service or prevent it from starting.
+                }
             }
         }
 
@@ -136,6 +147,36 @@ namespace GrouperService
         private void InvokeGrouper(object source, ElapsedEventArgs e)
         {
             Timer timer = (Timer)source;
+            try
+            {
+                ProcessDocuments();
+                _lastRunErrorMessage = null;
+            }
+            catch (Exception ex)
+            {
+                // A run that fails tends to keep failing on every timer event, so the same error
+                // is only reported once. An error that differs from the last one is always reported.
+                string message = ex.ToString();
+                if (message != _lastRunErrorMessage)
+                {
+                    WriteToEventLog(message, EventLogEntryType.Error);
+                    _lastRunErrorMessage = message;
+                }
+            }
+            finally
+            {
+                // AutoReset is false, and System.Timers.Timer discards exceptions that leave the
+                // Elapsed handler. Re-arming anywhere but here would mean that a single failed run
+                // leaves the service alive but permanently idle.
+                if (!_stopRequested)
+                {
+                    timer.Enabled = true;
+                }
+            }
+        }
+
+        private void ProcessDocuments()
+        {
             List<GrouperDocumentEntry> entries = [];
             bool processAllDocuments = ShouldProcessAllDocuments();
             if (processAllDocuments)
@@ -148,15 +189,7 @@ namespace GrouperService
                 // Get documents that changed since the last timer event.
                 // It doesn't matter if we miss a document. It will be processed in the next full run
                 DateTime start = DateTime.Now.AddMilliseconds(-_workInterval);
-                try
-                {
-                    entries.AddRange(_documentDb.GetEntriesByAgeAsync(start).GetAwaiter().GetResult());
-                }
-                catch (Exception ex)
-                {
-                    WriteToEventLog(ex.ToString(), EventLogEntryType.Error);
-                    throw;
-                }
+                entries.AddRange(_documentDb.GetEntriesByAgeAsync(start).GetAwaiter().GetResult());
                 // Get documents that have a processing interval hint and where the interval has passed.
                 IEnumerable<GrouperDocumentEntry> entriesWithInterval =
                     _documentDb.GetEntriesByProcessingInterval(min: 1).GetAwaiter().GetResult();
@@ -225,10 +258,6 @@ namespace GrouperService
             if (processAllDocuments)
             {
                 SetupGrouper();
-            }
-            if (!_stopRequested)
-            {
-                timer.Enabled = true;
             }
         }
     }
