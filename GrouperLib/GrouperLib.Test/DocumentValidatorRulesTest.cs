@@ -29,15 +29,21 @@ public class DocumentValidatorRulesTest
     private static readonly SourceSpec[] specs =
     [
         new(GroupMemberSource.Personalsystem, GroupStore.AzureAd,
-            ["Organisation", "Befattning", "IncludeManager"],
+            ["Organisation", "Plats", "Befattning", "IncludeManager"],
             [
                 ["Organisation"],
+                ["Plats"],
                 ["Befattning"],
+                ["Organisation", "Plats"],
                 ["Organisation", "Befattning"],
                 ["Organisation", "IncludeManager"],
-                ["Organisation", "Befattning", "IncludeManager"]
+                ["Plats", "Befattning"],
+                ["Organisation", "Plats", "Befattning"],
+                ["Organisation", "Befattning", "IncludeManager"],
+                ["Organisation", "Plats", "IncludeManager"],
+                ["Organisation", "Plats", "Befattning", "IncludeManager"],
             ],
-            new() { ["Organisation"] = "011JABCDEF12", ["Befattning"] = "Lärare", ["IncludeManager"] = "true" }),
+            new() { ["Organisation"] = "011JABCDEF12", ["Plats"] = "Stadshuset", ["Befattning"] = "Lärare", ["IncludeManager"] = "true" }),
 
         new(GroupMemberSource.Elevregister, GroupStore.AzureAd,
             ["Roll", "Enhet", "Klass", "Grupp", "Skolform", "Årskurs"],
@@ -133,7 +139,7 @@ public class DocumentValidatorRulesTest
     }
 
     /// <summary>
-    /// 88 cases: 64 for Elevregister, 8 for Personalsystem, 4 for OnPremAdQuery, 2 for each of the
+    /// 96 cases: 64 for Elevregister, 16 for Personalsystem, 4 for OnPremAdQuery, 2 for each of the
     /// five single-rule sources. A verdict that flips in either direction is a behaviour change.
     /// </summary>
     [Theory]
@@ -198,10 +204,11 @@ public class DocumentValidatorRulesTest
     [Theory]
     // Nothing from the required-or-optional pair: SearchBase without its LdapFilter.
     [InlineData(GroupMemberSource.OnPremAdQuery, "SearchBase", ResourceString.ValidationErrorRequiredRuleMissing)]
-    // Neither of the two names that select a population.
+    // None of the three names that select a population.
     [InlineData(GroupMemberSource.Personalsystem, "IncludeManager", ResourceString.ValidationErrorAtLeastOneRuleRequired)]
     // IncludeManager present, but nothing for it to be relative to.
     [InlineData(GroupMemberSource.Personalsystem, "Befattning,IncludeManager", ResourceString.ValidationErrorRuleRequiresAnotherRule)]
+    [InlineData(GroupMemberSource.Personalsystem, "Plats,IncludeManager", ResourceString.ValidationErrorRuleRequiresAnotherRule)]
     // Two competing ways to pick a cohort.
     [InlineData(GroupMemberSource.Elevregister, "Klass,Grupp", ResourceString.ValidationErrorMutuallyExclusiveRules)]
     [InlineData(GroupMemberSource.Elevregister, "Klass,Skolform,Årskurs", ResourceString.ValidationErrorMutuallyExclusiveRules)]
@@ -271,12 +278,16 @@ public class DocumentValidatorRulesTest
         Assert.Empty(Validate(document));
     }
 
-    [Fact]
-    public void TestNonRepeatableRuleNameTwiceIsRejected()
+    [Theory]
+    [InlineData(GroupMemberSource.Elevregister, "Enhet", "ARA", "ELOF")]
+    // The stored procedure takes a single @plats, so a second Plats has nowhere to go.
+    [InlineData(GroupMemberSource.Personalsystem, "Plats", "Stadshuset", "Rådhuset")]
+    public void TestNonRepeatableRuleNameTwiceIsRejected(
+        GroupMemberSource source, string ruleName, string first, string second)
     {
-        SourceSpec spec = SpecFor(GroupMemberSource.Elevregister);
-        GrouperDocumentMember member = new(GroupMemberSource.Elevregister, GroupMemberAction.Include,
-            [new GrouperDocumentRule("Enhet", "ARA"), new GrouperDocumentRule("Enhet", "ELOF")]);
+        SourceSpec spec = SpecFor(source);
+        GrouperDocumentMember member = new(source, GroupMemberAction.Include,
+            [new GrouperDocumentRule(ruleName, first), new GrouperDocumentRule(ruleName, second)]);
         GrouperDocument document = new(documentId, groupId, "Test Group", spec.CompatibleStore, [member]);
 
         Assert.Contains(ResourceString.ValidationErrorDuplicateRuleName, Validate(document).Select(e => e.ErrorId));

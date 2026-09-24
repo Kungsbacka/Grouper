@@ -198,6 +198,42 @@ public class DocumentValidatorTest
         Assert.Equal(expectedValid, errors.Count == 0);
     }
 
+    /// <summary>
+    /// Plats is free text matched exactly against <c>adr_beskrivning</c>, so the regex only keeps
+    /// out values that can never match: odd characters, leading whitespace, a trailing newline
+    /// (hence <c>\z</c> rather than <c>$</c>), and anything longer than the procedure's
+    /// <c>nvarchar(50)</c>, which would otherwise be truncated silently.
+    /// </summary>
+    [Theory]
+    [InlineData("Stadshuset", true)]
+    [InlineData("Storgatan 37", true)]           // spaces and digits
+    [InlineData("Åsa förskola", true)]           // \w includes Swedish letters
+    [InlineData("Hede-skolan", true)]
+    [InlineData("Hus A (plan 2), vån. 3/4 & 5", true)]
+    [InlineData(" Stadshuset", false)]           // leading whitespace
+    [InlineData("Stadshuset\n", false)]          // $ would have accepted this
+    [InlineData("Stadshuset;", false)]
+    [InlineData("Stads*", false)]
+    public void TestPlatsValueFormat(string value, bool expectedValid)
+    {
+        List<ValidationError> errors = Validate(Document(
+            source: GroupMemberSource.Personalsystem, ruleName: "Plats", ruleValue: value));
+
+        Assert.Equal(expectedValid, errors.Count == 0);
+    }
+
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(50, true)]
+    [InlineData(51, false)]
+    public void TestPlatsValueLengthIsCappedAtTheParameterSize(int length, bool expectedValid)
+    {
+        List<ValidationError> errors = Validate(Document(
+            source: GroupMemberSource.Personalsystem, ruleName: "Plats", ruleValue: new string('a', length)));
+
+        Assert.Equal(expectedValid, errors.Count == 0);
+    }
+
     [Theory]
     [InlineData("FSK", true)]
     [InlineData("GR", true)]

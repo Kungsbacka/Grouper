@@ -177,10 +177,11 @@ Each source is described by a `MemberSourceSpec`, which is built with a small fl
 
 ```csharp
 [GroupMemberSource.Personalsystem] = MemberSourceSpec.Independent()
-    .AtLeastOneOf("Organisation", "Befattning")
-    .Requires("IncludeManager", "Organisation")
+    .AtLeastOneOf("Organisation", "Befattning", "Plats")
+    .Requires(dependent: "IncludeManager", prerequisite: "Organisation")
     .Repeatable("Befattning")
     .Matches("Organisation", PersonecIdRegex())
+    .Matches("Plats", PersonecPlatsRegex())
     .Matches("IncludeManager", TrueFalseRegex()),
 ```
 

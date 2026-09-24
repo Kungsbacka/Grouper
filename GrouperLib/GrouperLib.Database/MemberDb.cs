@@ -73,12 +73,17 @@ public class MemberDb : IMemberSource
     {
         List<string?> befattning = [];
         string? organisation = null;
+        string? plats = null;
         bool includeManager = false;
         foreach (GrouperDocumentRule rule in member.Rules)
         {
             if (rule.Name.IEquals("Organisation"))
             {
                 organisation = rule.Value.NullIfEmpty();
+            }
+            else if (rule.Name.IEquals("Plats"))
+            {
+                plats = rule.Value.NullIfEmpty();
             }
             else if (rule.Name.IEquals("Befattning") && !string.IsNullOrEmpty(rule.Value))
             {
@@ -92,6 +97,7 @@ public class MemberDb : IMemberSource
         await GetMembersAsync("dbo.spGrouperPersonalsystem", memberType, memberCollection,
             new Dictionary<string, object?>() {
                 { "organisation",    organisation },
+                { "plats",           plats },
                 { "befattning",      befattning.ToArray() },
                 { "include_manager", includeManager }
             });

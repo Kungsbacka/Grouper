@@ -19,13 +19,14 @@ internal static partial class DocumentValidator
 
     private static readonly Dictionary<GroupMemberSource, MemberSourceSpec> memberSources = new()
     {
-        // At least one of Organisation or Befattning selects the population; IncludeManager only
+        // At least one of Organisation, Plats or Befattning selects the population; IncludeManager only
         // means anything relative to an Organisation.
         [GroupMemberSource.Personalsystem] = MemberSourceSpec.Independent()
-            .AtLeastOneOf("Organisation", "Befattning")
-            .Requires("IncludeManager", "Organisation")
+            .AtLeastOneOf("Organisation", "Befattning", "Plats")
+            .Requires(dependent: "IncludeManager", prerequisite: "Organisation")
             .Repeatable("Befattning")
             .Matches("Organisation", PersonecIdRegex())
+            .Matches("Plats", PersonecPlatsRegex())
             .Matches("IncludeManager", TrueFalseRegex()),
 
         // Klass, Grupp and Skolform+Årskurs are three competing ways to pick a cohort, so at most
@@ -74,6 +75,9 @@ internal static partial class DocumentValidator
 
     [GeneratedRegex("^011J[0-9A-Z]{8}$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
     private static partial Regex PersonecIdRegex();
+
+    [GeneratedRegex("^[\\w.,\\-/()&]([\\w .,\\-/()&]{0,48}[\\w.,\\-/()&])?\\z", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+    private static partial Regex PersonecPlatsRegex();
 
     [GeneratedRegex("^(true|false)$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
     private static partial Regex TrueFalseRegex();
